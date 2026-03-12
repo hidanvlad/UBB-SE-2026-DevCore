@@ -1,204 +1,245 @@
-## Doctor Schedule
+## 1) [Doctor Schedule] Create Doctor Schedule page and calendar container
+**Type:** Feature  
+**Priority:** High
 
-### 1) Build the Doctor Schedule screen
-**Type:** Frontend  
-**Description:** Create the main page where doctors can see appointments and shifts in one place.
+### Description
+Create a dedicated Doctor Schedule page where doctors can view upcoming appointments and shifts in a calendar interface.
 
-**What to implement**
-- Add a dedicated Doctor Schedule page in doctor navigation.
-- Show content in calendar/agenda style.
-- Include loading, empty, and error states.
-- Restrict access to doctor users.
-
----
-
-### 2) Fetch upcoming appointments for the logged-in doctor
-**Type:** Backend  
-**Description:** Provide reliable appointment data scoped to the current doctor.
-
-**What to implement**
-- API/service call that returns upcoming appointments for the current doctor only.
-- Include: appointment id, date, start time, end time, status, location.
-- Default to future appointments.
-- Handle API failure and larger response sets safely.
+### Acceptance Criteria
+- Doctor can access the page from authenticated doctor navigation.
+- Page includes calendar container with date navigation (today/next/previous).
+- Loading, empty, and error states are implemented.
+- Non-doctor users are blocked from access.
 
 ---
 
-### 3) Show appointments inside the calendar
-**Type:** Frontend  
-**Description:** Render appointment data in a way that is easy to read and interact with.
+## 2) [Doctor Schedule] Implement API/service to fetch upcoming doctor appointments
+**Type:** Backend / Feature  
+**Priority:** High
 
-**What to implement**
-- Render appointments in day/week views.
-- Support overlapping events without UI breakage.
-- Click/tap opens details panel/modal.
-- Use clear visual markers for appointment status/type.
+### Description
+Implement data retrieval for upcoming appointments for the logged-in doctor.
 
----
-
-### 4) Add doctor shift roster (day/week)
-**Type:** Frontend + Backend  
-**Description:** Let doctors view their on-duty shifts by day or by week.
-
-**What to implement**
-- Day/Week toggle for shift roster.
-- Sort shifts by time.
-- Handle multiple shifts in the same day.
-- Show clear empty state when no shifts exist.
+### Acceptance Criteria
+- Endpoint/service returns only appointments for current doctor.
+- Response includes: appointment id, date, start time, end time, status, and location.
+- Only future appointments are returned by default.
+- Proper error handling and pagination/windowing are included if dataset is large.
 
 ---
 
-### 5) Show shift location (ER, clinic room, etc.)
-**Type:** Frontend  
-**Description:** Display where each doctor shift takes place.
+## 3) [Doctor Schedule] Render upcoming appointments in calendar component
+**Type:** Frontend / Feature  
+**Priority:** High
 
-**What to implement**
-- Display location on each shift row/block.
-- Show location in both list and shift details.
-- Fallback text for missing values (e.g., `Location TBD`).
+### Description
+Bind appointment data to calendar events so doctors can visually see upcoming scheduled medical appointments.
 
----
-
-### 6) Display exact shift start/end time blocks
-**Type:** Frontend  
-**Description:** Make shift timing explicit and accurate in the UI.
-
-**What to implement**
-- Show Shift Start Time and Shift End Time clearly.
-- Render shifts as precise time blocks in timeline/calendar.
-- Correctly handle overnight shifts.
-- Respect 12h/24h user preference.
+### Acceptance Criteria
+- Appointments render correctly in day/week calendar views.
+- Overlapping appointments are displayed without layout breakage.
+- Clicking an appointment opens details panel/modal.
+- Appointment status/type is visually distinguishable (color/badge/tag).
 
 ---
 
-### 7) Doctor access rules + data validation
+## 4) [Doctor Schedule] Add daily/weekly shift roster generation
+**Type:** Backend + Frontend / Feature  
+**Priority:** High
+
+### Description
+Enable generation and display of on-duty shift roster in daily and weekly modes.
+
+### Acceptance Criteria
+- User can switch between Daily and Weekly roster view.
+- Shift data is grouped/sorted chronologically.
+- Multiple shifts per day are supported.
+- Empty-day/empty-week states are handled clearly.
+
+---
+
+## 5) [Doctor Schedule] Display exact shift locations (ER/Clinic Room/etc.)
+**Type:** Feature  
+**Priority:** Medium
+
+### Description
+Expose and display shift location details for each shift entry and calendar block.
+
+### Acceptance Criteria
+- Each shift includes a visible location label.
+- Location appears in both roster list and shift detail popover/modal.
+- Supports values like ER, ICU, Clinic Room X.
+- Missing location uses fallback text (e.g., “Location TBD”).
+
+---
+
+## 6) [Doctor Schedule] Show shift start/end times as exact calendar time blocks
+**Type:** Frontend / Feature  
+**Priority:** High
+
+### Description
+Render shifts using precise start/end boundaries in the calendar timeline.
+
+### Acceptance Criteria
+- Each shift displays Shift Start Time and Shift End Time.
+- Time blocks align correctly with timeline grid.
+- Overnight shifts (crossing midnight) render correctly.
+- Time formatting respects configured locale (12h/24h).
+
+---
+
+## 7) [Doctor Schedule] Enforce authorization and scheduling validation rules
 **Type:** Security / Backend  
-**Description:** Protect schedule privacy and enforce valid shift data.
+**Priority:** High
 
-**What to implement**
-- Enforce that doctors can only access their own schedule.
-- Reject unauthorized access attempts and log them.
-- Validate shift time ranges (`start < end`).
-- Handle malformed/duplicate records safely.
+### Description
+Ensure schedule privacy and data correctness for appointments and shifts.
+
+### Acceptance Criteria
+- Doctor can only access their own schedule data.
+- Unauthorized access attempts are rejected and logged.
+- Validation ensures shift start < shift end.
+- Invalid/overlapping/duplicated malformed records are safely handled.
 
 ---
 
-### 8) Test coverage for doctor schedule
+## 8) [Doctor Schedule] Add automated tests and acceptance coverage for schedule module
 **Type:** QA / Test Automation  
-**Description:** Add enough coverage to keep core doctor schedule flows stable.
+**Priority:** High
 
-**What to implement**
-- Unit tests for mapping/transformation logic.
-- Integration tests for API + UI flow.
-- E2E checks for:
-  - appointments visible
-  - day/week switch
-  - location visibility
-  - correct shift time blocks
+### Description
+Add test coverage to guarantee reliability of the Doctor Schedule functionality.
 
----
-
-## Pharmacist Schedule
-
-### 9) Build Pharmacy Schedule screen
-**Type:** Frontend  
-**Description:** Create a dedicated schedule screen for pharmacists.
-
-**What to implement**
-- Add Pharmacy Schedule page in pharmacist navigation.
-- Show roster/calendar style schedule.
-- Include loading, empty, and error states.
-- Restrict access to pharmacist role.
+### Acceptance Criteria
+- Unit tests cover mapping/transformation of appointment and shift data.
+- Integration tests cover API + UI rendering path.
+- E2E tests verify:
+  - appointments visible in calendar,
+  - daily/weekly roster toggle,
+  - shift location visibility,
+  - exact shift time block rendering.
+- Regression checklist is documented in PR template or test plan.
 
 ---
 
-### 10) Fetch pharmacist shifts and rotation assignments
-**Type:** Backend  
-**Description:** Provide schedule data with rotation details for the logged-in pharmacist.
+## 9) [Pharmacy Schedule] Create Pharmacy Schedule view and shift calendar/roster container
+**Type:** Feature  
+**Priority:** High
 
-**What to implement**
-- API/service for pharmacist schedule data.
-- Include: shift id, rotation assignment, start/end time, status, location/unit (if available).
-- Support day/week date range queries.
-- Handle large datasets safely.
+### Description
+Create a dedicated Pharmacy Schedule view where pharmacists can see work shifts and pharmacy rotations.
 
----
-
-### 11) Add day/week roster mode for pharmacists
-**Type:** Frontend  
-**Description:** Support quick switching between daily and weekly pharmacist schedule views.
-
-**What to implement**
-- Day/Week toggle.
-- Sort shifts chronologically.
-- Support multiple shifts per day.
-- Clear empty state when no data exists.
+### Acceptance Criteria
+- Pharmacist can access Pharmacy Schedule from authenticated pharmacist navigation.
+- View supports date navigation and initial default range.
+- Loading, empty, and error states are implemented.
+- Non-pharmacist users are restricted from this view.
 
 ---
 
-### 12) Show rotation assignment clearly on each shift
-**Type:** Frontend  
-**Description:** Make pharmacy rotation assignment visible and obvious in schedule views.
+## 10) [Pharmacy Schedule] Implement API/service to fetch pharmacist shifts and rotations
+**Type:** Backend / Feature  
+**Priority:** High
 
-**What to implement**
-- Show rotation label on each shift.
-- Include in list and in details panel.
-- Fallback value when missing (e.g., `Rotation TBD`).
-- Keep labels aligned with backend values.
+### Description
+Implement retrieval of scheduled shifts and pharmacy rotation assignments for the logged-in pharmacist.
 
----
-
-### 13) Show exact shift duration (start/end + computed duration)
-**Type:** Frontend  
-**Description:** Display complete time information for pharmacist shifts.
-
-**What to implement**
-- Always show start and end times.
-- Show computed duration (example: `8h 30m`).
-- Handle overnight shifts correctly.
-- Respect 12h/24h display setting.
+### Acceptance Criteria
+- Endpoint/service returns only shifts for current pharmacist.
+- Response includes: shift id, rotation assignment, start time, end time, status, and location/unit if available.
+- Supports date-range filtering for daily and weekly views.
+- Handles large datasets via pagination/windowing where required.
 
 ---
 
-### 14) Show shift status (Scheduled / Active / Completed)
-**Type:** Frontend  
-**Description:** Surface real-time shift status clearly.
+## 11) [Pharmacy Schedule] Add daily/weekly roster toggle and rendering for pharmacist shifts
+**Type:** Frontend / Feature  
+**Priority:** High
 
-**What to implement**
-- Display status in roster and details.
-- Use clear visual treatment (badge/color/icon).
-- Safe fallback for unknown statuses.
+### Description
+Enable pharmacists to switch between daily and weekly roster modes and view scheduled work shifts.
+
+### Acceptance Criteria
+- Toggle between Daily and Weekly roster works without full-page reload.
+- Shifts are grouped and sorted chronologically.
+- Multiple shifts in a single day are displayed correctly.
+- Empty day/week states show clear messaging.
 
 ---
 
-### 15) Pharmacist access rules + data validation
+## 12) [Pharmacy Schedule] Display pharmacy rotation assignments on each shift
+**Type:** Feature  
+**Priority:** High
+
+### Description
+Show each pharmacist’s specific rotation assignment (e.g., Inpatient, Outpatient, IV Room, Clinical Rotation) as part of shift details.
+
+### Acceptance Criteria
+- Every shift displays its rotation assignment label.
+- Rotation is visible in both roster rows and shift detail panel/modal.
+- Missing rotation uses fallback text (e.g., “Rotation TBD”).
+- Rotation values are consistent with backend master data.
+
+---
+
+## 13) [Pharmacy Schedule] Show exact shift duration using Shift Start Time and Shift End Time
+**Type:** Frontend / Feature  
+**Priority:** High
+
+### Description
+Display exact shift timing and duration clearly for every scheduled shift.
+
+### Acceptance Criteria
+- Shift Start Time and Shift End Time are always visible for each shift.
+- Duration is computed and displayed accurately (e.g., 8h 30m).
+- Overnight shifts crossing midnight are calculated correctly.
+- Time display respects locale/time format settings (12h/24h).
+
+---
+
+## 14) [Pharmacy Schedule] Add shift status indicators (Scheduled, Active, Completed)
+**Type:** Feature  
+**Priority:** High
+
+### Description
+Display real-time/current status of scheduled shifts with distinct visual indicators.
+
+### Acceptance Criteria
+- Status values include at least: Scheduled, Active, Completed.
+- Status is visible in roster and shift details.
+- Status styling (badge/color/icon) is consistent and accessible.
+- Invalid or unknown statuses fall back to a safe default (e.g., “Unknown”).
+
+---
+
+## 15) [Pharmacy Schedule] Enforce role-based access and shift data validation
 **Type:** Security / Backend  
-**Description:** Apply strict access control and schedule data validation for pharmacists.
+**Priority:** High
 
-**What to implement**
-- Enforce that pharmacists can only access their own schedule.
-- Reject and log unauthorized requests.
-- Validate shift ranges (`start < end`).
-- Handle duplicate/malformed entries safely.
+### Description
+Ensure pharmacists only access their own schedule and shift records meet integrity rules.
+
+### Acceptance Criteria
+- Pharmacist can only retrieve their own shifts/rotations.
+- Unauthorized requests are rejected and auditable.
+- Validation ensures start time < end time.
+- Duplicate/malformed shift records are handled safely and logged.
 
 ---
 
-### 16) Test coverage for pharmacist schedule
+## 16) [Pharmacy Schedule] Add automated tests for roster, rotation, duration, and status flows
 **Type:** QA / Test Automation  
-**Description:** Add robust tests for pharmacist scheduling features and edge cases.
+**Priority:** High
 
-**What to implement**
-- Unit tests for mapping, duration, and status logic.
-- Integration tests for API-to-UI rendering.
-- E2E checks for:
-  - day/week visibility
-  - rotation assignment visibility
-  - correct start/end + duration
-  - status badge behavior
+### Description
+Add test coverage for pharmacist scheduling to ensure correctness and prevent regressions.
 
----
-
-## Optional implementation notes
-- Reuse shared schedule components between doctor and pharmacist modules.
-- Keep labels/wording consistent across both views.
-- Validate timezone behavior early to avoid hard-to-debug issues.
+### Acceptance Criteria
+- Unit tests cover shift mapping, duration calculations, and status derivation.
+- Integration tests verify API-to-UI rendering for daily/weekly views.
+- E2E tests verify:
+  - daily/weekly roster visibility,
+  - rotation assignment display,
+  - start/end time and duration display,
+  - status badges for Scheduled/Active/Completed.
+- Regression checklist is documented for PR review.
