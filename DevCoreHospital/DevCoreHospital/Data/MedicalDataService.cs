@@ -6,7 +6,7 @@ namespace DevCoreHospital.Data
 {
     public class MedicalDataService
     {
-        // Our "In-Memory" Table
+        
         private static List<MedicalEvaluation> _mockTable = new List<MedicalEvaluation>();
 
         // TASK 5: Save to Table

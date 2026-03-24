@@ -5,7 +5,7 @@ namespace DevCoreHospital.Models
 {
     public class MedicalEvaluation
     {
-        // Fix for CS8618: Initialize with string.Empty
+        
         public string Id { get; set; } = string.Empty;
         public string Symptoms { get; set; } = string.Empty;
         public string MedsList { get; set; } = string.Empty;

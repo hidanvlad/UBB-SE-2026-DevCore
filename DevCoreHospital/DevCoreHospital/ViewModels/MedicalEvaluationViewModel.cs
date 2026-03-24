@@ -12,28 +12,33 @@ namespace DevCoreHospital.ViewModels
     {
         private readonly MedicalDataService _dataService = new MedicalDataService();
 
-        // Task 7: This is the source for your ListView
+        //The collection that gets populated when the window loads
         public ObservableCollection<MedicalEvaluation> PastEvaluations { get; set; } = new ObservableCollection<MedicalEvaluation>();
 
         private string _symptoms = string.Empty;
         public string Symptoms { get => _symptoms; set { _symptoms = value; OnPropertyChanged(); } }
-
 
         public ICommand SaveDiagnosisCommand { get; }
 
         public MedicalEvaluationViewModel()
         {
             SaveDiagnosisCommand = new RelayCommand(SaveDiagnosis);
-            LoadHistory();
+
+            //TASK 8: Populate the list with past evaluations
+            PopulateHistory();
         }
 
-        private void LoadHistory()
+        //Task 8 !
+        public void PopulateHistory()
         {
-            // Task 7: Pull existing records for the current doctor
-            var history = _dataService.GetEvaluationsByDoctor("DOC001");
-            foreach (var item in history)
+            PastEvaluations.Clear();
+
+            // Get the records from DB 
+            var records = _dataService.GetEvaluationsByDoctor("DOC001");
+
+            foreach (var record in records)
             {
-                PastEvaluations.Add(item);
+                PastEvaluations.Add(record);
             }
         }
 
@@ -42,16 +47,14 @@ namespace DevCoreHospital.ViewModels
             var newRecord = new MedicalEvaluation
             {
                 Symptoms = this.Symptoms,
-                MedsList = "N/A", // Simplified for now
-                DoctorNotes = "N/A",
                 EvaluationDate = DateTime.Now,
                 Evaluator = new Doctor { Id = "DOC001", Name = "Dr. Vlad" }
             };
 
             _dataService.SaveEvaluation(newRecord);
+            PastEvaluations.Insert(0, newRecord);
 
-            // Task 7: Add to the observable collection so the UI updates INSTANTLY
-            PastEvaluations.Insert(0, newRecord); // Adds to the top of the list
+            Symptoms = string.Empty; // Clear the box for the next entry
         }
 
         public event PropertyChangedEventHandler? PropertyChanged;
