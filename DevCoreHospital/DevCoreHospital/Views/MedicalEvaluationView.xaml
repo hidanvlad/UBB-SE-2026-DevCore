@@ -4,17 +4,33 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:local="using:DevCoreHospital.Views"
     mc:Ignorable="d">
 
-    <ScrollViewer>
-        <StackPanel Spacing="20" Padding="30" MaxWidth="500" HorizontalAlignment="Left">
-            <TextBlock Text="Diagnosis Entry Form" Style="{StaticResource TitleTextBlockStyle}"/>
+    <Grid Padding="30">
+        <StackPanel Spacing="20" MaxWidth="500" HorizontalAlignment="Left">
+            <TextBlock Text="Diagnosis Entry Form" FontSize="24" FontWeight="Bold"/>
+            
+            <TextBlock Text="{x:Bind ViewModel.Symptoms, Mode=OneWay}" Foreground="Red" /> 
+            
+            <TextBox Header="Symptoms" 
+                     Text="{x:Bind ViewModel.Symptoms, Mode=TwoWay}" 
+                     PlaceholderText="Describe symptoms..." 
+                     AcceptsReturn="True" MinHeight="80"/>
 
-            <TextBox x:Name="SymptomsInput" Header="Symptoms" PlaceholderText="Describe symptoms..." AcceptsReturn="True" MinHeight="80"/>
-            <TextBox x:Name="MedsListInput" Header="Medication List (Pharmacy Team)" PlaceholderText="Enter prescribed meds..." AcceptsReturn="True"/>
-            <TextBox x:Name="DoctorNotesInput" Header="Doctor Notes (Patient Team)" PlaceholderText="Internal clinical notes..." AcceptsReturn="True" MinHeight="100"/>
+            <TextBox Header="Medication List (Pharmacy)" 
+                     Text="{x:Bind ViewModel.MedsList, Mode=TwoWay}" 
+                     PlaceholderText="Enter meds..."/>
 
-            <Button x:Name="GenerateRecordButton" Content="Generate Record" Style="{StaticResource AccentButtonStyle}" HorizontalAlignment="Right" Width="150" Height="40"/>
+            <TextBox Header="Doctor Notes (Patient Team)" 
+                     Text="{x:Bind ViewModel.DoctorNotes, Mode=TwoWay}" 
+                     PlaceholderText="Notes..." 
+                     AcceptsReturn="True" MinHeight="100"/>
+
+            <Button Content="Generate Record" 
+                    Click="{x:Bind ViewModel.GenerateRecord}"
+                    HorizontalAlignment="Right" 
+                    Width="150" Height="40"/>
         </StackPanel>
-    </ScrollViewer>
+    </Grid>
 </UserControl>
