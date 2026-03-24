@@ -9,13 +9,13 @@ namespace DevCoreHospital.Repositories
 {
     public class HangoutRepository
     {
-        public List<Hangout> hangoutList;
+        public List<Hangout> hangoutList { get; }
 
         public HangoutRepository()
         {
             hangoutList = new List<Hangout> ();
         }
 
-        /// the other methods are assigned to Laszlo
+        // the other methods for this class are assigned to Laszlo
     }
 }
