@@ -2,105 +2,141 @@
 using DevCoreHospital.ViewModels.Base;
 using System;
 using System.Collections.ObjectModel;
-using System.Threading.Tasks;
 using System.Linq;
+using System.Threading.Tasks;
 
-namespace DevCoreHospital.ViewModels.Doctor;
-
-public class DoctorScheduleViewModel : ObservableObject
+namespace DevCoreHospital.ViewModels.Doctor
 {
-    private readonly ICurrentUserService _currentUser;
-    private readonly IDoctorAppointmentService _appointmentService;
-
-    public ObservableCollection<AppointmentItemViewModel> Appointments { get; } = new();
-
-    private bool _isLoading;
-    public bool IsLoading { get => _isLoading; set => SetProperty(ref _isLoading, value); }
-
-    private string _errorMessage = string.Empty;
-    public string ErrorMessage { get => _errorMessage; set => SetProperty(ref _errorMessage, value); }
-
-    private DateTime _selectedDate = DateTime.Today;
-    public DateTime SelectedDate
+    public class DoctorScheduleViewModel : ObservableObject
     {
-        get => _selectedDate;
-        set
+        private readonly ICurrentUserService _currentUser;
+        private readonly IDoctorAppointmentService _appointmentService;
+
+        public ObservableCollection<AppointmentItemViewModel> Appointments { get; } = new();
+        public ObservableCollection<DoctorOption> Doctors { get; } = new();
+
+        private DoctorOption? _selectedDoctor;
+        public DoctorOption? SelectedDoctor
         {
-            if (SetProperty(ref _selectedDate, value))
+            get => _selectedDoctor;
+            set
             {
-                RaisePropertyChanged(nameof(SelectedDateText));
-                _ = LoadAsync();
+                if (SetProperty(ref _selectedDoctor, value))
+                    _ = LoadAsync();
             }
         }
-    }
 
-    public string SelectedDateText => SelectedDate.ToString("dddd, dd MMM yyyy");
+        private bool _isLoading;
+        public bool IsLoading { get => _isLoading; set => SetProperty(ref _isLoading, value); }
 
-    public bool IsDoctor => string.Equals(_currentUser.Role, "Doctor", StringComparison.OrdinalIgnoreCase);
-    public bool IsAccessDenied => !IsDoctor;
-    public bool IsEmpty => !IsLoading && string.IsNullOrWhiteSpace(ErrorMessage) && Appointments.Count == 0;
+        private string _errorMessage = string.Empty;
+        public string ErrorMessage { get => _errorMessage; set => SetProperty(ref _errorMessage, value); }
 
-    public AsyncRelayCommand RefreshCommand { get; }
-    public RelayCommand TodayCommand { get; }
-    public RelayCommand NextDayCommand { get; }
-    public RelayCommand PreviousDayCommand { get; }
-
-    public Action<int>? OpenAppointmentDetailsRequested { get; set; }
-
-    public DoctorScheduleViewModel(ICurrentUserService currentUser, IDoctorAppointmentService appointmentService)
-    {
-        _currentUser = currentUser;
-        _appointmentService = appointmentService;
-
-        RefreshCommand = new AsyncRelayCommand(LoadAsync, () => IsDoctor);
-        TodayCommand = new RelayCommand(() => SelectedDate = DateTime.Today, () => IsDoctor);
-        NextDayCommand = new RelayCommand(() => SelectedDate = SelectedDate.AddDays(1), () => IsDoctor);
-        PreviousDayCommand = new RelayCommand(() => SelectedDate = SelectedDate.AddDays(-1), () => IsDoctor);
-    }
-
-    public async Task InitializeAsync() => await LoadAsync();
-
-    public async Task LoadAsync()
-    {
-        if (!IsDoctor)
+        private DateTime _selectedDate = DateTime.Today;
+        public DateTime SelectedDate
         {
-            ErrorMessage = "";
-            Appointments.Clear();
-            RaisePropertyChanged(nameof(IsAccessDenied));
-            RaisePropertyChanged(nameof(IsEmpty));
-            return;
+            get => _selectedDate;
+            set
+            {
+                if (SetProperty(ref _selectedDate, value))
+                {
+                    RaisePropertyChanged(nameof(SelectedDateText));
+                    _ = LoadAsync();
+                }
+            }
         }
 
-        try
-        {
-            IsLoading = true;
-            ErrorMessage = "";
-            Appointments.Clear();
+        public string SelectedDateText => SelectedDate.ToString("dddd, dd MMM yyyy");
+        public bool IsDoctor => string.Equals(_currentUser.Role, "Doctor", StringComparison.OrdinalIgnoreCase);
+        public bool IsAccessDenied => !IsDoctor;
+        public bool IsEmpty => !IsLoading && string.IsNullOrWhiteSpace(ErrorMessage) && Appointments.Count == 0;
 
-            var raw = await _appointmentService.GetUpcomingAppointmentsAsync(
-                _currentUser.UserId,
-                SelectedDate,
-                skip: 0,
-                take: 300);
+        public AsyncRelayCommand RefreshCommand { get; }
+        public RelayCommand TodayCommand { get; }
+        public RelayCommand NextDayCommand { get; }
+        public RelayCommand PreviousDayCommand { get; }
 
-            foreach (var item in raw.Where(x => x.Date.Date == SelectedDate.Date))
-                Appointments.Add(new AppointmentItemViewModel(item));
-        }
-        catch (Exception ex)
-        {
-            ErrorMessage = $"Failed to load schedule: {ex.Message}";
-        }
-        finally
-        {
-            IsLoading = false;
-            RaisePropertyChanged(nameof(IsAccessDenied));
-            RaisePropertyChanged(nameof(IsEmpty));
-        }
-    }
+        public Action<int>? OpenAppointmentDetailsRequested { get; set; }
 
-    public void OpenDetails(AppointmentItemViewModel? item)
-    {
-        if (item is null) return;
-        OpenAppointmentDetailsRequested?.Invoke(item.Id);
+        public DoctorScheduleViewModel(ICurrentUserService currentUser, IDoctorAppointmentService appointmentService)
+        {
+            _currentUser = currentUser;
+            _appointmentService = appointmentService;
+
+            RefreshCommand = new AsyncRelayCommand(LoadAsync, () => IsDoctor);
+            TodayCommand = new RelayCommand(() => SelectedDate = DateTime.Today, () => IsDoctor);
+            NextDayCommand = new RelayCommand(() => SelectedDate = SelectedDate.AddDays(1), () => IsDoctor);
+            PreviousDayCommand = new RelayCommand(() => SelectedDate = SelectedDate.AddDays(-1), () => IsDoctor);
+        }
+
+        public async Task InitializeAsync()
+        {
+            await LoadDoctorsAsync();
+            await LoadAsync();
+        }
+
+        private async Task LoadDoctorsAsync()
+        {
+            Doctors.Clear();
+
+            var allDoctors = await _appointmentService.GetAllDoctorsAsync();
+            foreach (var d in allDoctors)
+                Doctors.Add(new DoctorOption { DoctorId = d.DoctorId, DoctorName = d.DoctorName });
+
+            if (Doctors.Count > 0)
+                SelectedDoctor = Doctors.First();
+        }
+
+        public async Task LoadAsync()
+        {
+            if (!IsDoctor)
+            {
+                ErrorMessage = "";
+                Appointments.Clear();
+                RaisePropertyChanged(nameof(IsAccessDenied));
+                RaisePropertyChanged(nameof(IsEmpty));
+                return;
+            }
+
+            try
+            {
+                IsLoading = true;
+                ErrorMessage = "";
+                Appointments.Clear();
+
+                var doctorId = SelectedDoctor?.DoctorId ?? _currentUser.UserId;
+
+                var raw = await _appointmentService.GetUpcomingAppointmentsAsync(
+                    doctorId,
+                    SelectedDate,
+                    0,
+                    300);
+
+                foreach (var item in raw.Where(x => x.Date.Date == SelectedDate.Date))
+                    Appointments.Add(new AppointmentItemViewModel(item));
+            }
+            catch (Exception ex)
+            {
+                ErrorMessage = $"Failed to load schedule: {ex.Message}";
+            }
+            finally
+            {
+                IsLoading = false;
+                RaisePropertyChanged(nameof(IsAccessDenied));
+                RaisePropertyChanged(nameof(IsEmpty));
+            }
+        }
+
+        public void OpenDetails(AppointmentItemViewModel? item)
+        {
+            if (item is null) return;
+            OpenAppointmentDetailsRequested?.Invoke(item.Id);
+        }
+
+        public sealed class DoctorOption
+        {
+            public int DoctorId { get; set; }
+            public string DoctorName { get; set; } = string.Empty;
+        }
     }
 }

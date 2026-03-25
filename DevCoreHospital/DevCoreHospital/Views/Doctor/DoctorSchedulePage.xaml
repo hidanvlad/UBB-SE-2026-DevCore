@@ -28,6 +28,7 @@
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
 
             <TextBlock Grid.Column="0"
@@ -46,7 +47,15 @@
                        VerticalAlignment="Center"
                        FontSize="18"/>
 
-            <Button Grid.Column="5" Content="Refresh" Margin="20,0,0,0" Command="{Binding RefreshCommand}"/>
+            <ComboBox Grid.Column="5"
+                      Width="240"
+                      Margin="20,0,0,0"
+                      ItemsSource="{Binding Doctors}"
+                      SelectedItem="{Binding SelectedDoctor, Mode=TwoWay}"
+                      DisplayMemberPath="DoctorName"
+                      PlaceholderText="Select doctor"/>
+
+            <Button Grid.Column="6" Content="Refresh" Margin="12,0,0,0" Command="{Binding RefreshCommand}"/>
         </Grid>
 
         <!-- Error -->
@@ -87,64 +96,30 @@
 
                 <ListView.ItemTemplate>
                     <DataTemplate>
-                        <Border Background="#F3F4F6"
-                                CornerRadius="22"
-                                Padding="20"
-                                BorderThickness="1"
-                                BorderBrush="#E5E7EB">
-                            <Grid>
+                        <Border Background="#111827"
+                                CornerRadius="14"
+                                Padding="16">
+                            <Grid ColumnSpacing="14">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="Auto"/>
-                                    <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
 
-                                <StackPanel Grid.Column="0" Spacing="6">
-                                    <TextBlock Text="{Binding Type}"
-                                               FontSize="20"
-                                               FontWeight="SemiBold"
-                                               Foreground="#111827"/>
-                                    <TextBlock Text="{Binding Location}"
-                                               FontSize="15"
-                                               Foreground="#6B7280"/>
+                                <StackPanel Spacing="6">
+                                    <TextBlock Text="{Binding PatientName}" FontSize="20" FontWeight="SemiBold"/>
+                                    <TextBlock Text="{Binding DateText}" Foreground="#9CA3AF"/>
+                                    <TextBlock Text="{Binding Notes}" TextWrapping="WrapWholeWords" Foreground="#D1D5DB"/>
                                 </StackPanel>
 
-                                <Border Grid.Column="1"
-                                        Background="#2563EB"
-                                        CornerRadius="14"
-                                        Padding="16,8"
-                                        VerticalAlignment="Center"
-                                        Margin="12,0,0,0">
-                                    <TextBlock Text="{Binding Status}" Foreground="White" FontWeight="SemiBold"/>
-                                </Border>
-
-                                <Button Grid.Column="2"
+                                <Button Grid.Column="1"
                                         Content="Details"
-                                        Margin="12,0,0,0"
-                                        VerticalAlignment="Center"
-                                        Foreground="#111827"
-                                        Background="Transparent"
-                                        BorderBrush="#D1D5DB"
-                                        BorderThickness="1"
-                                        Padding="12,8"
-                                        Click="DetailsButton_Click"/>
+                                        Click="DetailsButton_Click"
+                                        VerticalAlignment="Center"/>
                             </Grid>
                         </Border>
                     </DataTemplate>
                 </ListView.ItemTemplate>
             </ListView>
-
-            <!-- Loading overlay -->
-            <Grid Background="#66000000"
-                  Visibility="{Binding IsLoading, Converter={StaticResource BoolToVisibilityConverter}}">
-                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="10">
-                    <ProgressRing IsActive="True" Width="56" Height="56"/>
-                    <TextBlock Text="Loading appointments..."
-                               Foreground="White"
-                               FontSize="18"
-                               HorizontalAlignment="Center"/>
-                </StackPanel>
-            </Grid>
         </Grid>
     </Grid>
 </Page>

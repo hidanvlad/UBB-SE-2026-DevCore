@@ -1,77 +1,195 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
-using DevCoreHospital.Data;
+﻿using DevCoreHospital.Data;
 using DevCoreHospital.Models;
 using Microsoft.Data.SqlClient;
+using System;
+using System.Collections.Generic;
+using System.Data;
+using System.Data.Common;
+using System.Threading.Tasks;
 
-namespace DevCoreHospital.Services;
-
-public class DoctorAppointmentService : IDoctorAppointmentService
+namespace DevCoreHospital.Services
 {
-    private readonly ISqlConnectionFactory _connectionFactory;
-
-    public DoctorAppointmentService(ISqlConnectionFactory connectionFactory)
+    public sealed class DoctorAppointmentService : IDoctorAppointmentService
     {
-        _connectionFactory = connectionFactory;
-    }
+        private readonly SqlConnectionFactory _sqlFactory;
 
-    public async Task<IReadOnlyList<Appointment>> GetUpcomingAppointmentsAsync(
-        int doctorId,
-        DateTime fromDate,
-        int skip = 0,
-        int take = 200,
-        CancellationToken cancellationToken = default)
-    {
-        var result = new List<Appointment>();
-
-        const string sql = """
-            SELECT
-                a.id,
-                a.doctor_id,
-                a.[date],
-                a.start_time,
-                a.end_time,
-                a.[status],
-                a.[type],
-                a.[location]
-            FROM Appointment a
-            WHERE a.doctor_id = @doctorId
-              AND (
-                    a.[date] > @fromDate
-                    OR (a.[date] = @fromDate AND a.end_time >= @fromTime)
-                  )
-            ORDER BY a.[date] ASC, a.start_time ASC
-            OFFSET @skip ROWS FETCH NEXT @take ROWS ONLY;
-            """;
-
-        await using SqlConnection connection = _connectionFactory.Create();
-        await connection.OpenAsync(cancellationToken);
-
-        await using SqlCommand command = new(sql, connection);
-        command.Parameters.AddWithValue("@doctorId", doctorId);
-        command.Parameters.AddWithValue("@fromDate", fromDate.Date);
-        command.Parameters.AddWithValue("@fromTime", fromDate.TimeOfDay);
-        command.Parameters.AddWithValue("@skip", skip);
-        command.Parameters.AddWithValue("@take", take);
-
-        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
-        while (await reader.ReadAsync(cancellationToken))
+        public DoctorAppointmentService(SqlConnectionFactory sqlFactory)
         {
-            result.Add(new Appointment
-            {
-                Id = reader.GetInt32(0),
-                DoctorId = reader.GetInt32(1),
-                Date = reader.GetDateTime(2),
-                StartTime = reader.GetTimeSpan(3),
-                EndTime = reader.GetTimeSpan(4),
-                Status = reader.IsDBNull(5) ? "" : reader.GetString(5),
-                Type = reader.IsDBNull(6) ? "" : reader.GetString(6),
-                Location = reader.IsDBNull(7) ? "" : reader.GetString(7)
-            });
+            _sqlFactory = sqlFactory;
         }
 
-        return result;
+        public async Task<IReadOnlyList<Appointment>> GetUpcomingAppointmentsAsync(int doctorUserId, DateTime fromDate, int skip, int take)
+        {
+            var items = new List<Appointment>();
+
+            using DbConnection conn = _sqlFactory.Create();
+            if (conn.State != ConnectionState.Open)
+                await conn.OpenAsync();
+
+            var doctorsTable = await ResolveDoctorsTableAsync(conn);           // e.g. [dbo].[doctor]
+            var appointmentsTable = await ResolveAppointmentsTableAsync(conn); // e.g. [dbo].[appointment]
+
+            var sql = $@"
+SELECT
+    a.id AS Id,
+    '' AS PatientName,
+    a.doctor_id AS DoctorId,
+    d.full_name AS DoctorName,
+    CAST(a.[date] AS datetime2) AS [Date],
+    a.start_time AS StartTime,
+    a.end_time AS EndTime,
+    a.status AS [Status],
+    a.type AS [Type],
+    a.location AS [Location],
+    '' AS Notes
+FROM {appointmentsTable} a
+INNER JOIN {doctorsTable} d ON d.id = a.doctor_id
+WHERE a.doctor_id = @DoctorId
+  AND a.[date] >= @FromDate
+ORDER BY a.[date], a.start_time
+OFFSET @Skip ROWS FETCH NEXT @Take ROWS ONLY;";
+
+            using DbCommand cmd = conn.CreateCommand();
+            cmd.CommandText = sql;
+            AddParameter(cmd, "@DoctorId", doctorUserId);
+            AddParameter(cmd, "@FromDate", fromDate.Date);
+            AddParameter(cmd, "@Skip", skip);
+            AddParameter(cmd, "@Take", take);
+
+            using var reader = await cmd.ExecuteReaderAsync();
+            while (await reader.ReadAsync())
+            {
+                items.Add(new Appointment
+                {
+                    Id = GetInt(reader, "Id"),
+                    PatientName = GetNullableString(reader, "PatientName"),
+                    DoctorId = GetInt(reader, "DoctorId"),
+                    DoctorName = GetString(reader, "DoctorName"),
+                    Date = GetDateTime(reader, "Date"),
+                    StartTime = GetTimeSpan(reader, "StartTime"),
+                    EndTime = GetTimeSpan(reader, "EndTime"),
+                    Status = GetNullableString(reader, "Status"),
+                    Type = GetNullableString(reader, "Type"),
+                    Location = GetNullableString(reader, "Location"),
+                    Notes = GetNullableString(reader, "Notes")
+                });
+            }
+
+            return items;
+        }
+
+        public async Task<IReadOnlyList<(int DoctorId, string DoctorName)>> GetAllDoctorsAsync()
+        {
+            var result = new List<(int DoctorId, string DoctorName)>();
+
+            using DbConnection conn = _sqlFactory.Create();
+            if (conn.State != ConnectionState.Open)
+                await conn.OpenAsync();
+
+            var doctorsTable = await ResolveDoctorsTableAsync(conn);
+
+            var sql = $@"
+SELECT
+    d.id AS DoctorId,
+    d.full_name AS DoctorName
+FROM {doctorsTable} d
+ORDER BY d.full_name;";
+
+            using DbCommand cmd = conn.CreateCommand();
+            cmd.CommandText = sql;
+
+            using var reader = await cmd.ExecuteReaderAsync();
+            while (await reader.ReadAsync())
+                result.Add((GetInt(reader, "DoctorId"), GetString(reader, "DoctorName")));
+
+            return result;
+        }
+
+        private static async Task<string> ResolveDoctorsTableAsync(DbConnection conn)
+        {
+            const string sql = @"
+SELECT TOP 1
+    QUOTENAME(c.TABLE_SCHEMA) + '.' + QUOTENAME(c.TABLE_NAME)
+FROM INFORMATION_SCHEMA.COLUMNS c
+GROUP BY c.TABLE_SCHEMA, c.TABLE_NAME
+HAVING
+    SUM(CASE WHEN c.COLUMN_NAME = 'id' THEN 1 ELSE 0 END) > 0
+    AND SUM(CASE WHEN c.COLUMN_NAME = 'full_name' THEN 1 ELSE 0 END) > 0
+    AND SUM(CASE WHEN c.COLUMN_NAME = 'specialty' THEN 1 ELSE 0 END) > 0;";
+
+            using var cmd = conn.CreateCommand();
+            cmd.CommandText = sql;
+            var table = (await cmd.ExecuteScalarAsync())?.ToString();
+
+            if (string.IsNullOrWhiteSpace(table))
+                throw new InvalidOperationException("Could not detect doctors table (expected columns: id, full_name, specialty).");
+
+            return table!;
+        }
+
+        private static async Task<string> ResolveAppointmentsTableAsync(DbConnection conn)
+        {
+            const string sql = @"
+SELECT TOP 1
+    QUOTENAME(c.TABLE_SCHEMA) + '.' + QUOTENAME(c.TABLE_NAME)
+FROM INFORMATION_SCHEMA.COLUMNS c
+GROUP BY c.TABLE_SCHEMA, c.TABLE_NAME
+HAVING
+    SUM(CASE WHEN c.COLUMN_NAME = 'id' THEN 1 ELSE 0 END) > 0
+    AND SUM(CASE WHEN c.COLUMN_NAME = 'doctor_id' THEN 1 ELSE 0 END) > 0
+    AND SUM(CASE WHEN c.COLUMN_NAME = 'date' THEN 1 ELSE 0 END) > 0
+    AND SUM(CASE WHEN c.COLUMN_NAME = 'start_time' THEN 1 ELSE 0 END) > 0
+    AND SUM(CASE WHEN c.COLUMN_NAME = 'end_time' THEN 1 ELSE 0 END) > 0;";
+
+            using var cmd = conn.CreateCommand();
+            cmd.CommandText = sql;
+            var table = (await cmd.ExecuteScalarAsync())?.ToString();
+
+            if (string.IsNullOrWhiteSpace(table))
+                throw new InvalidOperationException("Could not detect appointments table (expected columns: id, doctor_id, date, start_time, end_time).");
+
+            return table!;
+        }
+
+        private static void AddParameter(DbCommand cmd, string name, object value)
+        {
+            var p = cmd.CreateParameter();
+            p.ParameterName = name;
+            p.Value = value;
+            cmd.Parameters.Add(p);
+        }
+
+        private static int GetInt(DbDataReader r, string col) => r.GetInt32(r.GetOrdinal(col));
+        private static string GetString(DbDataReader r, string col) => r.GetString(r.GetOrdinal(col));
+
+        private static string GetNullableString(DbDataReader r, string col)
+        {
+            var i = r.GetOrdinal(col);
+            return r.IsDBNull(i) ? string.Empty : Convert.ToString(r.GetValue(i)) ?? string.Empty;
+        }
+
+        private static DateTime GetDateTime(DbDataReader r, string col)
+        {
+            var i = r.GetOrdinal(col);
+            var v = r.GetValue(i);
+            return v switch
+            {
+                DateTime dt => dt,
+                DateOnly d => d.ToDateTime(TimeOnly.MinValue),
+                _ => Convert.ToDateTime(v)
+            };
+        }
+
+        private static TimeSpan GetTimeSpan(DbDataReader r, string col)
+        {
+            var i = r.GetOrdinal(col);
+            var val = r.GetValue(i);
+            return val switch
+            {
+                TimeSpan ts => ts,
+                DateTime dt => dt.TimeOfDay,
+                _ => TimeSpan.Parse(val?.ToString() ?? "00:00:00")
+            };
+        }
     }
 }

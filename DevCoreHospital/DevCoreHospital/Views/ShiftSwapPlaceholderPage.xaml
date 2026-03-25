@@ -1,0 +1,11 @@
+﻿<Page
+    x:Class="DevCoreHospital.Views.ShiftSwapPlaceholderPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Grid>
+        <TextBlock Text="Shift Swap - Not implemented yet."
+                   HorizontalAlignment="Center"
+                   VerticalAlignment="Center"
+                   FontSize="28"/>
+    </Grid>
+</Page>

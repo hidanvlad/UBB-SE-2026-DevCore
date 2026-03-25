@@ -1,8 +1,14 @@
-﻿namespace DevCoreHospital.Services;
+﻿using DevCoreHospital.Models;
 
-public class MockCurrentUserService : ICurrentUserService
+namespace DevCoreHospital.Services
 {
-    // Replace with real login context when available
-    public int UserId => 1;
-    public string Role => "Doctor";
+    public sealed class MockCurrentUserService : ICurrentUserService
+    {
+        public int UserId { get; set; } = 1;
+
+        // keep old string role compatibility
+        public string Role => RoleType.ToString();
+
+        public UserRole RoleType { get; set; } = UserRole.Doctor;
+    }
 }

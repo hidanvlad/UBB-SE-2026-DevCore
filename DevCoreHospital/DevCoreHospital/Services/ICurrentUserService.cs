@@ -1,7 +1,11 @@
-﻿namespace DevCoreHospital.Services;
+﻿using DevCoreHospital.Models;
 
-public interface ICurrentUserService
+namespace DevCoreHospital.Services
 {
-    int UserId { get; }
-    string Role { get; } // "Doctor", "Administrator", etc.
+    public interface ICurrentUserService
+    {
+        int UserId { get; }
+        string Role { get; }
+        UserRole RoleType { get; set; }
+    }
 }

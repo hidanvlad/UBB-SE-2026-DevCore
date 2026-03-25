@@ -16,3 +16,4 @@ public sealed class SqlConnectionFactory : ISqlConnectionFactory
 
     public SqlConnection Create() => new SqlConnection(_connectionString);
 }
+
