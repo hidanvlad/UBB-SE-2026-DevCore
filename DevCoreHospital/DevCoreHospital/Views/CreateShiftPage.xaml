@@ -1,0 +1,48 @@
+﻿<UserControl
+    x:Class="DevCoreHospital.Views.CreateShiftPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+
+	<Grid Background="{ThemeResource LayerFillColorDefaultBrush}"
+          Padding="30"
+          CornerRadius="8"
+          BorderThickness="1"
+          BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}">
+
+		<StackPanel Spacing="15" MaxWidth="400">
+			<TextBlock Text="Programare Tură Nouă"
+                       Style="{StaticResource SubtitleTextBlockStyle}"
+                       Margin="0,0,0,10"/>
+
+			<ComboBox x:Name="EmployeeComboBox"
+                      Header="Personal medical"
+                      PlaceholderText="Alege doctor sau farmacist"
+                      HorizontalAlignment="Stretch"/>
+
+			<CalendarDatePicker x:Name="ShiftDatePicker"
+                                Header="Data calendaristică"
+                                HorizontalAlignment="Stretch"/>
+
+			<Grid ColumnSpacing="12">
+				<Grid.ColumnDefinitions>
+					<ColumnDefinition Width="*"/>
+					<ColumnDefinition Width="*"/>
+				</Grid.ColumnDefinitions>
+
+				<TimePicker x:Name="StartTimePicker" Header="Start" Grid.Column="0" HorizontalAlignment="Stretch"/>
+				<TimePicker x:Name="EndTimePicker" Header="Final" Grid.Column="1" HorizontalAlignment="Stretch"/>
+			</Grid>
+
+			<Button Content="Confirmă Tura"
+                    Click="SaveShift_Click"
+                    Style="{StaticResource AccentButtonStyle}"
+                    HorizontalAlignment="Stretch"
+                    Margin="0,10,0,0"/>
+
+			<InfoBar x:Name="StatusInfoBar" IsOpen="False" IsClosable="True" />
+		</StackPanel>
+	</Grid>
+</UserControl>
