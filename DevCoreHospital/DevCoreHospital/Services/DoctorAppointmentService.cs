@@ -26,8 +26,8 @@ namespace DevCoreHospital.Services
             if (conn.State != ConnectionState.Open)
                 await conn.OpenAsync();
 
-            var doctorsTable = await ResolveDoctorsTableAsync(conn);           // e.g. [dbo].[doctor]
-            var appointmentsTable = await ResolveAppointmentsTableAsync(conn); // e.g. [dbo].[appointment]
+            var doctorsTable = await ResolveDoctorsTableAsync(conn);           // doctor / doctors / dbo.*
+            var appointmentsTable = await ResolveAppointmentsTableAsync(conn); // appointment / appointments / dbo.*
 
             var sql = $@"
 SELECT
@@ -105,8 +105,66 @@ ORDER BY d.full_name;";
             return result;
         }
 
+        public async Task<AppointmentDetails?> GetAppointmentDetailsAsync(int appointmentId)
+        {
+            using DbConnection conn = _sqlFactory.Create();
+            if (conn.State != ConnectionState.Open)
+                await conn.OpenAsync();
+
+            var appointmentsTable = await ResolveAppointmentsTableAsync(conn);
+
+            var sql = $@"
+SELECT
+    a.id,
+    a.doctor_id,
+    CAST(a.[date] AS datetime2) AS [date],
+    a.start_time,
+    a.end_time,
+    a.status,
+    a.type,
+    a.location
+FROM {appointmentsTable} a
+WHERE a.id = @Id;";
+
+            using DbCommand cmd = conn.CreateCommand();
+            cmd.CommandText = sql;
+            AddParameter(cmd, "@Id", appointmentId);
+
+            using var reader = await cmd.ExecuteReaderAsync();
+            if (!await reader.ReadAsync())
+                return null;
+
+            return new AppointmentDetails
+            {
+                Id = GetInt(reader, "id"),
+                DoctorId = GetInt(reader, "doctor_id"),
+                Date = GetDateTime(reader, "date"),
+                StartTime = GetTimeSpan(reader, "start_time"),
+                EndTime = GetTimeSpan(reader, "end_time"),
+                Status = GetNullableString(reader, "status"),
+                Type = GetNullableString(reader, "type"),
+                Location = GetNullableString(reader, "location")
+            };
+        }
+
         private static async Task<string> ResolveDoctorsTableAsync(DbConnection conn)
         {
+            // strict candidates first (fast)
+            var candidates = new[]
+            {
+                "[doctor]",
+                "[doctors]",
+                "[dbo].[doctor]",
+                "[dbo].[doctors]"
+            };
+
+            foreach (var t in candidates)
+            {
+                if (await TableExistsWithColumns(conn, t, "id", "full_name"))
+                    return t;
+            }
+
+            // metadata fallback
             const string sql = @"
 SELECT TOP 1
     QUOTENAME(c.TABLE_SCHEMA) + '.' + QUOTENAME(c.TABLE_NAME)
@@ -119,16 +177,31 @@ HAVING
 
             using var cmd = conn.CreateCommand();
             cmd.CommandText = sql;
-            var table = (await cmd.ExecuteScalarAsync())?.ToString();
+            var obj = await cmd.ExecuteScalarAsync();
+            var table = obj?.ToString();
 
-            if (string.IsNullOrWhiteSpace(table))
-                throw new InvalidOperationException("Could not detect doctors table (expected columns: id, full_name, specialty).");
+            if (!string.IsNullOrWhiteSpace(table))
+                return table!;
 
-            return table!;
+            throw new InvalidOperationException("Could not find doctors table.");
         }
 
         private static async Task<string> ResolveAppointmentsTableAsync(DbConnection conn)
         {
+            var candidates = new[]
+            {
+                "[appointment]",
+                "[appointments]",
+                "[dbo].[appointment]",
+                "[dbo].[appointments]"
+            };
+
+            foreach (var t in candidates)
+            {
+                if (await TableExistsWithColumns(conn, t, "id", "doctor_id", "date", "start_time", "end_time"))
+                    return t;
+            }
+
             const string sql = @"
 SELECT TOP 1
     QUOTENAME(c.TABLE_SCHEMA) + '.' + QUOTENAME(c.TABLE_NAME)
@@ -143,12 +216,39 @@ HAVING
 
             using var cmd = conn.CreateCommand();
             cmd.CommandText = sql;
-            var table = (await cmd.ExecuteScalarAsync())?.ToString();
+            var obj = await cmd.ExecuteScalarAsync();
+            var table = obj?.ToString();
 
-            if (string.IsNullOrWhiteSpace(table))
-                throw new InvalidOperationException("Could not detect appointments table (expected columns: id, doctor_id, date, start_time, end_time).");
+            if (!string.IsNullOrWhiteSpace(table))
+                return table!;
 
-            return table!;
+            throw new InvalidOperationException("Could not find appointments table.");
+        }
+
+        private static async Task<bool> TableExistsWithColumns(DbConnection conn, string tableExpression, params string[] requiredColumns)
+        {
+            try
+            {
+                using var cmd = conn.CreateCommand();
+                cmd.CommandText = $"SELECT TOP 0 * FROM {tableExpression};";
+                using var reader = await cmd.ExecuteReaderAsync();
+
+                var schema = reader.GetColumnSchema();
+                var cols = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                foreach (var c in schema)
+                    if (!string.IsNullOrWhiteSpace(c.ColumnName))
+                        cols.Add(c.ColumnName!);
+
+                foreach (var req in requiredColumns)
+                    if (!cols.Contains(req))
+                        return false;
+
+                return true;
+            }
+            catch (SqlException ex) when (ex.Message.Contains("Invalid object name"))
+            {
+                return false;
+            }
         }
 
         private static void AddParameter(DbCommand cmd, string name, object value)

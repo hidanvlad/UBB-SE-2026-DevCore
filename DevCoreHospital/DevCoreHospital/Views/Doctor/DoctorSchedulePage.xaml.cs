@@ -8,35 +8,34 @@ namespace DevCoreHospital.Views.Doctor
 {
     public sealed partial class DoctorSchedulePage : Page
     {
-        public DoctorScheduleViewModel ViewModel { get; }
+        private readonly DoctorScheduleViewModel _vm;
+        private readonly IDialogService _dialogService;
 
         public DoctorSchedulePage()
         {
             InitializeComponent();
 
-            var sqlFactory = new SqlConnectionFactory();
-            var appointmentService = new DoctorAppointmentService(sqlFactory);
-            ICurrentUserService currentUserService = new CurrentUserService();
+            _dialogService = new DialogService();
+            _vm = new DoctorScheduleViewModel(
+                new CurrentUserService(),
+                new DoctorAppointmentService(new SqlConnectionFactory()),
+                _dialogService);
 
-            ViewModel = new DoctorScheduleViewModel(currentUserService, appointmentService);
-            DataContext = ViewModel;
+            DataContext = _vm;
 
             Loaded += DoctorSchedulePage_Loaded;
         }
 
         private async void DoctorSchedulePage_Loaded(object sender, RoutedEventArgs e)
         {
-            Loaded -= DoctorSchedulePage_Loaded;
-            await ViewModel.InitializeAsync();
+            _dialogService.SetXamlRoot(this.XamlRoot);
+            await _vm.InitializeAsync();
         }
 
         private void DetailsButton_Click(object sender, RoutedEventArgs e)
         {
-            if (sender is not Button button || button.DataContext is not AppointmentItemViewModel item)
-                return;
-
-            ViewModel.OpenDetails(item);
-            Frame.Navigate(typeof(AppointmentDetailsPage), item);
+            if ((sender as FrameworkElement)?.DataContext is AppointmentItemViewModel item)
+                _vm.OpenDetails(item);
         }
     }
 }

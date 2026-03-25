@@ -11,6 +11,7 @@ namespace DevCoreHospital.ViewModels.Doctor
     {
         private readonly ICurrentUserService _currentUser;
         private readonly IDoctorAppointmentService _appointmentService;
+        private readonly IDialogService _dialogService;
 
         public ObservableCollection<AppointmentItemViewModel> Appointments { get; } = new();
         public ObservableCollection<DoctorOption> Doctors { get; } = new();
@@ -56,12 +57,14 @@ namespace DevCoreHospital.ViewModels.Doctor
         public RelayCommand NextDayCommand { get; }
         public RelayCommand PreviousDayCommand { get; }
 
-        public Action<int>? OpenAppointmentDetailsRequested { get; set; }
-
-        public DoctorScheduleViewModel(ICurrentUserService currentUser, IDoctorAppointmentService appointmentService)
+        public DoctorScheduleViewModel(
+            ICurrentUserService currentUser,
+            IDoctorAppointmentService appointmentService,
+            IDialogService dialogService)
         {
             _currentUser = currentUser;
             _appointmentService = appointmentService;
+            _dialogService = dialogService;
 
             RefreshCommand = new AsyncRelayCommand(LoadAsync, () => IsDoctor);
             TodayCommand = new RelayCommand(() => SelectedDate = DateTime.Today, () => IsDoctor);
@@ -127,10 +130,34 @@ namespace DevCoreHospital.ViewModels.Doctor
             }
         }
 
-        public void OpenDetails(AppointmentItemViewModel? item)
+        public async void OpenDetails(AppointmentItemViewModel? item)
         {
             if (item is null) return;
-            OpenAppointmentDetailsRequested?.Invoke(item.Id);
+
+            try
+            {
+                var d = await _appointmentService.GetAppointmentDetailsAsync(item.Id);
+                if (d is null)
+                {
+                    await _dialogService.ShowMessageAsync("Details", "Appointment not found.");
+                    return;
+                }
+
+                var text =
+                    $"ID: {d.Id}\n" +
+                    $"Doctor ID: {d.DoctorId}\n" +
+                    $"Date: {d.Date:yyyy-MM-dd}\n" +
+                    $"Time: {d.StartTime:hh\\:mm} - {d.EndTime:hh\\:mm}\n" +
+                    $"Status: {d.Status}\n" +
+                    $"Type: {d.Type}\n" +
+                    $"Location: {d.Location}";
+
+                await _dialogService.ShowMessageAsync("Appointment Details", text);
+            }
+            catch (Exception ex)
+            {
+                await _dialogService.ShowMessageAsync("Details", $"Failed to load details: {ex.Message}");
+            }
         }
 
         public sealed class DoctorOption

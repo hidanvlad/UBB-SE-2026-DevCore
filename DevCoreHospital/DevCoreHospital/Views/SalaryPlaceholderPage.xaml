@@ -4,22 +4,18 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
     <Grid Background="#1E2B40">
-        <Border Background="#0B1730"
-                CornerRadius="24"
-                Padding="36"
-                HorizontalAlignment="Center"
-                VerticalAlignment="Center">
-            <StackPanel Spacing="10">
-                <TextBlock Text="Salary"
-                           Foreground="#F3F4F6"
-                           FontSize="64"
-                           FontWeight="SemiBold"
-                           HorizontalAlignment="Center"/>
-                <TextBlock Text="Module not implemented yet."
-                           Foreground="#C7CDD8"
-                           FontSize="48"
-                           HorizontalAlignment="Center"/>
-            </StackPanel>
-        </Border>
+        <StackPanel HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    Spacing="10">
+            <TextBlock Text="Salary"
+                       Foreground="White"
+                       FontSize="56"
+                       FontWeight="SemiBold"
+                       HorizontalAlignment="Center"/>
+            <TextBlock Text="In progress..."
+                       Foreground="#C7CDD8"
+                       FontSize="26"
+                       HorizontalAlignment="Center"/>
+        </StackPanel>
     </Grid>
 </Page>

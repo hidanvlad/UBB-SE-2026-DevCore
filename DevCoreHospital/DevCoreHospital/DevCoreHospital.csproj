@@ -12,9 +12,6 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Remove="Views\SalaryPlaceholderPage.xaml.cs" />
-  </ItemGroup>
-  <ItemGroup>
     <None Remove="Views\AppointmentsPlaceholderPage.xaml" />
     <None Remove="Views\Doctor\AppointmentDetailsPage.xaml" />
     <None Remove="Views\Doctor\HangOutPlaceholderPage.xaml" />
@@ -45,13 +42,15 @@
 		<PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.26100.1" />
 	</ItemGroup>
   <ItemGroup>
-    <None Include="Views\SalaryPlaceholderPage.xaml.cs" />
-  </ItemGroup>
-
-  <ItemGroup>
     <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.5.240311000" />
     <PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.26100.1" />
     <PackageReference Include="Microsoft.Data.SqlClient" Version="5.2.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Page Update="Views\SalaryPlaceholderPage.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
   </ItemGroup>
 
   <ItemGroup>
@@ -71,9 +70,6 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Update="Views\RoleSelectionPage.xaml">
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Update="Views\SalaryPlaceholderPage.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Update="Views\ShiftSwapPlaceholderPage.xaml">
