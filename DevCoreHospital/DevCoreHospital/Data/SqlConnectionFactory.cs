@@ -1,20 +1,18 @@
-﻿using Microsoft.Data.SqlClient;
+﻿using DevCoreHospital.Configuration;
+using Microsoft.Data.SqlClient;
 
 namespace DevCoreHospital.Data;
 
-public interface ISqlConnectionFactory
-{
-    SqlConnection Create();
-}
-
-public class SqlConnectionFactory : ISqlConnectionFactory
+public sealed class SqlConnectionFactory : ISqlConnectionFactory
 {
     private readonly string _connectionString;
 
-    public SqlConnectionFactory(string connectionString)
+    public SqlConnectionFactory(string? connectionString = null)
     {
-        _connectionString = connectionString;
+        _connectionString = string.IsNullOrWhiteSpace(connectionString)
+            ? AppSettings.ConnectionString
+            : connectionString;
     }
 
-    public SqlConnection Create() => new(_connectionString);
+    public SqlConnection Create() => new SqlConnection(_connectionString);
 }

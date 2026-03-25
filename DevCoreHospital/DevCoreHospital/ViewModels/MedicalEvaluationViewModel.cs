@@ -2,7 +2,6 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
-using System.Windows.Input;
 using DevCoreHospital.Models;
 using DevCoreHospital.Data;
 using System.Diagnostics;
@@ -26,7 +25,6 @@ namespace DevCoreHospital.ViewModels
             {
                 _isFatigued = value;
                 OnPropertyChanged();
-                // notify the ui to update the form state and lockout visibility
                 OnPropertyChanged(nameof(IsFormEnabled));
                 OnPropertyChanged(nameof(LockoutVisibility));
             }
@@ -42,9 +40,7 @@ namespace DevCoreHospital.ViewModels
 
         public MedicalEvaluationViewModel()
         {
-
             SaveDiagnosisCommand = new RelayCommand(SaveDiagnosis, CanSaveDiagnosis);
-
             PopulateHistory();
             CheckDoctorFatigue();
         }
@@ -69,14 +65,13 @@ namespace DevCoreHospital.ViewModels
 
         private void SaveDiagnosis()
         {
-            // Extra safety check  
             if (!CanSaveDiagnosis()) return;
 
             var newRecord = new MedicalEvaluation
             {
-                Symptoms = this.Symptoms,
+                Symptoms = Symptoms,
                 EvaluationDate = DateTime.Now,
-                Evaluator = new Doctor { Id = "DOC001", Name = "Dr. Vlad" }
+                Evaluator = "DOC001" // store doctor id as string
             };
 
             _dataService.SaveEvaluation(newRecord);
@@ -84,7 +79,6 @@ namespace DevCoreHospital.ViewModels
 
             Symptoms = string.Empty;
 
-            // Re-check fatigue and tell the button to re-evaluate its state
             CheckDoctorFatigue();
             SaveDiagnosisCommand.RaiseCanExecuteChanged();
         }

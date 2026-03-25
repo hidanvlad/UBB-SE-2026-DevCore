@@ -7,14 +7,13 @@ namespace DevCoreHospital.Data
 {
     public class MedicalDataService
     {
-        private static List<MedicalEvaluation> _mockTable = new List<MedicalEvaluation>();
+        private static readonly List<MedicalEvaluation> _mockTable = new List<MedicalEvaluation>();
 
-        // --- testing table for Shifts to test ---
-        private static List<Shift> _shiftsMockTable = new List<Shift>();
+        // --- testing table for Shifts ---
+        private static readonly List<Shift> _shiftsMockTable = new List<Shift>();
 
         public MedicalDataService()
         {
-          
             if (_shiftsMockTable.Count == 0)
             {
                 // COMPLETED shift from 5 hours ago (lasted 4 hours)
@@ -33,7 +32,6 @@ namespace DevCoreHospital.Data
                     StartTime = DateTime.Now.AddHours(-2),
                     Status = "ACTIVE"
                 });
-                // TOTAL: 16 hours (This will trigger the Red Lockout)
             }
         }
 
@@ -44,7 +42,10 @@ namespace DevCoreHospital.Data
 
         public List<MedicalEvaluation> GetEvaluationsByDoctor(string doctorId)
         {
-            return _mockTable.Where(e => e.Evaluator != null && e.Evaluator.Id == doctorId).ToList();
+            // Evaluator is string doctor id (ex: "DOC001")
+            return _mockTable
+                .Where(e => !string.IsNullOrWhiteSpace(e.Evaluator) && e.Evaluator == doctorId)
+                .ToList();
         }
 
         public double GetDoctorFatigueHours(string doctorId)

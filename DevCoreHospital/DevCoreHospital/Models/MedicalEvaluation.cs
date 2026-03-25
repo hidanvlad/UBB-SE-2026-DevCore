@@ -1,20 +1,23 @@
 ﻿using System;
-using System.Numerics;
 
-namespace DevCoreHospital.Models
+namespace DevCoreHospital.Models;
+
+public class MedicalEvaluation
 {
-    public class MedicalEvaluation
-    {
-        
-        public string Id { get; set; } = string.Empty;
-        public string Symptoms { get; set; } = string.Empty;
-        public string MedsList { get; set; } = string.Empty;
-        public string DoctorNotes { get; set; } = string.Empty;
-        public DateTime EvaluationDate { get; set; }
-        public Doctor? Evaluator { get; set; }
+    public int Id { get; set; }
 
+    public int PatientId { get; set; }
 
-        public string FormattedDate => EvaluationDate.ToString("dd MMM yyyy");
-        public string FormattedTime => EvaluationDate.ToString("HH:mm");
-    }
+    public DateTime EvaluationDate { get; set; }
+
+    // REQUIRED by your MedicalDataService + MedicalEvaluationViewModel
+    public string Evaluator { get; set; } = string.Empty;
+
+    public string Symptoms { get; set; } = string.Empty;
+
+    public string DiagnosisResult { get; set; } = string.Empty;
+
+    public string MedsList { get; set; } = string.Empty;
+
+    public string DoctorNotes { get; set; } = string.Empty;
 }
