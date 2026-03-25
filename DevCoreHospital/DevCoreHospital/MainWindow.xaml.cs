@@ -1,31 +1,46 @@
+using DevCoreHospital.Views;
+using DevCoreHospital.Views.Doctor;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Controls.Primitives;
-using Microsoft.UI.Xaml.Data;
-using Microsoft.UI.Xaml.Input;
-using Microsoft.UI.Xaml.Media;
-using Microsoft.UI.Xaml.Navigation;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Runtime.InteropServices.WindowsRuntime;
-using Windows.Foundation;
-using Windows.Foundation.Collections;
-
-// To learn more about WinUI, the WinUI project structure,
-// and more about our project templates, see: http://aka.ms/winui-project-info.
 
 namespace DevCoreHospital
 {
-    /// <summary>
-    /// An empty window that can be used on its own or navigated to within a Frame.
-    /// </summary>
     public sealed partial class MainWindow : Window
     {
+        private bool _initialized;
+
         public MainWindow()
         {
             InitializeComponent();
+            Activated += MainWindow_Activated;
+        }
+
+        private void MainWindow_Activated(object sender, WindowActivatedEventArgs args)
+        {
+            if (_initialized) return;
+            _initialized = true;
+
+            if (AppNavigationView.Content is Frame frame)
+            {
+                frame.Navigate(typeof(StartupPage));
+            }
+        }
+
+        private void AppNavigationView_SelectionChanged(NavigationView sender, NavigationViewSelectionChangedEventArgs args)
+        {
+            if (sender.Content is not Frame frame) return;
+            if (args.SelectedItemContainer is not NavigationViewItem item) return;
+            if (item.Tag is not string tag) return;
+
+            switch (tag)
+            {
+                case "MedicalEvaluation":
+                    frame.Navigate(typeof(MedicalEvaluationView));
+                    break;
+                case "DoctorSchedule":
+                    frame.Navigate(typeof(DoctorSchedulePage)); // or DoctorSchedulePage if that is your actual page
+                    break;
+            }
         }
     }
 }

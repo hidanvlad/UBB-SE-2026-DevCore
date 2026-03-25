@@ -11,6 +11,14 @@
 		<EnableMsixTooling>true</EnableMsixTooling>
 		<Nullable>enable</Nullable>
 	</PropertyGroup>
+	<ItemGroup>
+	  <Compile Remove="ViewModels\Doctor\AppointmentItemViewModel.cs" />
+	  <Compile Remove="ViewModels\Doctor\DoctorViewScheduleViewModel.cs" />
+	  <Compile Remove="Views\Doctor\DoctorSchedulePage.xaml.cs" />
+	</ItemGroup>
+	<ItemGroup>
+	  <None Remove="Views\StartupPage.xaml" />
+	</ItemGroup>
 
 	<ItemGroup>
 		<Content Include="Assets\SplashScreen.scale-200.png" />
@@ -29,10 +37,19 @@
 	<ItemGroup>
 		<PackageReference Include="Microsoft.WindowsAppSDK" Version="1.5.240311000" />
 		<PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.26100.1" />
+		<PackageReference Include="Microsoft.Data.SqlClient" Version="5.2.2" />
 	</ItemGroup>
 
 	<ItemGroup>
-		<Folder Include="ViewModels\" />
+	  <Page Include="ViewModels\Doctor\AppointmentItemViewModel.cs" />
+	  <Page Include="ViewModels\Doctor\DoctorViewScheduleViewModel.cs" />
+	  <Page Include="Views\Doctor\DoctorSchedulePage.xaml.cs" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Page Update="Views\StartupPage.xaml">
+	    <Generator>MSBuild:Compile</Generator>
+	  </Page>
 	</ItemGroup>
 
 	<PropertyGroup Condition="'$(DisableHasPackageAndPublishMenuAddedByProject)'!='true' and '$(EnableMsixTooling)'=='true'">
