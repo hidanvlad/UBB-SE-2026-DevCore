@@ -39,17 +39,24 @@ namespace DevCoreHospital.Views.Doctor
             await _vm.InitializeAsync();
         }
 
-        private void OpenDatePicker_Click(object sender, RoutedEventArgs e)
+        private void DateCalendar_SelectedDatesChanged(CalendarView sender, CalendarViewSelectedDatesChangedEventArgs args)
         {
-            InlineCalendarPicker.IsCalendarOpen = true;
+            if (sender.SelectedDates == null || sender.SelectedDates.Count == 0)
+                return;
+
+            var picked = sender.SelectedDates[0].Date;
+            var minSqlDate = new DateTime(1753, 1, 1);
+
+            if (picked < minSqlDate)
+                return;
+
+            _vm.SelectedDate = picked;
         }
 
         private void DetailsButton_Click(object sender, RoutedEventArgs e)
         {
             if ((sender as FrameworkElement)?.DataContext is AppointmentItemViewModel item)
-            {
                 Frame?.Navigate(typeof(AppointmentDetailsPage), item);
-            }
         }
     }
 }

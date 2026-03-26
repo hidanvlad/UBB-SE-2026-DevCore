@@ -26,7 +26,7 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <!-- TOP LINE: Title + doctor -->
+        <!-- TOP LINE -->
         <Grid Grid.Row="0">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
@@ -48,7 +48,7 @@
                       PlaceholderText="Select doctor"/>
         </Grid>
 
-        <!-- SECOND LINE: controls -->
+        <!-- SECOND LINE -->
         <Grid Grid.Row="1" ColumnSpacing="10">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto"/>
@@ -61,49 +61,37 @@
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
 
-            <Button Grid.Column="0" Content="Previous"
-                    Command="{Binding PreviousDayCommand}"
+            <Button Grid.Column="0" Content="Previous" Command="{Binding PreviousDayCommand}"
+                    Background="{StaticResource AccentBrush}" Foreground="White" BorderBrush="{StaticResource AccentBrush}"/>
+            <Button Grid.Column="1" Content="Today" Command="{Binding TodayCommand}"
+                    Background="{StaticResource AccentBrush}" Foreground="White" BorderBrush="{StaticResource AccentBrush}"/>
+            <Button Grid.Column="2" Content="Next" Command="{Binding NextDayCommand}"
                     Background="{StaticResource AccentBrush}" Foreground="White" BorderBrush="{StaticResource AccentBrush}"/>
 
-            <Button Grid.Column="1" Content="Today"
-                    Command="{Binding TodayCommand}"
-                    Background="{StaticResource AccentBrush}" Foreground="White" BorderBrush="{StaticResource AccentBrush}"/>
-
-            <Button Grid.Column="2" Content="Next"
-                    Command="{Binding NextDayCommand}"
-                    Background="{StaticResource AccentBrush}" Foreground="White" BorderBrush="{StaticResource AccentBrush}"/>
-
-            <!-- Click this to open calendar -->
-            <Button Grid.Column="3"
+            <Button x:Name="DateButton"
+                    Grid.Column="3"
                     Content="{Binding SelectedDateText}"
-                    Click="OpenDatePicker_Click"
                     Margin="8,0,0,0"
                     Background="Transparent"
                     Foreground="{StaticResource TextBrush}"
                     BorderBrush="{StaticResource AccentBrush}"
                     BorderThickness="1"
-                    Padding="12,6"/>
+                    Padding="12,6">
+                <Button.Flyout>
+                    <Flyout Placement="Bottom">
+                        <CalendarView x:Name="DateCalendar"
+                                        SelectionMode="Single"
+                                        SelectedDatesChanged="DateCalendar_SelectedDatesChanged"/>
+                    </Flyout>
+                </Button.Flyout>
+            </Button>
 
-            <Button Grid.Column="4" Content="Daily"
-                    Command="{Binding DailyModeCommand}"
-                    Background="{StaticResource AccentBrush}" Foreground="White" BorderBrush="{StaticResource AccentBrush}"
-                    Margin="8,0,0,0"/>
-
-            <Button Grid.Column="5" Content="Weekly"
-                    Command="{Binding WeeklyModeCommand}"
+            <Button Grid.Column="4" Content="Daily" Command="{Binding DailyModeCommand}"
+                    Background="{StaticResource AccentBrush}" Foreground="White" BorderBrush="{StaticResource AccentBrush}" Margin="8,0,0,0"/>
+            <Button Grid.Column="5" Content="Weekly" Command="{Binding WeeklyModeCommand}"
                     Background="{StaticResource AccentBrush}" Foreground="White" BorderBrush="{StaticResource AccentBrush}"/>
-
-            <Button Grid.Column="6" Content="Refresh"
-                    Command="{Binding RefreshCommand}"
+            <Button Grid.Column="6" Content="Refresh" Command="{Binding RefreshCommand}"
                     Background="{StaticResource AccentBrush}" Foreground="White" BorderBrush="{StaticResource AccentBrush}"/>
-
-            <!-- Hidden picker used only as popup -->
-            <CalendarDatePicker x:Name="InlineCalendarPicker"
-                                Grid.Column="7"
-                                Width="1"
-                                Height="1"
-                                Opacity="0"
-                                Date="{Binding SelectedDate, Mode=TwoWay}"/>
         </Grid>
 
         <!-- Error -->
