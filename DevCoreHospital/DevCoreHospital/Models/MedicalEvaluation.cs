@@ -4,13 +4,13 @@ namespace DevCoreHospital.Models
 {
     public class MedicalEvaluation
     {
-        public string Id { get; set; } = Guid.NewGuid().ToString();
+
+        public int EvaluationID { get; set; }
+
         public string PatientId { get; set; } = string.Empty;
         public string DiagnosisResult { get; set; } = string.Empty;
         public string Symptoms { get; set; } = string.Empty;
         public string MedsList { get; set; } = string.Empty;
-
-        // Unified property for both Notes and Justifications
         public string Notes { get; set; } = string.Empty;
 
         public DateTime EvaluationDate { get; set; }

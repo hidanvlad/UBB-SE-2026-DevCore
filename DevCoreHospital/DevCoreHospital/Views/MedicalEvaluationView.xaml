@@ -5,8 +5,13 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:models="using:DevCoreHospital.Models"
+    xmlns:converters="using:DevCoreHospital.Converters" 
     mc:Ignorable="d"
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+
+    <Page.Resources>
+        <converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
+    </Page.Resources>
 
     <Grid Padding="20">
         <Grid.ColumnDefinitions>
@@ -69,10 +74,22 @@
                                TextWrapping="WrapWholeWords"
                                Margin="0,5"/>
 
-                    <Button Content="Generate Diagnosis" 
+                    <Button Content="Save Diagnosis" 
                             Command="{x:Bind ViewModel.SaveDiagnosisCommand}" 
                             HorizontalAlignment="Stretch" Height="45"
                             Style="{StaticResource AccentButtonStyle}"/>
+
+                    <Button Content="Delete Diagnosis" 
+                            Click="DeleteButton_Click"
+                            IsEnabled="{x:Bind ViewModel.IsEditing, Mode=OneWay}"
+                            Visibility="{x:Bind ViewModel.IsEditing, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}}"
+                            HorizontalAlignment="Stretch" Height="45"
+                            Background="DarkRed" Foreground="White"/>
+
+                    <Button Content="Cancel Edit" 
+                            Visibility="{x:Bind ViewModel.IsEditing, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}}"
+                            Click="{x:Bind ViewModel.ResetForm}"
+                            HorizontalAlignment="Stretch" Margin="0,5"/>
                 </StackPanel>
             </ScrollViewer>
 
@@ -116,6 +133,7 @@
                 </StackPanel>
 
                 <ListView ItemsSource="{x:Bind ViewModel.PastEvaluations, Mode=OneWay}" 
+                          SelectedItem="{x:Bind ViewModel.SelectedEvaluation, Mode=TwoWay}"
                           Background="{ThemeResource LayerFillColorDefaultBrush}" 
                           CornerRadius="8" 
                           Padding="10" 

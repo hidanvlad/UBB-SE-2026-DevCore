@@ -1,6 +1,7 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using DevCoreHospital.ViewModels;
+using System;
 
 namespace DevCoreHospital.Views
 {
@@ -12,8 +13,29 @@ namespace DevCoreHospital.Views
         {
             this.InitializeComponent();
 
-            // Setting DataContext allows standard {Binding} to work alongside {x:Bind}
             this.DataContext = ViewModel;
+        }
+
+        private async void DeleteButton_Click(object sender, RoutedEventArgs e)
+        {
+
+            ContentDialog deleteDialog = new ContentDialog
+            {
+                Title = "Confirm Deletion",
+                Content = "This action is permanent. Are you sure you want to delete this diagnosis?",
+                PrimaryButtonText = "Delete",
+                CloseButtonText = "Cancel",
+                DefaultButton = ContentDialogButton.Close,
+               
+                XamlRoot = this.Content.XamlRoot
+            };
+
+            ContentDialogResult result = await deleteDialog.ShowAsync();
+
+            if (result == ContentDialogResult.Primary)
+            {
+                ViewModel.ExecuteDeletion();
+            }
         }
     }
 }
