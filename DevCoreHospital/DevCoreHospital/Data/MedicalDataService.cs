@@ -1,13 +1,20 @@
-﻿using System.Collections.Generic;
-using DevCoreHospital.Models;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
-using System;
+using System.Data;
+using Microsoft.Data.SqlClient; 
+using DevCoreHospital.Models;
 
 namespace DevCoreHospital.Data
 {
     public class MedicalDataService
     {
-        private static List<MedicalEvaluation> _mockTable = new List<MedicalEvaluation>();
+
+        /// <summary>
+        /// USE YOUR OWN CONNECTION HERE
+        /// </summary>
+        private readonly string _connectionString = @"Server=LAPTOP-UV77CFP3\SQLEXPRESS;Database=master;Trusted_Connection=True;TrustServerCertificate=True;";
+
         private static List<Shift> _shiftsMockTable = new List<Shift>();
 
         public MedicalDataService()
@@ -19,44 +26,123 @@ namespace DevCoreHospital.Data
             }
         }
 
-  
         public void UpdateEvaluationNotes(int evaluationId, string newNotes)
         {
+            string sql = "UPDATE MedicalEvaluations SET Notes = @Notes WHERE EvaluationID = @Id";
 
-            var record = _mockTable.FirstOrDefault(e => e.EvaluationID == evaluationId);
-            if (record != null)
+            using (SqlConnection conn = new SqlConnection(_connectionString))
             {
-                record.Notes = newNotes;
+                using (SqlCommand cmd = new SqlCommand(sql, conn))
+                {
+                    cmd.Parameters.AddWithValue("@Notes", newNotes);
+                    cmd.Parameters.AddWithValue("@Id", evaluationId);
+
+                    conn.Open();
+                    cmd.ExecuteNonQuery();
+                }
             }
         }
 
+
         public void SaveEvaluation(MedicalEvaluation record)
         {
-     
-            _mockTable.Add(record);
+            string sql = @"INSERT INTO MedicalEvaluations (PatientId, Symptoms, MedsList, Notes, EvaluationDate, DoctorId) 
+                           VALUES (@PatientId, @Symptoms, @MedsList, @Notes, @Date, @DoctorId)";
+
+            using (SqlConnection conn = new SqlConnection(_connectionString))
+            {
+                using (SqlCommand cmd = new SqlCommand(sql, conn))
+                {
+                    cmd.Parameters.AddWithValue("@PatientId", record.PatientId);
+                    cmd.Parameters.AddWithValue("@Symptoms", record.Symptoms);
+                    cmd.Parameters.AddWithValue("@MedsList", record.MedsList);
+                    cmd.Parameters.AddWithValue("@Notes", record.Notes);
+                    cmd.Parameters.AddWithValue("@Date", record.EvaluationDate);
+                    cmd.Parameters.AddWithValue("@DoctorId", record.Evaluator?.StaffID ?? 0);
+
+                    conn.Open();
+                    cmd.ExecuteNonQuery();
+                }
+            }
         }
 
         public List<MedicalEvaluation> GetEvaluationsByDoctor(string doctorId)
         {
-            return _mockTable.Where(e => e.Evaluator != null && e.Evaluator.StaffID.ToString() == doctorId).ToList();
+            var results = new List<MedicalEvaluation>();
+            string sql = "SELECT * FROM MedicalEvaluations WHERE DoctorId = @DocId ORDER BY EvaluationDate DESC";
+
+            using (SqlConnection conn = new SqlConnection(_connectionString))
+            {
+                using (SqlCommand cmd = new SqlCommand(sql, conn))
+                {
+                    cmd.Parameters.AddWithValue("@DocId", doctorId);
+                    conn.Open();
+                    using (SqlDataReader reader = cmd.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            results.Add(MapReaderToEvaluation(reader));
+                        }
+                    }
+                }
+            }
+            return results;
         }
 
         public List<MedicalEvaluation> GetPatientMedicalHistory(string patientId)
         {
-            return _mockTable
-                .Where(e => string.Equals(e.PatientId, patientId, StringComparison.OrdinalIgnoreCase))
-                .OrderByDescending(e => e.EvaluationDate)
-                .ToList();
+            var results = new List<MedicalEvaluation>();
+            string sql = "SELECT * FROM MedicalEvaluations WHERE PatientId = @PatientId ORDER BY EvaluationDate DESC";
+
+            using (SqlConnection conn = new SqlConnection(_connectionString))
+            {
+                using (SqlCommand cmd = new SqlCommand(sql, conn))
+                {
+                    cmd.Parameters.AddWithValue("@PatientId", patientId);
+                    conn.Open();
+                    using (SqlDataReader reader = cmd.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            results.Add(MapReaderToEvaluation(reader));
+                        }
+                    }
+                }
+            }
+            return results;
         }
 
-        public void UpdateAppointmentStatus(string patientId, string status) { }
-        public void UpdateDoctorAvailability(string doctorId) { }
-        public void CreateAdminFatigueAlert(string doctorId) { }
-
-        public double GetDoctorFatigueHours(string doctorId)
+        public void DeleteEvaluation(int evaluationId)
         {
-            return CalculateMockFatigue(doctorId);
+            string sql = "DELETE FROM MedicalEvaluations WHERE EvaluationID = @Id";
+
+            using (SqlConnection conn = new SqlConnection(_connectionString))
+            {
+                using (SqlCommand cmd = new SqlCommand(sql, conn))
+                {
+                    cmd.Parameters.AddWithValue("@Id", evaluationId);
+                    conn.Open();
+                    cmd.ExecuteNonQuery();
+                }
+            }
         }
+
+        // Helper method to keep domain logic and SQL mapping clean
+        private MedicalEvaluation MapReaderToEvaluation(SqlDataReader reader)
+        {
+            return new MedicalEvaluation
+            {
+                EvaluationID = (int)reader["EvaluationID"],
+                PatientId = reader["PatientId"].ToString(),
+                Symptoms = reader["Symptoms"].ToString(),
+                MedsList = reader["MedsList"].ToString(),
+                Notes = reader["Notes"].ToString(),
+                EvaluationDate = (DateTime)reader["EvaluationDate"],
+                Evaluator = new Doctor { StaffID = (int)reader["DoctorId"] }
+            };
+        }
+ 
+        public double GetDoctorFatigueHours(string doctorId) => CalculateMockFatigue(doctorId);
 
         private double CalculateMockFatigue(string doctorId)
         {
@@ -64,26 +150,14 @@ namespace DevCoreHospital.Data
             var dayAgo = now.AddHours(-24);
             var active = _shiftsMockTable.FirstOrDefault(s => s.AppointedStaff != null && s.AppointedStaff.StaffID.ToString() == doctorId && s.Status == ShiftStatus.ACTIVE);
             double activeHours = active != null ? (now - active.StartTime).TotalHours : 0;
-
             double completedHours = _shiftsMockTable
                 .Where(s => s.AppointedStaff != null && s.AppointedStaff.StaffID.ToString() == doctorId && s.Status == ShiftStatus.COMPLETED && s.EndTime >= dayAgo)
                 .Sum(s => (s.EndTime - s.StartTime).TotalHours);
-
             return activeHours + completedHours;
         }
 
-        public void DeleteEvaluation(int evaluationId)
-        {
-            // TASK 12: Hand-written SQL DELETE for local SQL Server
-            // The query must be simple and free of business logic.
-            string sql = "DELETE FROM MedicalEvaluations WHERE EvaluationID = @Id";
-
-            // In-memory implementation for now:
-            var record = _mockTable.FirstOrDefault(e => e.EvaluationID == evaluationId);
-            if (record != null)
-            {
-                _mockTable.Remove(record);
-            }
-        }
+        public void UpdateAppointmentStatus(string patientId, string status) { }
+        public void UpdateDoctorAvailability(string doctorId) { }
+        public void CreateAdminFatigueAlert(string doctorId) { }
     }
 }
