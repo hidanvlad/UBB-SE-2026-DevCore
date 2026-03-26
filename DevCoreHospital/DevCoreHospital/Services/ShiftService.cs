@@ -45,27 +45,21 @@ namespace DevCoreHospital.Services
                 ((start >= shift.StartTime && start < shift.EndTime) || (end > shift.StartTime && end <= shift.EndTime)));
         }
 
-        //public void AssignStaffToShift(int staffId, int shiftId)
-        //{
-        //    var doctor = _staffRepo.GetAvailableStaff("", "").FirstOrDefault(doctor => doctor.StaffID == staffId);
-        //    var shift = _shiftRepo.GetShifts().FirstOrDefault(shift => shift.Id == shiftId);
-
-        //    if (doctor != null && shift != null && doctor.Available && ValidateNoOverlap(staffId, shift.StartTime, shift.EndTime))
-        //    {
-        //        shift.AppointedStaff = doctor;
-        //        _shiftRepo.UpdateShiftStatus(shiftId, ShiftStatus.SCHEDULED);
-        //        _staffRepo.UpdateStaffAvailability(staffId, false, DoctorStatus.IN_EXAMINATION);
-        //    }
-        //}
+        public void AddShift(Shift shift)
+        {
+            this._shiftRepo.AddShift(shift);
+        }
 
         public List<Shift> GetDailyShifts(DateTime date)
         {
             return _shiftRepo.GetShifts().Where(shift => shift.StartTime.Date == date.Date).ToList();
         }
-        public List<Shift> GetWeeklyShifts(DateTime weekStartDate)
+
+        public List<Shift> GetWeeklyShifts(DateTime date)
         {
-            var weekEndDate = weekStartDate.AddDays(7);
-            return _shiftRepo.GetShifts().Where(shift => shift.StartTime >= weekStartDate && shift.StartTime < weekEndDate).ToList();
+            var monday = date.AddDays(-(int)DateTime.Now.DayOfWeek + (int)DayOfWeek.Monday);
+            var sunday = monday.AddDays(7);
+            return _shiftRepo.GetShifts().Where(shift => shift.StartTime >= monday && shift.StartTime < sunday).ToList();
         }
 
         public List<IStaff> FindStaffReplacement(int shiftId)
