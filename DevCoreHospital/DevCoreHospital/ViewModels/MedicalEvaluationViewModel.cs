@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Linq;
@@ -9,6 +10,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using DevCoreHospital.Models;
 using DevCoreHospital.Data;
+using System.Threading.Tasks;
 
 namespace DevCoreHospital.ViewModels
 {
@@ -18,7 +20,45 @@ namespace DevCoreHospital.ViewModels
         private const string CurrentDoctorId = "DOC001";
         private const string CurrentPatientId = "7759376";
 
+        // Master list to hold all records for filtering
+        private List<MedicalEvaluation> _allRecords = new List<MedicalEvaluation>();
+
+        private const int MaxSymptomsLength = 500;
+        private const int MaxMedsLength = 200;
+        private const int MaxNotesLength = 1000;
+
         public ObservableCollection<MedicalEvaluation> PastEvaluations { get; } = new();
+
+        // --- TASK 36: Search Logic ---
+        private string _searchText = string.Empty;
+        public string SearchText
+        {
+            get => _searchText;
+            set
+            {
+                if (SetProperty(ref _searchText, value))
+                {
+                    ApplyFilter();
+                }
+            }
+        }
+
+        private void ApplyFilter()
+        {
+            PastEvaluations.Clear();
+
+            var filtered = string.IsNullOrWhiteSpace(SearchText)
+                ? _allRecords
+                : _allRecords.Where(r => r.PatientId.Contains(SearchText, StringComparison.OrdinalIgnoreCase));
+
+            foreach (var record in filtered)
+            {
+                PastEvaluations.Add(record);
+            }
+
+            // Ensure empty state appears if search finds nothing
+            OnPropertyChanged(nameof(IsEmptyStateVisible));
+        }
 
         private string _symptoms = string.Empty;
         public string Symptoms
@@ -31,14 +71,28 @@ namespace DevCoreHospital.ViewModels
         public string MedsList
         {
             get => _medsList;
-            set { if (SetProperty(ref _medsList, value)) ValidateMedsConflict(value); }
+            set
+            {
+                if (SetProperty(ref _medsList, value))
+                {
+                    ValidateMedsConflict(value);
+                    RefreshButtonState();
+                }
+            }
         }
 
         private string _doctorNotes = string.Empty;
         public string DoctorNotes
         {
             get => _doctorNotes;
-            set => SetProperty(ref _doctorNotes, value);
+            set { if (SetProperty(ref _doctorNotes, value)) RefreshButtonState(); }
+        }
+
+        private string _validationError = string.Empty;
+        public string ValidationError
+        {
+            get => _validationError;
+            set => SetProperty(ref _validationError, value);
         }
 
         private string _conflictWarning = string.Empty;
@@ -57,7 +111,6 @@ namespace DevCoreHospital.ViewModels
                 if (SetProperty(ref _isConflictVisible, value))
                 {
                     OnPropertyChanged(nameof(NotesBackground));
-                    // Force the checkbox to uncheck whenever a new conflict is found
                     IsRiskAssumed = false;
                     RefreshButtonState();
                 }
@@ -92,6 +145,21 @@ namespace DevCoreHospital.ViewModels
 
         public bool IsFormEnabled => !IsFatigued;
         public Visibility LockoutVisibility => IsFatigued ? Visibility.Visible : Visibility.Collapsed;
+
+        private bool _isLoading;
+        public bool IsLoading
+        {
+            get => _isLoading;
+            set
+            {
+                if (SetProperty(ref _isLoading, value))
+                {
+                    OnPropertyChanged(nameof(IsEmptyStateVisible));
+                }
+            }
+        }
+
+        public bool IsEmptyStateVisible => !IsLoading && PastEvaluations.Count == 0;
 
         public MedicalEvaluationViewModel()
         {
@@ -132,15 +200,32 @@ namespace DevCoreHospital.ViewModels
             IsConflictVisible = false;
         }
 
-        private bool CanSaveDiagnosis => !IsFatigued &&
-                                         !string.IsNullOrWhiteSpace(Symptoms) &&
-                                         (!IsConflictVisible || IsRiskAssumed);
+        private bool CanSaveDiagnosis()
+        {
+            if (IsFatigued) return false;
+            if (string.IsNullOrWhiteSpace(Symptoms) || string.IsNullOrWhiteSpace(DoctorNotes))
+            {
+                ValidationError = "⚠️ Symptoms and Doctor Notes are required.";
+                return false;
+            }
+            if (Symptoms.Length > MaxSymptomsLength || DoctorNotes.Length > MaxNotesLength || MedsList.Length > MaxMedsLength)
+            {
+                ValidationError = "⚠️ Text exceeds database limits.";
+                return false;
+            }
+            if (IsConflictVisible && !IsRiskAssumed)
+            {
+                ValidationError = "⚠️ You must acknowledge the clinical risk.";
+                return false;
+            }
+            ValidationError = string.Empty;
+            return true;
+        }
 
         [RelayCommand(CanExecute = nameof(CanSaveDiagnosis))]
         private void SaveDiagnosis()
         {
             string finalSymptoms = this.Symptoms;
-
             if (IsConflictVisible && IsRiskAssumed)
             {
                 finalSymptoms = $"⚠️ [RISK ACKNOWLEDGED] - {finalSymptoms}";
@@ -153,18 +238,16 @@ namespace DevCoreHospital.ViewModels
                 MedsList = this.MedsList,
                 Notes = this.DoctorNotes,
                 EvaluationDate = DateTime.Now,
-                // CS0118 FIX: Explicitly reference the Models.Doctor class
                 Evaluator = new DevCoreHospital.Models.Doctor { Id = CurrentDoctorId, Name = "Dr. Vlad" }
             };
 
-            // 1. Persist the Medical Data
             _dataService.SaveEvaluation(newRecord);
-            PastEvaluations.Insert(0, newRecord);
 
-            // 2. Set the appointment to 'Finished' (Task 30)
+            // TASK 36: Add to master list and re-filter
+            _allRecords.Insert(0, newRecord);
+            ApplyFilter();
+
             _dataService.UpdateAppointmentStatus(CurrentPatientId, "Finished");
-
-            // 3. Set the Doctor to 'AVAILABLE' (Task 30)
             _dataService.UpdateDoctorAvailability(CurrentDoctorId);
 
             ResetForm();
@@ -189,13 +272,25 @@ namespace DevCoreHospital.ViewModels
             RefreshButtonState();
         }
 
-        private void RefreshButtonState() => SaveDiagnosisCommand.NotifyCanExecuteChanged();
-
-        public void PopulateHistory()
+        private void RefreshButtonState()
         {
+            SaveDiagnosisCommand.NotifyCanExecuteChanged();
+            OnPropertyChanged(nameof(ValidationError));
+        }
+
+        public async void PopulateHistory()
+        {
+            IsLoading = true;
+            _allRecords.Clear();
             PastEvaluations.Clear();
+
+            await System.Threading.Tasks.Task.Delay(1500);
+
             var records = _dataService.GetEvaluationsByDoctor(CurrentDoctorId);
-            foreach (var record in records) { PastEvaluations.Add(record); }
+            _allRecords = records; // Store in master list
+
+            ApplyFilter(); // Sync ObservableCollection
+            IsLoading = false;
         }
 
         private void CheckDoctorFatigue()
