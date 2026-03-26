@@ -22,8 +22,9 @@
                       HorizontalAlignment="Stretch"
                       SelectionChanged="LocationComboBox_SelectionChanged">
                 <x:String>ER</x:String>
-                <x:String>Cardiologie</x:String>
-                <x:String>Farmacie Centrală</x:String>
+                <x:String>Cardiology</x:String>
+                <x:String>Central Pharmacy</x:String>
+                <x:String>Neurology</x:String>
             </ComboBox>
 
             <ComboBox x:Name="StaffComboBox" 

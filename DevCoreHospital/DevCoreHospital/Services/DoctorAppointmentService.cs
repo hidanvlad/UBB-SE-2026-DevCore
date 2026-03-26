@@ -154,7 +154,7 @@ WHERE a.id = @Id;";
         {
             var candidates = new[] { "[doctor]", "[doctors]", "[dbo].[doctor]", "[dbo].[doctors]" };
             foreach (var t in candidates)
-                if (await TableExistsWithColumns(conn, t, "id", "full_name"))
+                if (await TableExistsWithColumns(conn, t, "StaffID", "FirstName"))
                     return t;
 
             const string sql = @"
@@ -162,8 +162,8 @@ SELECT TOP 1 QUOTENAME(c.TABLE_SCHEMA) + '.' + QUOTENAME(c.TABLE_NAME)
 FROM INFORMATION_SCHEMA.COLUMNS c
 GROUP BY c.TABLE_SCHEMA, c.TABLE_NAME
 HAVING
-    SUM(CASE WHEN c.COLUMN_NAME = 'id' THEN 1 ELSE 0 END) > 0
-    AND SUM(CASE WHEN c.COLUMN_NAME = 'full_name' THEN 1 ELSE 0 END) > 0;";
+    SUM(CASE WHEN c.COLUMN_NAME = 'StaffID' THEN 1 ELSE 0 END) > 0
+    AND SUM(CASE WHEN c.COLUMN_NAME = 'FirstName' THEN 1 ELSE 0 END) > 0;";
 
             using var cmd = conn.CreateCommand();
             cmd.CommandText = sql;
