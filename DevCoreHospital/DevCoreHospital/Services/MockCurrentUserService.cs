@@ -1,4 +1,4 @@
-﻿using DevCoreHospital.Models;
+using DevCoreHospital.Models;
 
 namespace DevCoreHospital.Services
 {

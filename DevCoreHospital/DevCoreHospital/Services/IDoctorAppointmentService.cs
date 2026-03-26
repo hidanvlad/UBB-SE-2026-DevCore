@@ -9,8 +9,6 @@ namespace DevCoreHospital.Services
     {
         Task<IReadOnlyList<Appointment>> GetUpcomingAppointmentsAsync(int doctorUserId, DateTime fromDate, int skip, int take);
         Task<IReadOnlyList<(int DoctorId, string DoctorName)>> GetAllDoctorsAsync();
-
-        // NEW:
         Task<AppointmentDetails?> GetAppointmentDetailsAsync(int appointmentId);
     }
 }

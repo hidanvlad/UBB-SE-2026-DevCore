@@ -1,4 +1,4 @@
-﻿<Page
+<Page
     x:Class="DevCoreHospital.Views.Doctor.DoctorSchedulePage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -7,131 +7,160 @@
     xmlns:converters="using:DevCoreHospital.Converters"
     mc:Ignorable="d">
 
-	<Page.Resources>
-		<converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
-		<converters:StringNotEmptyToVisibilityConverter x:Key="StringNotEmptyToVisibilityConverter"/>
+    <Page.Resources>
+        <converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
+        <converters:StringNotEmptyToVisibilityConverter x:Key="StringNotEmptyToVisibilityConverter"/>
 
-		<SolidColorBrush x:Key="BgBrush" Color="#FF0B120D"/>
-		<SolidColorBrush x:Key="CardBrush" Color="#FF0F1711"/>
-		<SolidColorBrush x:Key="TextBrush" Color="#FFFFFFFF"/>
-		<SolidColorBrush x:Key="MutedBrush" Color="#FFB7C2BA"/>
-		<SolidColorBrush x:Key="AccentBrush" Color="#FF166534"/>
-	</Page.Resources>
+        <SolidColorBrush x:Key="BgBrush" Color="#FF0B120D"/>
+        <SolidColorBrush x:Key="CardBrush" Color="#FF0F1711"/>
+        <SolidColorBrush x:Key="TextBrush" Color="#FFFFFFFF"/>
+        <SolidColorBrush x:Key="MutedBrush" Color="#FFB7C2BA"/>
+        <SolidColorBrush x:Key="AccentBrush" Color="#FF166534"/>
+    </Page.Resources>
 
-	<Grid Padding="24" RowSpacing="16" Background="{StaticResource BgBrush}">
-		<Grid.RowDefinitions>
-			<RowDefinition Height="Auto"/>
-			<RowDefinition Height="Auto"/>
-			<RowDefinition Height="*"/>
-		</Grid.RowDefinitions>
+    <Grid Padding="24" RowSpacing="14" Background="{StaticResource BgBrush}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
 
-		<Grid>
-			<Grid.ColumnDefinitions>
-				<ColumnDefinition Width="*"/>
-				<ColumnDefinition Width="Auto"/>
-				<ColumnDefinition Width="Auto"/>
-				<ColumnDefinition Width="Auto"/>
-				<ColumnDefinition Width="Auto"/>
-				<ColumnDefinition Width="Auto"/>
-				<ColumnDefinition Width="Auto"/>
-			</Grid.ColumnDefinitions>
+        <!-- TOP LINE -->
+        <Grid Grid.Row="0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="320"/>
+            </Grid.ColumnDefinitions>
 
-			<TextBlock Grid.Column="0"
+            <TextBlock Grid.Column="0"
                        Text="Doctor Schedule"
                        Foreground="{StaticResource TextBrush}"
-                       FontSize="52"
+                       FontSize="44"
                        FontWeight="SemiBold"
                        VerticalAlignment="Center"/>
 
-			<Button Grid.Column="1" Content="Previous" Margin="8,0,0,0" Command="{Binding PreviousDayCommand}" Background="{StaticResource AccentBrush}" Foreground="White" BorderBrush="{StaticResource AccentBrush}"/>
-			<Button Grid.Column="2" Content="Today" Margin="8,0,0,0" Command="{Binding TodayCommand}" Background="{StaticResource AccentBrush}" Foreground="White" BorderBrush="{StaticResource AccentBrush}"/>
-			<Button Grid.Column="3" Content="Next" Margin="8,0,0,0" Command="{Binding NextDayCommand}" Background="{StaticResource AccentBrush}" Foreground="White" BorderBrush="{StaticResource AccentBrush}"/>
-
-			<TextBlock Grid.Column="4"
-                       Text="{Binding SelectedDateText}"
-                       Foreground="{StaticResource TextBrush}"
-                       Margin="20,0,0,0"
-                       VerticalAlignment="Center"
-                       FontSize="18"/>
-
-			<ComboBox Grid.Column="5"
-                      Width="240"
-                      Margin="20,0,0,0"
+            <ComboBox Grid.Column="1"
+                      Height="40"
                       ItemsSource="{Binding Doctors}"
                       SelectedItem="{Binding SelectedDoctor, Mode=TwoWay}"
-                      DisplayMemberPath="DoctorName"
+                      DisplayMemberPath="DisplayName"
                       PlaceholderText="Select doctor"/>
+        </Grid>
 
-			<Button Grid.Column="6" Content="Refresh" Margin="12,0,0,0" Command="{Binding RefreshCommand}" Background="{StaticResource AccentBrush}" Foreground="White" BorderBrush="{StaticResource AccentBrush}"/>
-		</Grid>
+        <!-- SECOND LINE -->
+        <Grid Grid.Row="1" ColumnSpacing="10">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
 
-		<Border Grid.Row="1"
+            <Button Grid.Column="0" Content="Previous" Command="{Binding PreviousDayCommand}"
+                    Background="{StaticResource AccentBrush}" Foreground="White" BorderBrush="{StaticResource AccentBrush}"/>
+            <Button Grid.Column="1" Content="Today" Command="{Binding TodayCommand}"
+                    Background="{StaticResource AccentBrush}" Foreground="White" BorderBrush="{StaticResource AccentBrush}"/>
+            <Button Grid.Column="2" Content="Next" Command="{Binding NextDayCommand}"
+                    Background="{StaticResource AccentBrush}" Foreground="White" BorderBrush="{StaticResource AccentBrush}"/>
+
+            <Button x:Name="DateButton"
+                    Grid.Column="3"
+                    Content="{Binding SelectedDateText}"
+                    Margin="8,0,0,0"
+                    Background="Transparent"
+                    Foreground="{StaticResource TextBrush}"
+                    BorderBrush="{StaticResource AccentBrush}"
+                    BorderThickness="1"
+                    Padding="12,6">
+                <Button.Flyout>
+                    <Flyout Placement="Bottom">
+                        <CalendarView x:Name="DateCalendar"
+                                        SelectionMode="Single"
+                                        SelectedDatesChanged="DateCalendar_SelectedDatesChanged"/>
+                    </Flyout>
+                </Button.Flyout>
+            </Button>
+
+            <Button Grid.Column="4" Content="Daily" Command="{Binding DailyModeCommand}"
+                    Background="{StaticResource AccentBrush}" Foreground="White" BorderBrush="{StaticResource AccentBrush}" Margin="8,0,0,0"/>
+            <Button Grid.Column="5" Content="Weekly" Command="{Binding WeeklyModeCommand}"
+                    Background="{StaticResource AccentBrush}" Foreground="White" BorderBrush="{StaticResource AccentBrush}"/>
+            <Button Grid.Column="6" Content="Refresh" Command="{Binding RefreshCommand}"
+                    Background="{StaticResource AccentBrush}" Foreground="White" BorderBrush="{StaticResource AccentBrush}"/>
+        </Grid>
+
+        <!-- Error -->
+        <Border Grid.Row="2"
                 Background="#332A1204"
                 BorderBrush="{StaticResource AccentBrush}"
                 BorderThickness="1"
                 CornerRadius="14"
                 Padding="14,10"
                 Visibility="{Binding ErrorMessage, Converter={StaticResource StringNotEmptyToVisibilityConverter}}">
-			<TextBlock Text="{Binding ErrorMessage}" Foreground="#FFFFB4B4" TextWrapping="Wrap"/>
-		</Border>
+            <TextBlock Text="{Binding ErrorMessage}" Foreground="#FFFFB4B4" TextWrapping="Wrap"/>
+        </Border>
 
-		<Grid Grid.Row="2">
-			<StackPanel HorizontalAlignment="Center"
+        <!-- Appointments -->
+        <Grid Grid.Row="3">
+            <StackPanel HorizontalAlignment="Center"
                         VerticalAlignment="Center"
                         Spacing="8"
                         Visibility="{Binding IsEmpty, Converter={StaticResource BoolToVisibilityConverter}}">
-				<TextBlock Text="No appointments for this day."
+                <TextBlock Text="No appointments for this day."
                            Foreground="{StaticResource TextBrush}"
                            FontSize="20"
                            HorizontalAlignment="Center"/>
-				<TextBlock Text="Try Previous/Next or Refresh."
+                <TextBlock Text="Try Previous/Next, click date, or Refresh."
                            Foreground="{StaticResource MutedBrush}"
                            HorizontalAlignment="Center"/>
-			</StackPanel>
+            </StackPanel>
 
-			<ListView ItemsSource="{Binding Appointments}" SelectionMode="None" Background="Transparent" BorderThickness="0">
-				<ListView.ItemContainerStyle>
-					<Style TargetType="ListViewItem">
-						<Setter Property="HorizontalContentAlignment" Value="Stretch"/>
-						<Setter Property="Padding" Value="0"/>
-						<Setter Property="Margin" Value="0,0,0,12"/>
-						<Setter Property="Background" Value="Transparent"/>
-					</Style>
-				</ListView.ItemContainerStyle>
+            <ListView ItemsSource="{Binding Appointments}" SelectionMode="None" Background="Transparent" BorderThickness="0">
+                <ListView.ItemContainerStyle>
+                    <Style TargetType="ListViewItem">
+                        <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                        <Setter Property="Padding" Value="0"/>
+                        <Setter Property="Margin" Value="0,0,0,12"/>
+                        <Setter Property="Background" Value="Transparent"/>
+                    </Style>
+                </ListView.ItemContainerStyle>
 
-				<ListView.ItemTemplate>
-					<DataTemplate>
-						<Border Background="{StaticResource CardBrush}"
+                <ListView.ItemTemplate>
+                    <DataTemplate>
+                        <Border Background="{StaticResource CardBrush}"
                                 BorderBrush="{StaticResource AccentBrush}"
                                 BorderThickness="1"
                                 CornerRadius="14"
-                                Padding="16">
-							<Grid ColumnSpacing="14">
-								<Grid.ColumnDefinitions>
-									<ColumnDefinition Width="*"/>
-									<ColumnDefinition Width="Auto"/>
-								</Grid.ColumnDefinitions>
+                                Padding="12">
+                            <Grid ColumnSpacing="14">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
 
-								<StackPanel Spacing="6">
-									<TextBlock Text="{Binding PatientName}" Foreground="{StaticResource TextBrush}" FontSize="20" FontWeight="SemiBold"/>
-									<TextBlock Text="{Binding DateText}" Foreground="{StaticResource MutedBrush}"/>
-									<TextBlock Text="{Binding TimeRangeText}" Foreground="{StaticResource MutedBrush}"/>
-									<TextBlock Text="{Binding LocationSafe}" Foreground="{StaticResource MutedBrush}"/>
-									<TextBlock Text="{Binding Notes}" TextWrapping="WrapWholeWords" Foreground="{StaticResource MutedBrush}"/>
-								</StackPanel>
+                                <StackPanel Spacing="4">
+                                    <TextBlock Text="{Binding DateText}" Foreground="{StaticResource MutedBrush}" FontSize="28"/>
+                                    <TextBlock Text="{Binding TimeRangeText}" Foreground="{StaticResource TextBrush}" FontSize="24" FontWeight="SemiBold"/>
+                                    <TextBlock Text="{Binding LocationSafe}" Foreground="{StaticResource MutedBrush}" FontSize="20"/>
+                                </StackPanel>
 
-								<Button Grid.Column="1"
+                                <Button Grid.Column="1"
                                         Content="Details"
                                         Click="DetailsButton_Click"
                                         VerticalAlignment="Center"
                                         Background="{StaticResource AccentBrush}"
                                         Foreground="White"
                                         BorderBrush="{StaticResource AccentBrush}"/>
-							</Grid>
-						</Border>
-					</DataTemplate>
-				</ListView.ItemTemplate>
-			</ListView>
-		</Grid>
-	</Grid>
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </ListView.ItemTemplate>
+            </ListView>
+        </Grid>
+    </Grid>
 </Page>

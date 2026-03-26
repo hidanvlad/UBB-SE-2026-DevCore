@@ -1,0 +1,218 @@
+<Page
+    x:Class="DevCoreHospital.Views.Pharmacy.PharmacySchedulePage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:converters="using:DevCoreHospital.Converters"
+    mc:Ignorable="d">
+
+    <Page.Resources>
+        <converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
+        <converters:StringNotEmptyToVisibilityConverter x:Key="StringNotEmptyToVisibilityConverter"/>
+    </Page.Resources>
+
+    <Grid Padding="24" RowSpacing="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <StackPanel Grid.Column="0" Spacing="4">
+                <TextBlock Text="Pharmacy Schedule"
+                           FontSize="44"
+                           FontWeight="SemiBold"/>
+                <TextBlock Text="{Binding HeaderSubtitle}"
+                           FontSize="16"
+                           Foreground="#6B7280"/>
+            </StackPanel>
+
+            <Button Grid.Column="1" Content="Daily" Margin="8,0,0,0" Command="{Binding ShowDailyCommand}"/>
+            <Button Grid.Column="2" Content="Weekly" Margin="8,0,0,0" Command="{Binding ShowWeeklyCommand}"/>
+
+            <Button Grid.Column="3" Content="Previous" Margin="16,0,0,0" Command="{Binding PreviousPeriodCommand}"/>
+            <Button Grid.Column="4" Content="Today" Margin="8,0,0,0" Command="{Binding TodayCommand}"/>
+            <Button Grid.Column="5" Content="Next" Margin="8,0,0,0" Command="{Binding NextPeriodCommand}"/>
+
+            <Button Grid.Column="6" Content="Refresh" Margin="16,0,0,0" Command="{Binding RefreshCommand}"/>
+        </Grid>
+
+        <StackPanel Grid.Row="1" Spacing="10">
+            <Border Background="#FEF3C7"
+                    BorderBrush="#D97706"
+                    BorderThickness="1"
+                    CornerRadius="14"
+                    Padding="14,10"
+                    Visibility="{Binding IsAccessDenied, Converter={StaticResource BoolToVisibilityConverter}}">
+                <TextBlock TextWrapping="Wrap" Foreground="#92400E"
+                           Text="Pharmacy Schedule is available to pharmacist accounts. Set Role to Pharmacist in CurrentUserService (or MockCurrentUserService) to view your roster."/>
+            </Border>
+            <Border Background="#FFF7ED"
+                    BorderBrush="#F59E0B"
+                    BorderThickness="1"
+                    CornerRadius="14"
+                    Padding="14,10"
+                    Visibility="{Binding ErrorMessage, Converter={StaticResource StringNotEmptyToVisibilityConverter}}">
+                <TextBlock Text="{Binding ErrorMessage}" Foreground="#9A3412" TextWrapping="Wrap"/>
+            </Border>
+        </StackPanel>
+
+        <Grid Grid.Row="2" RowSpacing="16">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <Grid Grid.Row="0">
+            <StackPanel HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Spacing="8"
+                        Visibility="{Binding IsEmpty, Converter={StaticResource BoolToVisibilityConverter}}">
+                <TextBlock Text="No shifts in this period."
+                           FontSize="20"
+                           HorizontalAlignment="Center"/>
+                <TextBlock Text="Try Weekly view, change the date range, or Refresh."
+                           Foreground="#9CA3AF"
+                           HorizontalAlignment="Center"/>
+            </StackPanel>
+
+            <ListView ItemsSource="{Binding Shifts}" SelectionMode="None">
+                <ListView.ItemContainerStyle>
+                    <Style TargetType="ListViewItem">
+                        <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                        <Setter Property="Padding" Value="0"/>
+                        <Setter Property="Margin" Value="0,0,0,12"/>
+                    </Style>
+                </ListView.ItemContainerStyle>
+
+                <ListView.ItemTemplate>
+                    <DataTemplate>
+                        <Border Background="#F0FDF4"
+                                CornerRadius="18"
+                                Padding="18"
+                                BorderThickness="1"
+                                BorderBrush="#BBF7D0">
+                            <Grid RowSpacing="8">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+
+                                <Grid Grid.Row="0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0"
+                                               Text="{Binding RotationAssignment}"
+                                               FontSize="18"
+                                               FontWeight="SemiBold"
+                                               TextWrapping="Wrap"
+                                               Foreground="#14532D"/>
+                                    <Border Grid.Column="1"
+                                            Background="#166534"
+                                            CornerRadius="12"
+                                            Padding="12,6"
+                                            Margin="12,0,0,0"
+                                            VerticalAlignment="Top">
+                                        <TextBlock Text="{Binding StatusDisplay}"
+                                                   Foreground="White"
+                                                   FontWeight="SemiBold"/>
+                                    </Border>
+                                </Grid>
+
+                                <TextBlock Grid.Row="1"
+                                           Text="{Binding TimeRangeDetail}"
+                                           FontSize="14"
+                                           Foreground="#4B5563"
+                                           TextWrapping="Wrap"/>
+
+                                <TextBlock Grid.Row="2"
+                                           Text="{Binding DayLabel}"
+                                           FontSize="13"
+                                           Foreground="#6B7280"/>
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </ListView.ItemTemplate>
+            </ListView>
+
+            <Grid Background="#66000000"
+                  Visibility="{Binding IsLoading, Converter={StaticResource BoolToVisibilityConverter}}">
+                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="10">
+                    <ProgressRing IsActive="True" Width="56" Height="56"/>
+                    <TextBlock Text="Loading pharmacy roster..."
+                               Foreground="White"
+                               FontSize="18"
+                               HorizontalAlignment="Center"/>
+                </StackPanel>
+            </Grid>
+            </Grid>
+
+            <Border Grid.Row="1"
+                    Background="#EFF6FF"
+                    BorderBrush="#3B82F6"
+                    BorderThickness="1"
+                    CornerRadius="16"
+                    Padding="18"
+                    Visibility="{Binding ShowHandoverSection, Converter={StaticResource BoolToVisibilityConverter}}">
+                <StackPanel Spacing="12">
+                    <TextBlock Text="Shift transition &amp; pharmacy handover"
+                               FontSize="20"
+                               FontWeight="SemiBold"
+                               Foreground="#1E3A8A"/>
+                    <TextBlock TextWrapping="Wrap" Foreground="#374151" FontSize="14"
+                               Text="At your shift end time, all Pending_Medications rows still in Processing (not Completed) must move to the incoming pharmacist. You cannot complete your shift until you choose who receives the queue. The database updates ResponsibleStaffID on those orders and sets your is_available flag to false."/>
+                    <TextBlock Text="{Binding ProcessingQueueText}"
+                               FontSize="14"
+                               FontWeight="SemiBold"
+                               Foreground="#111827"/>
+                    <ComboBox Header="Incoming pharmacist"
+                              PlaceholderText="Select incoming pharmacist"
+                              ItemsSource="{Binding IncomingPharmacists}"
+                              DisplayMemberPath="DisplayName"
+                              SelectedItem="{Binding SelectedIncoming, Mode=TwoWay}"
+                              IsEnabled="{Binding NotHandoverBusy}"/>
+                    <Button Content="Complete shift &amp; hand over queue"
+                            Command="{Binding CompleteHandoverCommand}"
+                            Style="{StaticResource AccentButtonStyle}"
+                            HorizontalAlignment="Left"
+                            IsEnabled="{Binding CanCompleteShift}"/>
+                    <ProgressRing Width="32" Height="32"
+                                  IsActive="{Binding IsHandoverBusy}"
+                                  Visibility="{Binding IsHandoverBusy, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                    <Border Background="#DCFCE7"
+                            BorderBrush="#22C55E"
+                            BorderThickness="1"
+                            CornerRadius="10"
+                            Padding="10"
+                            Visibility="{Binding HandoverSuccessMessage, Converter={StaticResource StringNotEmptyToVisibilityConverter}}">
+                        <TextBlock Text="{Binding HandoverSuccessMessage}" Foreground="#14532D" TextWrapping="Wrap"/>
+                    </Border>
+                    <Border Background="#FEE2E2"
+                            BorderBrush="#EF4444"
+                            BorderThickness="1"
+                            CornerRadius="10"
+                            Padding="10"
+                            Visibility="{Binding HandoverErrorMessage, Converter={StaticResource StringNotEmptyToVisibilityConverter}}">
+                        <TextBlock Text="{Binding HandoverErrorMessage}" Foreground="#991B1B" TextWrapping="Wrap"/>
+                    </Border>
+                </StackPanel>
+            </Border>
+        </Grid>
+    </Grid>
+</Page>

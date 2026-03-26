@@ -6,5 +6,15 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d">
 
-    <Frame x:Name="RootFrame"/>
+    <NavigationView x:Name="NavView"
+                    IsBackButtonVisible="Collapsed"
+                    IsSettingsVisible="False"
+                    SelectionChanged="NavView_SelectionChanged">
+        <NavigationView.MenuItems>
+            <NavigationViewItem Content="Role selection" Tag="role-selection"/>
+            <NavigationViewItem Content="Dashboard" Tag="dashboard"/>
+        </NavigationView.MenuItems>
+
+        <Frame x:Name="RootFrame"/>
+    </NavigationView>
 </Window>

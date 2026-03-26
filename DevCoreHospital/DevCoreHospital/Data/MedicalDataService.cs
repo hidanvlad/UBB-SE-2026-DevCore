@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using DevCoreHospital.Models;
 using System.Linq;
 using System;
@@ -72,9 +72,9 @@ namespace DevCoreHospital.Data
         {
             var now = DateTime.Now;
             var dayAgo = now.AddHours(-24);
-            var active = _shiftsMockTable.FirstOrDefault(s => s.DoctorId == doctorId && s.Status == "ACTIVE");
+            var active = _shiftsMockTable.FirstOrDefault(s => s.DoctorId == doctorId && s.Status == ShiftStatus.ACTIVE);
             double activeHours = active != null ? (now - active.StartTime).TotalHours : 0;
-            double completedHours = _shiftsMockTable.Where(s => s.DoctorId == doctorId && s.Status == "COMPLETED" && s.EndTime >= dayAgo)
+            double completedHours = _shiftsMockTable.Where(s => s.DoctorId == doctorId && s.Status == ShiftStatus.COMPLETED && s.EndTime >= dayAgo)
                 .Sum(s => s.EndTime.HasValue ? (s.EndTime.Value - s.StartTime).TotalHours : 0);
             return activeHours + completedHours;
         }

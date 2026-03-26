@@ -1,4 +1,4 @@
-﻿using DevCoreHospital.Services;
+using DevCoreHospital.Services;
 using DevCoreHospital.ViewModels.Base;
 using System;
 using System.Collections.ObjectModel;
@@ -145,17 +145,25 @@ namespace DevCoreHospital.ViewModels.Doctor
             Doctors.Clear();
 
             var allDoctors = await _appointmentService.GetAllDoctorsAsync();
-            var me = allDoctors.FirstOrDefault(d => d.DoctorId == _currentUser.UserId);
 
-            if (me.DoctorId == 0)
+            foreach (var d in allDoctors.OrderBy(x => x.DoctorName))
             {
-                ErrorMessage = $"Current user doctor id {_currentUser.UserId} was not found.";
+                Doctors.Add(new DoctorOption
+                {
+                    DoctorId = d.DoctorId,
+                    DoctorName = d.DoctorName
+                });
+            }
+
+            if (Doctors.Count == 0)
+            {
+                ErrorMessage = "No doctors available.";
                 SelectedDoctor = null;
                 return;
             }
 
-            Doctors.Add(new DoctorOption { DoctorId = me.DoctorId, DoctorName = me.DoctorName });
-            SelectedDoctor = Doctors.First();
+            // default selection = current user if present, otherwise first
+            SelectedDoctor = Doctors.FirstOrDefault(d => d.DoctorId == _currentUser.UserId) ?? Doctors.First();
         }
 
         public async Task LoadAsync()
@@ -177,16 +185,24 @@ namespace DevCoreHospital.ViewModels.Doctor
                 IsLoading = true;
                 ErrorMessage = "";
 
-                var doctorId = _currentUser.UserId;
+                if (SelectedDoctor is null)
+                {
+                    Appointments.Clear();
+                    IsLoading = false;
+                    RaisePropertyChanged(nameof(IsEmpty));
+                    return;
+                }
+
+                var doctorId = SelectedDoctor.DoctorId;
                 DateTime from = IsDaily ? SelectedDate.Date : StartOfWeek(SelectedDate);
                 DateTime to = IsDaily ? from.AddDays(1) : from.AddDays(7);
 
                 var raw = await _appointmentService.GetUpcomingAppointmentsAsync(doctorId, from, 0, 500);
 
-                if (myVersion != _loadVersion) return; // stale request result ignored
+                if (myVersion != _loadVersion) return;
 
                 var filtered = raw
-                    .Where(x => x.DoctorId == _currentUser.UserId)
+                    .Where(x => x.DoctorId == doctorId)
                     .Where(x =>
                     {
                         var start = x.Date.Date + x.StartTime;
@@ -256,6 +272,27 @@ namespace DevCoreHospital.ViewModels.Doctor
         {
             public int DoctorId { get; set; }
             public string DoctorName { get; set; } = string.Empty;
+            public string FirstName { get; set; } = string.Empty;
+            public string LastName { get; set; } = string.Empty;
+
+            // Prefer showing only first + last even if DB has middle names/titles.
+            public string DisplayName =>
+                string.Join(" ", new[] { FirstName?.Trim(), LastName?.Trim() }.Where(x => !string.IsNullOrWhiteSpace(x)));
+
+            public static (string FirstName, string LastName) SplitFirstLast(string? fullName)
+            {
+                if (string.IsNullOrWhiteSpace(fullName))
+                    return (string.Empty, string.Empty);
+
+                // Collapse whitespace, then take first/last tokens.
+                var parts = fullName
+                    .Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+                if (parts.Length == 1)
+                    return (parts[0], string.Empty);
+
+                return (parts[0], parts[^1]);
+            }
         }
     }
 }

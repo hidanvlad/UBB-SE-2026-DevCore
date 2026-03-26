@@ -6,39 +6,76 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d">
 
-	<Page.Resources>
-		<SolidColorBrush x:Key="BgBrush" Color="#FF000000"/>
-		<SolidColorBrush x:Key="CardBrush" Color="#FF0F1711"/>
-		<SolidColorBrush x:Key="TextBrush" Color="#FFFFFFFF"/>
-		<SolidColorBrush x:Key="MutedBrush" Color="#FFB7C2BA"/>
-		<SolidColorBrush x:Key="AccentBrush" Color="#FF166534"/>
-	</Page.Resources>
+    <Page.Resources>
+        <SolidColorBrush x:Key="BgBrush" Color="#FF000000"/>
+        <SolidColorBrush x:Key="CardBrush" Color="#FF0F1711"/>
+        <SolidColorBrush x:Key="TextBrush" Color="#FFFFFFFF"/>
+        <SolidColorBrush x:Key="MutedBrush" Color="#FFB7C2BA"/>
+        <SolidColorBrush x:Key="AccentBrush" Color="#FF166534"/>
+    </Page.Resources>
 
-	<Grid Background="{StaticResource BgBrush}">
-		<Border HorizontalAlignment="Center"
+    <Grid Background="{StaticResource BgBrush}">
+        <Border HorizontalAlignment="Center"
                 VerticalAlignment="Center"
-                Width="520"
-                Padding="24"
-                CornerRadius="14"
+                Width="760"
+                Padding="28"
+                CornerRadius="16"
                 Background="{StaticResource CardBrush}"
                 BorderBrush="{StaticResource AccentBrush}"
                 BorderThickness="1">
-			<StackPanel Spacing="20">
-				<TextBlock Text="DevCore Hospital"
+            <StackPanel Spacing="22">
+                <TextBlock Text="DevCore Hospital"
                            Foreground="{StaticResource TextBrush}"
                            FontSize="48"
                            FontWeight="SemiBold"
                            HorizontalAlignment="Center"/>
 
-				<TextBlock Text="Choose your role"
+                <TextBlock Text="Choose your role"
                            Foreground="{StaticResource MutedBrush}"
-                           FontSize="20"
+                           FontSize="28"
                            HorizontalAlignment="Center"/>
 
-				<Button Content="Admin" Height="64" FontSize="22" Click="Admin_Click" Background="{StaticResource AccentBrush}" Foreground="White" BorderBrush="{StaticResource AccentBrush}"/>
-				<Button Content="Doctor" Height="64" FontSize="22" Click="Doctor_Click" Background="{StaticResource AccentBrush}" Foreground="White" BorderBrush="{StaticResource AccentBrush}"/>
-				<Button Content="Pharmacist" Height="64" FontSize="22" Click="Pharmacist_Click" Background="{StaticResource AccentBrush}" Foreground="White" BorderBrush="{StaticResource AccentBrush}"/>
-			</StackPanel>
-		</Border>
-	</Grid>
+                <!-- Buttons aligned on one row -->
+                <Grid HorizontalAlignment="Center" Margin="0,12,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="20"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="20"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <Button Grid.Column="0"
+                            Content="Admin"
+                            Height="64"
+                            MinWidth="180"
+                            FontSize="22"
+                            Click="Admin_Click"
+                            Background="{StaticResource AccentBrush}"
+                            Foreground="White"
+                            BorderBrush="{StaticResource AccentBrush}"/>
+
+                    <Button Grid.Column="2"
+                            Content="Doctor"
+                            Height="64"
+                            MinWidth="180"
+                            FontSize="22"
+                            Click="Doctor_Click"
+                            Background="{StaticResource AccentBrush}"
+                            Foreground="White"
+                            BorderBrush="{StaticResource AccentBrush}"/>
+
+                    <Button Grid.Column="4"
+                            Content="Pharmacist"
+                            Height="64"
+                            MinWidth="180"
+                            FontSize="22"
+                            Click="Pharmacist_Click"
+                            Background="{StaticResource AccentBrush}"
+                            Foreground="White"
+                            BorderBrush="{StaticResource AccentBrush}"/>
+                </Grid>
+            </StackPanel>
+        </Border>
+    </Grid>
 </Page>
