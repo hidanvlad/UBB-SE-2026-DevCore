@@ -27,8 +27,8 @@ namespace DevCoreHospital.Data
 
             if (_shiftsMockTable.Count == 0)
             {
-                _shiftsMockTable.Add(new Shift { DoctorId = "DOC001", StartTime = DateTime.Now.AddHours(-9), EndTime = DateTime.Now.AddHours(-5), Status = "COMPLETED" });
-                _shiftsMockTable.Add(new Shift { DoctorId = "DOC001", StartTime = DateTime.Now.AddHours(-2), Status = "ACTIVE" });
+                _shiftsMockTable.Add(new Shift { DoctorId = "DOC001", StartTime = DateTime.Now.AddHours(-9), EndTime = DateTime.Now.AddHours(-5), Status = ShiftStatus.COMPLETED });
+                _shiftsMockTable.Add(new Shift { DoctorId = "DOC001", StartTime = DateTime.Now.AddHours(-2), Status = ShiftStatus.ACTIVE });
                 // TOTAL: 16 hours (This will trigger the Red Lockout)
                 // TOTAL: 16 hours (This will trigger the Red Lockout)
             }
@@ -70,9 +70,9 @@ namespace DevCoreHospital.Data
         {
             var now = DateTime.Now;
             var dayAgo = now.AddHours(-24);
-            var active = _shiftsMockTable.FirstOrDefault(s => s.DoctorId == doctorId && s.Status == "ACTIVE");
+            var active = _shiftsMockTable.FirstOrDefault(s => s.DoctorId == doctorId && s.Status == ShiftStatus.ACTIVE);
             double activeHours = active != null ? (now - active.StartTime).TotalHours : 0;
-            double completedHours = _shiftsMockTable.Where(s => s.DoctorId == doctorId && s.Status == "COMPLETED" && s.EndTime >= dayAgo)
+            double completedHours = _shiftsMockTable.Where(s => s.DoctorId == doctorId && s.Status == ShiftStatus.COMPLETED && s.EndTime >= dayAgo)
                 .Sum(s => s.EndTime.HasValue ? (s.EndTime.Value - s.StartTime).TotalHours : 0);
             return activeHours + completedHours;
         }

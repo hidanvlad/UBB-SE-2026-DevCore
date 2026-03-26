@@ -38,7 +38,7 @@ public sealed class PharmacyScheduleService : IPharmacyScheduleService
             RotationAssignment = shift.RotationAssignment,
             StartTime = shift.StartTime,
             EndTime = shift.EndTime,
-            Status = shift.Status
+            Status = shift.Status.ToString()
         };
     }
 }

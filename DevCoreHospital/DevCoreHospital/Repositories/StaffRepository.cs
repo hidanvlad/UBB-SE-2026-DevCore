@@ -67,7 +67,12 @@ public sealed class StaffRepository : IStaffRepository
     {
         return _staffList
             .Where(s => string.Equals(s.Role, "Doctor", StringComparison.OrdinalIgnoreCase))
-            .Select(s => new Doctor { Id = s.Id.ToString(), Name = s.DisplayName })
+            .Select(s => new Doctor
+            {
+                Id = s.StaffCode,
+                Name = s.DisplayName,
+                Specialization = s.Specialization
+            })
             .ToList();
     }
 
@@ -78,13 +83,13 @@ public sealed class StaffRepository : IStaffRepository
 
         foreach (var doctor in GetAvailableDoctors())
         {
-            var staff = _staffList.FirstOrDefault(s => s.Id.ToString() == doctor.Id);
+            var staff = _staffList.FirstOrDefault(s =>
+                string.Equals(s.StaffCode, doctor.Id, StringComparison.OrdinalIgnoreCase));
             if (staff != null &&
                 !string.IsNullOrEmpty(staff.Specialization) &&
                 staff.Specialization.Contains(spec, StringComparison.OrdinalIgnoreCase))
                 return doctor;
         }
-
         return null;
     }
 

@@ -1,4 +1,4 @@
-﻿using DevCoreHospital.Services;
+using DevCoreHospital.Services;
 using DevCoreHospital.ViewModels.Base;
 using System;
 using System.Collections.ObjectModel;
@@ -154,7 +154,14 @@ namespace DevCoreHospital.ViewModels.Doctor
                 return;
             }
 
-            Doctors.Add(new DoctorOption { DoctorId = me.DoctorId, DoctorName = me.DoctorName });
+            var (first, last) = DoctorOption.SplitFirstLast(me.DoctorName);
+            Doctors.Add(new DoctorOption
+            {
+                DoctorId = me.DoctorId,
+                DoctorName = me.DoctorName,
+                FirstName = first,
+                LastName = last
+            });
             SelectedDoctor = Doctors.First();
         }
 
@@ -256,6 +263,27 @@ namespace DevCoreHospital.ViewModels.Doctor
         {
             public int DoctorId { get; set; }
             public string DoctorName { get; set; } = string.Empty;
+            public string FirstName { get; set; } = string.Empty;
+            public string LastName { get; set; } = string.Empty;
+
+            // Prefer showing only first + last even if DB has middle names/titles.
+            public string DisplayName =>
+                string.Join(" ", new[] { FirstName?.Trim(), LastName?.Trim() }.Where(x => !string.IsNullOrWhiteSpace(x)));
+
+            public static (string FirstName, string LastName) SplitFirstLast(string? fullName)
+            {
+                if (string.IsNullOrWhiteSpace(fullName))
+                    return (string.Empty, string.Empty);
+
+                // Collapse whitespace, then take first/last tokens.
+                var parts = fullName
+                    .Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+                if (parts.Length == 1)
+                    return (parts[0], string.Empty);
+
+                return (parts[0], parts[^1]);
+            }
         }
     }
 }

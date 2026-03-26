@@ -35,7 +35,7 @@ public sealed class ShiftRepository : IShiftRepository
             RotationAssignment = "Main dispensary — controlled substances audit",
             StartTime = today.AddHours(7),
             EndTime = today.AddHours(15),
-            Status = "Completed"
+            Status = ShiftStatus.COMPLETED
         });
 
         AddShift(new Shift
@@ -45,7 +45,7 @@ public sealed class ShiftRepository : IShiftRepository
             RotationAssignment = "Outpatient clinic satellite",
             StartTime = today.AddHours(10),
             EndTime = today.AddHours(18),
-            Status = "Active"
+            Status = ShiftStatus.ACTIVE
         });
 
         AddShift(new Shift
@@ -55,7 +55,7 @@ public sealed class ShiftRepository : IShiftRepository
             RotationAssignment = "Oncology infusion suite",
             StartTime = today.AddDays(1).AddHours(8),
             EndTime = today.AddDays(1).AddHours(16),
-            Status = "Scheduled"
+            Status = ShiftStatus.SCHEDULED
         });
 
         AddShift(new Shift
@@ -65,7 +65,7 @@ public sealed class ShiftRepository : IShiftRepository
             RotationAssignment = "Central pharmacy — IV admixture",
             StartTime = today.AddDays(2).AddHours(6),
             EndTime = today.AddDays(2).AddHours(14),
-            Status = "Scheduled"
+            Status = ShiftStatus.SCHEDULED
         });
 
         AddShift(new Shift
@@ -75,7 +75,7 @@ public sealed class ShiftRepository : IShiftRepository
             RotationAssignment = "Emergency department",
             StartTime = today.AddDays(3).AddHours(14),
             EndTime = today.AddDays(3).AddHours(22),
-            Status = "Scheduled"
+            Status = ShiftStatus.SCHEDULED
         });
     }
 
@@ -91,20 +91,20 @@ public sealed class ShiftRepository : IShiftRepository
     {
         var shift = _shiftList.FirstOrDefault(s => s.Id == shiftId);
         if (shift != null)
-            shift.Status = "Cancelled";
+            shift.Status = ShiftStatus.CANCELLED;
     }
 
     private Shift? GetShiftByStaff(int staffId)
     {
         return _shiftList.FirstOrDefault(s =>
             s.StaffId == staffId &&
-            string.Equals(s.Status, "Active", StringComparison.OrdinalIgnoreCase));
+            s.Status == ShiftStatus.ACTIVE);
     }
 
     private List<Shift> GetActiveShifts()
     {
         return _shiftList
-            .Where(s => string.Equals(s.Status, "Active", StringComparison.OrdinalIgnoreCase))
+            .Where(s => s.Status == ShiftStatus.ACTIVE)
             .ToList();
     }
 
