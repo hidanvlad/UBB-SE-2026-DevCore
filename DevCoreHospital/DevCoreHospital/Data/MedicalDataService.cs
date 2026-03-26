@@ -26,10 +26,11 @@ namespace DevCoreHospital.Data
 
             if (_shiftsMockTable.Count == 0)
             {
-                _shiftsMockTable.Add(new Shift { DoctorId = "DOC001", StartTime = DateTime.Now.AddHours(-9), EndTime = DateTime.Now.AddHours(-5), Status = "COMPLETED" });
-                _shiftsMockTable.Add(new Shift { DoctorId = "DOC001", StartTime = DateTime.Now.AddHours(-2), Status = "ACTIVE" });
+                _shiftsMockTable.Add(new Shift { DoctorId = "DOC001", StartTime = DateTime.Now.AddHours(-9), EndTime = DateTime.Now.AddHours(-5), Status = ShiftStatus.COMPLETED });
+                _shiftsMockTable.Add(new Shift { DoctorId = "DOC001", StartTime = DateTime.Now.AddHours(-2), Status = ShiftStatus.ACTIVE });
             }
         }
+     
 
         public void SaveEvaluation(MedicalEvaluation record)
         {
