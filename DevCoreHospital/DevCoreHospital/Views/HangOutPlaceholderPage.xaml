@@ -1,16 +1,64 @@
 ﻿<Page
     x:Class="DevCoreHospital.Views.HangOutPlaceholderPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
-    <Grid>
-        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="8">
-            <TextBlock Text="Hang Out"
-                       FontSize="36"
-                       FontWeight="SemiBold"
-                       HorizontalAlignment="Center"/>
-            <TextBlock Text="Module not implemented yet."
-                       Opacity="0.75"
-                       HorizontalAlignment="Center"/>
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:models="using:DevCoreHospital.Models"
+    mc:Ignorable="d"
+    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+
+    <Grid Padding="24">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="350"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <StackPanel Grid.Column="0" Spacing="16" Margin="0,0,24,0">
+            <TextBlock Text="Create Hangout" FontSize="28" FontWeight="SemiBold"/>
+
+            <TextBox Header="Title" Text="{x:Bind ViewModel.Title, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" PlaceholderText="5-25 characters" MaxLength="25"/>
+            <TextBox Header="Description" Text="{x:Bind ViewModel.Description, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" PlaceholderText="Max 100 characters" AcceptsReturn="True" Height="100" MaxLength="100"/>
+
+            <CalendarDatePicker Header="Date" Date="{x:Bind ViewModel.SelectedDate, Mode=TwoWay}" HorizontalAlignment="Stretch"/>
+
+            <ComboBox Header="Max Participants" ItemsSource="{x:Bind ViewModel.MaxParticipantsOptions}" SelectedItem="{x:Bind ViewModel.MaxParticipants, Mode=TwoWay}" HorizontalAlignment="Stretch"/>
+
+            <Button Content="Create Hangout" Command="{x:Bind ViewModel.CreateCommand}" Style="{StaticResource AccentButtonStyle}" HorizontalAlignment="Stretch"/>
+
+            <TextBlock Text="{x:Bind ViewModel.ErrorMessage, Mode=OneWay}" Foreground="#EF4444" TextWrapping="Wrap"/>
+            <TextBlock Text="{x:Bind ViewModel.SuccessMessage, Mode=OneWay}" Foreground="#22C55E" TextWrapping="Wrap"/>
+        </StackPanel>
+
+        <StackPanel Grid.Column="1" Spacing="16">
+            <TextBlock Text="Available Staff Hangouts" FontSize="28" FontWeight="SemiBold"/>
+
+            <ListView ItemsSource="{x:Bind ViewModel.Hangouts, Mode=OneWay}" SelectionMode="None">
+                <ListView.ItemTemplate>
+                    <DataTemplate x:DataType="models:Hangout">
+                        <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="8" Padding="16" Margin="0,0,0,12">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0" Spacing="4">
+                                    <TextBlock Text="{x:Bind title}" FontSize="20" FontWeight="Bold"/>
+                                    <TextBlock Text="{x:Bind description}" TextWrapping="Wrap" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                                    <StackPanel Orientation="Horizontal" Spacing="16" Margin="0,8,0,0">
+                                        <TextBlock Text="{x:Bind FormattedDate}"/>
+                                        <TextBlock Text="{x:Bind participantList.Count}"/>
+                                        <TextBlock Text="/"/>
+                                        <TextBlock Text="{x:Bind maxParticipants}"/>
+                                        <TextBlock Text="Participants"/>
+                                    </StackPanel>
+                                </StackPanel>
+                                <Button Grid.Column="1" Content="Join" VerticalAlignment="Center" Click="Join_Click" Tag="{x:Bind hangoutID}" Style="{StaticResource AccentButtonStyle}"/>
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </ListView.ItemTemplate>
+            </ListView>
         </StackPanel>
     </Grid>
 </Page>
