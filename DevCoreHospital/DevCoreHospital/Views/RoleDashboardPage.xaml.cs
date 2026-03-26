@@ -33,10 +33,11 @@ namespace DevCoreHospital.Views
 
             switch (_currentUser.RoleType)
             {
-                case UserRole.Admin:
-                    Add("See Schedule", "admin-schedule", typeof(DoctorSchedulePage));
-                    Add("Auto-Audit", "admin-auto-audit", typeof(ShiftSwapPlaceholderPage));
-                    Add("Appointments", "admin-appointments", typeof(AppointmentsPlaceholderPage));
+                 case UserRole.Admin:
+                     Add("See Schedule", "admin-schedule", typeof(DoctorSchedulePage));
+                     Add("Auto-Audit", "admin-auto-audit", typeof(ShiftSwapPlaceholderPage));
+                     Add("ER Dispatch", "admin-er-dispatch", typeof(ERDispatchPage));
+                     Add("Appointments", "admin-appointments", typeof(AppointmentsPlaceholderPage));
                     break;
 
                 case UserRole.Pharmacist:
