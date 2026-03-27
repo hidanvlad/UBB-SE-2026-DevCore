@@ -149,10 +149,14 @@ namespace DevCoreHospital.ViewModels.Doctor
 
             foreach (var d in allDoctors.OrderBy(x => x.DoctorName))
             {
+                var (first, last) = DoctorOption.SplitFirstLast(d.DoctorName);
+
                 Doctors.Add(new DoctorOption
                 {
                     DoctorId = d.DoctorId,
-                    DoctorName = d.DoctorName
+                    DoctorName = d.DoctorName,
+                    FirstName = first,
+                    LastName = last
                 });
             }
 
@@ -163,7 +167,6 @@ namespace DevCoreHospital.ViewModels.Doctor
                 return;
             }
 
-            // default selection = current user if present, otherwise first
             SelectedDoctor = Doctors.FirstOrDefault(d => d.DoctorId == _currentUser.UserId) ?? Doctors.First();
         }
 
