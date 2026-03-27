@@ -9,6 +9,7 @@ namespace DevCoreHospital.Models
         public string title { get; set; }
         public string description { get; set; }
         public DateTime date { get; set; }
+        public string FormattedDate => date.ToString("yyyy-MM-dd");
         public int maxParticipants { get; set; }
         public List<IStaff> participantList { get; }
 

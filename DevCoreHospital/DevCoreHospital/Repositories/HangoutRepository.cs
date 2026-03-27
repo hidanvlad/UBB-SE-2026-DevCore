@@ -1,8 +1,5 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using DevCoreHospital.Models;
 
 namespace DevCoreHospital.Repositories
@@ -13,9 +10,22 @@ namespace DevCoreHospital.Repositories
 
         public HangoutRepository()
         {
-            hangoutList = new List<Hangout> ();
+            hangoutList = new List<Hangout>();
         }
 
-        // the other methods for this class are assigned to Laszlo
+        public void AddHangout(Hangout hangout)
+        {
+            hangoutList.Add(hangout);
+        }
+
+        public List<Hangout> GetAllHangouts()
+        {
+            return hangoutList.ToList();
+        }
+
+        public Hangout? GetHangoutById(int id)
+        {
+            return hangoutList.FirstOrDefault(h => h.hangoutID == id);
+        }
     }
 }

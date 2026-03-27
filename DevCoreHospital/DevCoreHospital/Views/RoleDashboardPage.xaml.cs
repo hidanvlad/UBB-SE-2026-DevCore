@@ -1,7 +1,7 @@
-using DevCoreHospital.Models;
+﻿using DevCoreHospital.Models;
 using DevCoreHospital.Services;
+using DevCoreHospital.Views.Admin;
 using DevCoreHospital.Views.Doctor;
-using DevCoreHospital.Views.Pharmacy;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media.Animation;
@@ -36,11 +36,14 @@ namespace DevCoreHospital.Views
             {
                 case UserRole.Admin:
                     Add("See Schedule", "admin-schedule", typeof(DoctorSchedulePage));
-                    Add("Appointments", "admin-appointments", typeof(AppointmentsPlaceholderPage));
+                    Add("Appointments", "admin-appointments", typeof(AppointmentsPage));
+                    Add("Create Shift", "admin-create-shift", typeof(AdminShiftView));
+                    Add("Auto-Audit", "admin-auto-audit", typeof(FatigueAuditPage));
+                    Add("ER Dispatch", "admin-er-dispatch", typeof(ERDispatchPage));
                     break;
 
                 case UserRole.Pharmacist:
-                    Add("See Schedule", "pharmacist-schedule", typeof(PharmacySchedulePage));
+                    Add("See Schedule", "pharmacist-schedule", typeof(DoctorSchedulePage));
                     Add("Salary", "pharmacist-salary", typeof(DevCoreHospital.Views.SalaryPlaceholderPage));
                     break;
 

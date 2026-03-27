@@ -1,0 +1,316 @@
+﻿<Page
+    x:Class="DevCoreHospital.Views.Admin.FatigueAuditPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <Page.Resources>
+        <SolidColorBrush x:Key="BgBrush" Color="#FF0B120D"/>
+        <SolidColorBrush x:Key="CardBrush" Color="#FF0F1711"/>
+        <SolidColorBrush x:Key="TextBrush" Color="#FFFFFFFF"/>
+        <SolidColorBrush x:Key="MutedBrush" Color="#FFB7C2BA"/>
+        <SolidColorBrush x:Key="AccentBrush" Color="#FF166534"/>
+        <SolidColorBrush x:Key="ErrorBrush" Color="#FFEF4444"/>
+        <SolidColorBrush x:Key="WarningBrush" Color="#FFFFB91C"/>
+    </Page.Resources>
+
+    <ScrollViewer Background="{StaticResource BgBrush}">
+        <Grid Padding="24" RowSpacing="14">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <!-- Header -->
+            <TextBlock Text="Staff Fatigue Audit &amp; Roster Validation"
+                       Foreground="{StaticResource TextBrush}"
+                       FontSize="36"
+                       FontWeight="SemiBold"/>
+
+            <!-- Week Selection & Controls -->
+            <Grid Grid.Row="1" ColumnSpacing="10" Margin="0,12,0,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="200"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <TextBlock Grid.Column="0" 
+                           Text="Week Starting:"
+                           Foreground="{StaticResource TextBrush}"
+                           VerticalAlignment="Center"
+                           FontSize="14"/>
+
+                <CalendarDatePicker Grid.Column="1"
+                                    x:Name="WeekStartPicker"
+                                    DateChanged="WeekStartPicker_DateChanged"
+                                    PlaceholderText="Select week"
+                                    Margin="0"/>
+
+                <Button Grid.Column="2"
+                        Content="Run Auto-Audit"
+                        Click="RunAutoAudit_Click"
+                        Background="{StaticResource AccentBrush}"
+                        Foreground="White"
+                        BorderBrush="{StaticResource AccentBrush}"/>
+
+                <Button Grid.Column="3"
+                        Content="Refresh"
+                        Click="Refresh_Click"
+                        Background="Transparent"
+                        Foreground="{StaticResource TextBrush}"
+                        BorderBrush="{StaticResource MutedBrush}"
+                        BorderThickness="1"
+                        Margin="8,0,0,0"/>
+
+                <StackPanel Grid.Column="4" 
+                            VerticalAlignment="Center"
+                            HorizontalAlignment="Right">
+                    <TextBlock Text="{Binding PublishStatus}"
+                               Foreground="{Binding PublishStatusColor}"
+                               FontSize="14"
+                               FontWeight="SemiBold"/>
+                </StackPanel>
+            </Grid>
+
+            <!-- Status Message -->
+            <Border Grid.Row="2"
+                    Background="#332A1204"
+                    BorderBrush="{StaticResource AccentBrush}"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    Padding="12">
+                <StackPanel Spacing="6">
+                    <TextBlock Text="Audit Status:"
+                               Foreground="{StaticResource TextBrush}"
+                               FontSize="14"
+                               FontWeight="SemiBold"/>
+                    <TextBlock Text="{Binding StatusMessage}"
+                               Foreground="{StaticResource MutedBrush}"
+                               TextWrapping="Wrap"
+                               FontSize="12"/>
+                    <TextBlock Text="{Binding WeekLabel}"
+                               Foreground="{StaticResource MutedBrush}"
+                               FontSize="11"
+                               Margin="0,6,0,0"/>
+                </StackPanel>
+            </Border>
+
+            <!-- Violations Section -->
+            <Border Grid.Row="3"
+                    Background="{StaticResource CardBrush}"
+                    BorderBrush="{StaticResource ErrorBrush}"
+                    BorderThickness="1"
+                    CornerRadius="12"
+                    Padding="12"
+                    Margin="0,8,0,0">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="Fatigue Violations Detected"
+                                   Foreground="{StaticResource TextBrush}"
+                                   FontSize="18"
+                                   FontWeight="SemiBold"/>
+                        <TextBlock Text="Rules: Max 60h/week, Min 12h rest between shifts"
+                                   Foreground="{StaticResource MutedBrush}"
+                                   FontSize="12"/>
+                    </StackPanel>
+
+                    <ListView Grid.Row="1" 
+                              ItemsSource="{Binding Violations}"
+                              Background="Transparent"
+                              SelectionMode="None"
+                              Margin="0,8,0,0">
+                        <ListView.ItemTemplate>
+                            <DataTemplate>
+                                <Border BorderBrush="{StaticResource ErrorBrush}"
+                                        BorderThickness="1"
+                                        CornerRadius="8"
+                                        Padding="10"
+                                        Margin="0,0,0,8"
+                                        Background="#1A2B2B2B">
+                                    <Grid RowSpacing="6">
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                        </Grid.RowDefinitions>
+
+                                        <Grid ColumnSpacing="20">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+
+                                            <StackPanel>
+                                                <TextBlock Text="Staff:"
+                                                           Foreground="{StaticResource MutedBrush}"
+                                                           FontSize="11"/>
+                                                <TextBlock Text="{Binding Staff}"
+                                                           Foreground="{StaticResource TextBrush}"
+                                                           FontSize="14"
+                                                           FontWeight="SemiBold"/>
+                                            </StackPanel>
+
+                                            <StackPanel Grid.Column="1">
+                                                <TextBlock Text="Shift Window:"
+                                                           Foreground="{StaticResource MutedBrush}"
+                                                           FontSize="11"/>
+                                                <TextBlock Text="{Binding Window}"
+                                                           Foreground="{StaticResource TextBrush}"
+                                                           FontSize="12"
+                                                           FontFamily="Courier New"/>
+                                            </StackPanel>
+                                        </Grid>
+
+                                        <StackPanel Grid.Row="1">
+                                            <TextBlock Text="Rule Violated:"
+                                                       Foreground="{StaticResource MutedBrush}"
+                                                       FontSize="11"/>
+                                            <TextBlock Text="{Binding Rule}"
+                                                       Foreground="{StaticResource WarningBrush}"
+                                                       FontSize="12"
+                                                       FontWeight="SemiBold"/>
+                                        </StackPanel>
+
+                                        <TextBlock Grid.Row="2"
+                                                   Text="{Binding Message}"
+                                                   Foreground="#FFFFB4B4"
+                                                   TextWrapping="Wrap"
+                                                   FontSize="12"/>
+
+                                        <TextBlock Grid.Row="3"
+                                                   Text="⚠️ Roster cannot be published while violations exist"
+                                                   Foreground="{StaticResource ErrorBrush}"
+                                                   FontSize="11"
+                                                   FontStyle="Italic"/>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ListView.ItemTemplate>
+                    </ListView>
+                </Grid>
+            </Border>
+
+            <!-- Suggestions Section -->
+            <Border Grid.Row="4"
+                    Background="{StaticResource CardBrush}"
+                    BorderBrush="{StaticResource AccentBrush}"
+                    BorderThickness="1"
+                    CornerRadius="12"
+                    Padding="12"
+                    Margin="0,8,0,0">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="Auto-Suggested Reassignments"
+                                   Foreground="{StaticResource TextBrush}"
+                                   FontSize="18"
+                                   FontWeight="SemiBold"/>
+                        <TextBlock Text="System recommends these changes to resolve violations"
+                                   Foreground="{StaticResource MutedBrush}"
+                                   FontSize="12"/>
+                    </StackPanel>
+
+                    <ListView Grid.Row="1"
+                              ItemsSource="{Binding Suggestions}"
+                              Background="Transparent"
+                              SelectionMode="None"
+                              Margin="0,8,0,0">
+                        <ListView.ItemTemplate>
+                            <DataTemplate>
+                                <Border BorderBrush="{StaticResource AccentBrush}"
+                                        BorderThickness="1"
+                                        CornerRadius="8"
+                                        Padding="10"
+                                        Margin="0,0,0,8"
+                                        Background="#1A1A1A1A">
+                                    <Grid RowSpacing="6">
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                        </Grid.RowDefinitions>
+
+                                        <TextBlock Text="{Binding ReassignText}"
+                                                   Foreground="{StaticResource TextBrush}"
+                                                   FontSize="14"
+                                                   FontWeight="SemiBold"
+                                                   TextWrapping="Wrap"/>
+
+                                        <TextBlock Grid.Row="1"
+                                                   Text="{Binding Reason}"
+                                                   Foreground="{StaticResource MutedBrush}"
+                                                   FontSize="12"
+                                                   TextWrapping="Wrap"/>
+
+                                        <Button Grid.Row="2"
+                                                Content="Apply Reassignment"
+                                                Click="ApplyReassignment_Click"
+                                                Tag="{Binding ShiftId}"
+                                                Background="{StaticResource AccentBrush}"
+                                                Foreground="White"
+                                                BorderBrush="{StaticResource AccentBrush}"
+                                                Width="200"
+                                                HorizontalAlignment="Left"/>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ListView.ItemTemplate>
+                    </ListView>
+                </Grid>
+            </Border>
+
+            <!-- Publish Section -->
+            <Border Grid.Row="5"
+                    Background="{StaticResource CardBrush}"
+                    BorderBrush="{StaticResource AccentBrush}"
+                    BorderThickness="2"
+                    CornerRadius="12"
+                    Padding="16"
+                    Margin="0,8,0,0">
+                <StackPanel Spacing="12">
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="Roster Publication"
+                                   Foreground="{StaticResource TextBrush}"
+                                   FontSize="18"
+                                   FontWeight="SemiBold"/>
+                        <TextBlock Text="{Binding PublishStatus}"
+                                   Foreground="{Binding PublishStatusColor}"
+                                   FontSize="14"
+                                   FontWeight="SemiBold"/>
+                    </StackPanel>
+
+                    <TextBlock Text="{Binding PublishStatusDescription}"
+                               Foreground="{StaticResource MutedBrush}"
+                               TextWrapping="Wrap"
+                               FontSize="12"/>
+
+                    <Button Content="Publish Roster"
+                            Click="PublishRoster_Click"
+                            IsEnabled="{Binding CanPublish}"
+                            Background="{StaticResource AccentBrush}"
+                            Foreground="White"
+                            BorderBrush="{StaticResource AccentBrush}"
+                            Width="200"
+                            HorizontalAlignment="Left"/>
+                </StackPanel>
+            </Border>
+        </Grid>
+    </ScrollViewer>
+</Page>
+

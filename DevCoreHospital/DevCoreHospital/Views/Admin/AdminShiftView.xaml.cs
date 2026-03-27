@@ -6,7 +6,7 @@ using DevCoreHospital.Models;
 
 namespace DevCoreHospital.Views.Admin
 {
-    public sealed partial class AdminShiftView : UserControl
+    public sealed partial class AdminShiftView : Page
     {
         // Proprietatea pentru Data Binding (x:Bind)
         public AdminShiftViewModel ViewModel { get; }
