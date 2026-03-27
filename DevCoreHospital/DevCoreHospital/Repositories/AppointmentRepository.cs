@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace DevCoreHospital.Repositories
 {
-    public class AppointmentRepository
+    public class AppointmentRepository : IDoctorAppointmentDataSource
     {
         private readonly DatabaseManager _dbManager;
 
@@ -62,7 +62,7 @@ ORDER BY a.[Date], a.StartTime OFFSET @Skip ROWS FETCH NEXT @Take ROWS ONLY;";
             return result;
         }
 
-        public async Task<Appointment> GetAppointmentDetailsAsync(int appointmentId)
+        public async Task<Appointment?> GetAppointmentDetailsAsync(int appointmentId)
         {
             using DbConnection conn = _dbManager.GetConnection();
             if (conn.State != ConnectionState.Open) await conn.OpenAsync();

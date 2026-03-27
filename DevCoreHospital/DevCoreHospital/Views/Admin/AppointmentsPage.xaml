@@ -27,6 +27,9 @@
 
                 <ComboBox x:Name="DoctorComboBox" Header="Select Doctor" 
                           PlaceholderText="Choose a doctor" HorizontalAlignment="Stretch"
+                          ItemsSource="{Binding Doctors}"
+                          DisplayMemberPath="DoctorName"
+                          SelectedValuePath="DoctorId"
                           Foreground="{StaticResource TextBrush}"/>
 
                 <TextBox x:Name="PatientIdTextBox" Header="Patient ID (External Ref)" 
@@ -60,10 +63,13 @@
 
                 <ComboBox x:Name="FilterDoctorComboBox" PlaceholderText="Filter by Doctor" 
                           Width="250" SelectionChanged="FilterDoctorComboBox_SelectionChanged"
+                          ItemsSource="{Binding Doctors}"
+                          DisplayMemberPath="DoctorName"
+                          SelectedValuePath="DoctorId"
                           Foreground="{StaticResource TextBrush}"/>
             </StackPanel>
 
-            <ListView Grid.Row="1" x:Name="AppointmentsListView" SelectionMode="None">
+            <ListView Grid.Row="1" x:Name="AppointmentsListView" SelectionMode="None" ItemsSource="{Binding AppointmentsList}">
                 <ListView.ItemTemplate>
                     <DataTemplate>
                         <Grid Padding="15" Margin="0,0,0,10" Background="#1A241C" CornerRadius="8">
@@ -73,8 +79,8 @@
                             </Grid.ColumnDefinitions>
 
                             <StackPanel Grid.Column="0" Spacing="4">
-                                <TextBlock Text="{Binding PatientExternalId}" FontWeight="Bold" Foreground="{StaticResource TextBrush}"/>
-                                <TextBlock Text="{Binding DateString}" Foreground="{StaticResource MutedBrush}"/>
+                                <TextBlock Text="{Binding PatientName}" FontWeight="Bold" Foreground="{StaticResource TextBrush}"/>
+                                <TextBlock Text="{Binding Date}" Foreground="{StaticResource MutedBrush}"/>
                                 <TextBlock Text="{Binding Status}" Foreground="{StaticResource AccentBrush}" FontWeight="SemiBold"/>
                             </StackPanel>
 

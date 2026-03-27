@@ -10,13 +10,13 @@ namespace DevCoreHospital.ViewModels
 {
     public class AdminAppointmentsViewModel : INotifyPropertyChanged
     {
-        private readonly DoctorAppointmentService _appointmentService;
+        private readonly IDoctorAppointmentService _appointmentService;
 
         // Listele observabile care vor actualiza automat interfața (UI-ul) când adăugăm/ștergem elemente
-        public ObservableCollection<(int DoctorId, string DoctorName)> Doctors { get; } = new();
+        public ObservableCollection<DoctorOption> Doctors { get; } = new();
         public ObservableCollection<Appointment> AppointmentsList { get; } = new ObservableCollection<Appointment>();
 
-        public AdminAppointmentsViewModel(DoctorAppointmentService appointmentService)
+        public AdminAppointmentsViewModel(IDoctorAppointmentService appointmentService)
         {
             _appointmentService = appointmentService;
         }
@@ -29,7 +29,11 @@ namespace DevCoreHospital.ViewModels
             Doctors.Clear();
             foreach (var doc in doctors)
             {
-                Doctors.Add(doc);
+                Doctors.Add(new DoctorOption
+                {
+                    DoctorId = doc.DoctorId,
+                    DoctorName = string.IsNullOrWhiteSpace(doc.DoctorName) ? $"Doctor #{doc.DoctorId}" : doc.DoctorName
+                });
             }
         }
 
@@ -77,6 +81,12 @@ namespace DevCoreHospital.ViewModels
         protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
+
+        public sealed class DoctorOption
+        {
+            public int DoctorId { get; set; }
+            public string DoctorName { get; set; } = string.Empty;
         }
     }
 }
