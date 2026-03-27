@@ -20,8 +20,6 @@ namespace DevCoreHospital.Models
         public string FullName { get; set; } = string.Empty;
         public string Role { get; set; } = string.Empty;
         public string Specialization { get; set; } = string.Empty;
-
-        // Req 3 asks to consider staff with availability == false for auto-suggest.
         public bool IsAvailable { get; set; }
     }
 
