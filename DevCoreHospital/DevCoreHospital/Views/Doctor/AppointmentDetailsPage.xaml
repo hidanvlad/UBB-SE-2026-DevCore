@@ -34,10 +34,26 @@
                     CornerRadius="16"
                     Padding="16">
                 <StackPanel Spacing="10">
-                    <TextBlock Text="{Binding TypeLine}" Foreground="{StaticResource TextBrush}" FontSize="20" FontWeight="SemiBold"/>
-                    <TextBlock Text="{Binding LocationLine}" Foreground="{StaticResource MutedBrush}" FontSize="18"/>
-                    <TextBlock Text="{Binding StatusLine}" Foreground="{StaticResource MutedBrush}" FontSize="18"/>
-                    <TextBlock Text="{Binding TimeLine}" Foreground="{StaticResource MutedBrush}" FontSize="18"/>
+                    <TextBlock Text="{Binding AppointmentIdLine}"
+                               Foreground="{StaticResource TextBrush}"
+                               FontSize="20"
+                               FontWeight="SemiBold"/>
+
+                    <TextBlock Text="{Binding PatientIdLine}"
+                               Foreground="{StaticResource MutedBrush}"
+                               FontSize="18"/>
+
+                    <TextBlock Text="{Binding DoctorIdLine}"
+                               Foreground="{StaticResource MutedBrush}"
+                               FontSize="18"/>
+
+                    <TextBlock Text="{Binding TimeLine}"
+                               Foreground="{StaticResource MutedBrush}"
+                               FontSize="18"/>
+
+                    <TextBlock Text="{Binding StatusLine}"
+                               Foreground="{StaticResource MutedBrush}"
+                               FontSize="18"/>
                 </StackPanel>
             </Border>
 

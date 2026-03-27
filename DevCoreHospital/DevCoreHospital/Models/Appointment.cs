@@ -4,21 +4,10 @@ namespace DevCoreHospital.Models
 {
     public class Appointment
     {
-        public int Id { get; set; }
-        public string PatientName { get; set; } = string.Empty;
-
-        public int DoctorId { get; set; }
-        public string DoctorName { get; set; } = string.Empty;
-
-        public DateTime Date { get; set; }
-
-        public TimeSpan StartTime { get; set; }
-        public TimeSpan EndTime { get; set; }
-
+        public int Id { get; set; }              // appointment_id
+        public int PatientId { get; set; }       // patient_id
+        public int DoctorId { get; set; }        // doctor_id -> Staff.staff_id
+        public DateTime DateTime { get; set; }   // date_time
         public string Status { get; set; } = string.Empty;
-        public string Type { get; set; } = string.Empty;
-        public string Location { get; set; } = string.Empty;
-
-        public string Notes { get; set; } = string.Empty;
     }
 }
