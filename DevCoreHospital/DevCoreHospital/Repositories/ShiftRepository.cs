@@ -25,8 +25,7 @@ namespace DevCoreHospital.Repositories
         }
         public void AddShift(Shift newShift)
         {
-            // Here you would add code to save the new shift to the database
-            // For now, we will just add it to the local list
+            
             _shiftList.Add(newShift);
         }
         public void CancelShift(int shiftId)
@@ -34,8 +33,7 @@ namespace DevCoreHospital.Repositories
             var shiftToCancel = _shiftList.FirstOrDefault(shift => shift.Id == shiftId);
             if (shiftToCancel != null)
             {
-                // Here you would add code to remove the shift from the database
-                // For now, we will just remove it from the local list
+                
                 _shiftList.Remove(shiftToCancel);
             }
         }
@@ -88,7 +86,6 @@ namespace DevCoreHospital.Repositories
             if (shiftToUpdate != null)
             {
                 shiftToUpdate.Status = status;
-                // Here you would add code to update the shift status in the database
             }
         }
     }

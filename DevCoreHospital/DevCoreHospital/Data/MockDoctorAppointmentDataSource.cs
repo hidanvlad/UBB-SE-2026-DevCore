@@ -104,7 +104,6 @@ namespace DevCoreHospital.Data
 
         public Task UpdateDoctorStatusAsync(int doctorId, string status)
         {
-            // Mock source does not track doctor status table.
             return Task.CompletedTask;
         }
 

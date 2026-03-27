@@ -4,7 +4,6 @@ namespace DevCoreHospital.Services
 {
     public sealed class CurrentUserService : ICurrentUserService
     {
-        // Keep singleton-like shared state across pages
         private static UserRole _roleType = UserRole.Doctor;
 
         public int UserId { get; } = 1;

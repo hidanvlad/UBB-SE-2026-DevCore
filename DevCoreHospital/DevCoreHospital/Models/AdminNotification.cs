@@ -8,6 +8,6 @@ namespace DevCoreHospital.Models
         public string DoctorId { get; set; } = string.Empty;
         public string Message { get; set; } = string.Empty;
         public DateTime Timestamp { get; set; } = DateTime.Now;
-        public string Status { get; set; } = "UNREAD"; // Admin can mark as read later
+        public string Status { get; set; } = "UNREAD"; 
     }
 }

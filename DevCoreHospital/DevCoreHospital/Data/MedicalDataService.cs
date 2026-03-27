@@ -75,10 +75,8 @@ namespace DevCoreHospital.Data
         public void DeleteEvaluation(int evaluationId)
         {
             // TASK 12: Hand-written SQL DELETE for local SQL Server
-            // The query must be simple and free of business logic.
             string sql = "DELETE FROM MedicalEvaluations WHERE EvaluationID = @Id";
 
-            // In-memory implementation for now:
             var record = _mockTable.FirstOrDefault(e => e.EvaluationID == evaluationId);
             if (record != null)
             {

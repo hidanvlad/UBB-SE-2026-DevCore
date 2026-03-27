@@ -167,9 +167,7 @@ ORDER BY a.[Date], a.StartTime OFFSET @Skip ROWS FETCH NEXT @Take ROWS ONLY;";
             await cmd.ExecuteNonQueryAsync();
         }
 
-        // ====================================================================
-        // METODE DE AJUTOR PENTRU BAZA DE DATE
-        // ====================================================================
+   
 
         private Appointment MapReaderToAppointment(DbDataReader reader)
         {
@@ -193,7 +191,7 @@ ORDER BY a.[Date], a.StartTime OFFSET @Skip ROWS FETCH NEXT @Take ROWS ONLY;";
             var candidates = new[] { "[Doctors]", "[dbo].[Doctors]", "[doctor]" };
             foreach (var t in candidates)
                 if (await TableExistsWithColumns(conn, t, "FirstName")) return t;
-            return "Doctors"; // Fallback
+            return "Doctors"; 
         }
 
         private async Task<string> ResolveAppointmentsTableAsync(DbConnection conn)
@@ -201,7 +199,7 @@ ORDER BY a.[Date], a.StartTime OFFSET @Skip ROWS FETCH NEXT @Take ROWS ONLY;";
             var candidates = new[] { "[Appointments]", "[dbo].[Appointments]", "[appointment]" };
             foreach (var t in candidates)
                 if (await TableExistsWithColumns(conn, t, "DoctorId", "PatientName")) return t;
-            return "Appointments"; // Fallback
+            return "Appointments"; 
         }
 
         private async Task<bool> TableExistsWithColumns(DbConnection conn, string tableExpression, params string[] requiredColumns)

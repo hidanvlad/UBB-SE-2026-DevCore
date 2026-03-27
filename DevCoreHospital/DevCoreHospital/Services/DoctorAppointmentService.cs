@@ -28,9 +28,7 @@ namespace DevCoreHospital.Services
         public Task<IReadOnlyList<Appointment>> GetAppointmentsForAdminAsync(int doctorId) =>
             _dataSource.GetAppointmentsForAdminAsync(doctorId);
 
-        // ==========================================
-        // REGULILE TALE DE BUSINESS
-        // ==========================================
+        
 
         public async Task BookAppointmentAsync(Appointment appointment)
         {
