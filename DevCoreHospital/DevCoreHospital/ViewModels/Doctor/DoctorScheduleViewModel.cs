@@ -92,7 +92,8 @@ namespace DevCoreHospital.ViewModels.Doctor
                 ? SelectedDate.ToString("dddd, dd MMM yyyy")
                 : $"Week of {StartOfWeek(SelectedDate):dd MMM yyyy}";
 
-        public bool IsDoctor => string.Equals(_currentUser.Role, "Doctor", StringComparison.OrdinalIgnoreCase);
+        public bool IsDoctor => string.Equals(_currentUser.Role, "Doctor", StringComparison.OrdinalIgnoreCase) ||
+                                string.Equals(_currentUser.Role, "Admin", StringComparison.OrdinalIgnoreCase);
         public bool IsAccessDenied => !IsDoctor;
         public bool IsEmpty => !IsLoading && string.IsNullOrWhiteSpace(ErrorMessage) && Appointments.Count == 0;
 

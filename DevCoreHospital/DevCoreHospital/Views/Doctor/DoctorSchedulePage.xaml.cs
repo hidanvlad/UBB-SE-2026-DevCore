@@ -39,7 +39,21 @@ namespace DevCoreHospital.Views.Doctor
             if (_initialized) return;
             _initialized = true;
 
-            await _vm.InitializeAsync();
+            try
+            {
+                await _vm.InitializeAsync();
+            }
+            catch (Exception ex)
+            {
+                var dialog = new ContentDialog
+                {
+                    Title = "Eroare Ascunsa la Baza de Date!",
+                    Content = $"Mesaj: {ex.Message}\n\nUnde: {ex.StackTrace}",
+                    CloseButtonText = "Am inteles",
+                    XamlRoot = this.XamlRoot
+                };
+                await dialog.ShowAsync();
+            }
         }
 
         private void DateCalendar_SelectedDatesChanged(CalendarView sender, CalendarViewSelectedDatesChangedEventArgs args)

@@ -1,8 +1,11 @@
-﻿using System;
+﻿using DevCoreHospital.Configuration;
+using DevCoreHospital.Models;
+using DevCoreHospital.Repositories;
+using DevCoreHospital.Services;
+using DevCoreHospital.ViewModels.Admin;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using DevCoreHospital.ViewModels.Admin;
-using DevCoreHospital.Models;
+using System;
 
 namespace DevCoreHospital.Views.Admin
 {
@@ -14,11 +17,12 @@ namespace DevCoreHospital.Views.Admin
         public AdminShiftView()
         {
             this.InitializeComponent();
-            
-            // ATENȚIE: Aici trebuie să injectezi ViewModel-ul. 
-            // Dacă nu aveți un sistem de Dependency Injection configurat încă, 
-            // va trebui să îl instanțiezi manual (ex: ViewModel = new AdminShiftViewModel(new StaffAndShiftService(...));)
-            // ViewModel = App.GetService<AdminShiftViewModel>(); 
+
+            var dbManager = new Data.DatabaseManager(AppSettings.ConnectionString);
+            var shiftRepo = new ShiftRepository(dbManager);
+            var staffRepo = new StaffRepository(dbManager);
+            var staffAndShiftService = new StaffAndShiftService(staffRepo, shiftRepo);
+            ViewModel = new AdminShiftViewModel(staffAndShiftService);
         }
 
         // --- 1. Filtrare Personal la schimbarea locației ---
