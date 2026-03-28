@@ -156,27 +156,8 @@ namespace DevCoreHospital.Data
             return activeHours + completedHours;
         }
 
-        public void DeleteEvaluation(int evaluationId)
-        {
-            // TASK 12: Hand-written SQL DELETE for local SQL Server
-            string sql = "DELETE FROM MedicalEvaluations WHERE EvaluationID = @Id";
-
-            var record = _mockTable.FirstOrDefault(e => e.EvaluationID == evaluationId);
-            if (record != null)
-            {
-                _mockTable.Remove(record);
-            }
-        }
         public void UpdateAppointmentStatus(string patientId, string status) { }
         public void UpdateDoctorAvailability(string doctorId) { }
         public void CreateAdminFatigueAlert(string doctorId) { }
-            }
-        }
-            }
-        }
-            }
-        }
-            }
-        }
     }
 }
