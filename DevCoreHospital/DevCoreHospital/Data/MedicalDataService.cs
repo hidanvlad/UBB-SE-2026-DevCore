@@ -71,12 +71,12 @@ namespace DevCoreHospital.Data
             var results = new List<MedicalEvaluation>();
             string sql = "SELECT * FROM MedicalEvaluations WHERE DoctorId = @DocId ORDER BY EvaluationDate DESC";
 
-            using (SqlConnection conn = new SqlConnection(_connectionString))
+            using (SqlConnection vconn = new SqlConnection(_connectionString))
             {
-                using (SqlCommand cmd = new SqlCommand(sql, conn))
+                using (SqlCommand cmd = new SqlCommand(sql, vconn))
                 {
                     cmd.Parameters.AddWithValue("@DocId", doctorId);
-                    conn.Open();
+                    vconn.Open();
                     using (SqlDataReader reader = cmd.ExecuteReader())
                     {
                         while (reader.Read())

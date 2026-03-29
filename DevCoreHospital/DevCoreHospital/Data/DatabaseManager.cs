@@ -1,11 +1,12 @@
-using System.Collections.Generic;
+using DevCoreHospital.Configuration;
 using DevCoreHospital.Models;
-using System.Linq;
-using System;
-using System.Data;
-using System.Data.SqlClient;
 using Microsoft.Data.SqlClient;
+using System;
+using System.Collections.Generic;
+using System.Data;
 using System.Data.Common;
+using System.Data.SqlClient;
+using System.Linq;
 
 namespace DevCoreHospital.Data
 {
@@ -85,5 +86,30 @@ namespace DevCoreHospital.Data
             var connectionFactory = new SqlConnectionFactory(ConnectionString);
             return connectionFactory.Create();
         }
+
+
+        public void AddNewShift(Shift newShift)
+        {
+            // Assignment 2: Hand-written SQL requirement
+            string sql = "INSERT INTO Shifts (StaffId, Location, StartTime, EndTime, Status) " +
+                         "VALUES (@StaffId, @Location, @Start, @End, @Status)";
+
+            using (SqlConnection conn = new SqlConnection(AppSettings.ConnectionString))
+            {
+                using (SqlCommand cmd = new SqlCommand(sql, conn))
+                {
+                    // Mapping the object properties to SQL parameters
+                    cmd.Parameters.AddWithValue("@StaffId", newShift.AppointedStaff?.StaffID ?? 0);
+                    cmd.Parameters.AddWithValue("@Location", newShift.Location);
+                    cmd.Parameters.AddWithValue("@Start", newShift.StartTime);
+                    cmd.Parameters.AddWithValue("@End", newShift.EndTime);
+                    cmd.Parameters.AddWithValue("@Status", newShift.Status.ToString());
+
+                    conn.Open();
+                    cmd.ExecuteNonQuery();
+                }
+            }
+        }
+
     }
 }
