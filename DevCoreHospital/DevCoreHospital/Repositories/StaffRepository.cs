@@ -26,8 +26,7 @@ namespace DevCoreHospital.Repositories
 
         public void SaveStaffChanges()
         {
-            // Here you would add code to save the staff list to the database
-            // For now, we will just assume it's saved
+            
         }
 
         public List<Doctor> GetAvailableDoctors()
@@ -52,16 +51,16 @@ namespace DevCoreHospital.Repositories
                 var filteredPharmacists = availablePharmacists.Where(ph => ph.Certification.Equals(pharmacystCertification, StringComparison.OrdinalIgnoreCase));
                 availableStaff.AddRange(filteredDoctors);
                 availableStaff.AddRange(filteredPharmacists);
-            } else if (!doctorSpecialization.IsNullOrEmpty()) // in this case, we need only doctors
+            } else if (!doctorSpecialization.IsNullOrEmpty()) 
             {
                 var filteredDoctors = availableDoctors.Where(doctor => doctor.Specialization.Equals(doctorSpecialization, StringComparison.OrdinalIgnoreCase));
                 availableStaff.AddRange(filteredDoctors);
-            } else if (!pharmacystCertification.IsNullOrEmpty()) // in this case, we need only pharmacysts
+            } else if (!pharmacystCertification.IsNullOrEmpty()) 
             {
                 var filteredPharmacists = availablePharmacists.Where(ph => ph.Certification.Equals(pharmacystCertification, StringComparison.OrdinalIgnoreCase));
                 availableStaff.AddRange(filteredPharmacists);
             }
-            else // in this case, retrieve all the available doctors & pharmacysts
+            else 
             {
                 availableStaff.AddRange(availableDoctors);
                 availableStaff.AddRange(availablePharmacists);
@@ -71,8 +70,7 @@ namespace DevCoreHospital.Repositories
 
         public void RegisterStaff(IStaff newStaff)
         {
-            // Here you would add code to save the new staff member to the database
-            // For now, we will just add it to the local list
+           
             _staffList.Add(newStaff);
         }
         public void RemoveStaff(int staffId)
@@ -80,8 +78,7 @@ namespace DevCoreHospital.Repositories
             var staffToRemove = _staffList.FirstOrDefault(staff => staff.StaffID == staffId);
             if (staffToRemove != null)
             {
-                // Here you would add code to remove the staff member from the database
-                // For now, we will just remove it from the local list
+                
                 _staffList.Remove(staffToRemove);
             }
         }

@@ -6,6 +6,7 @@ using DevCoreHospital.ViewModels;
 using DevCoreHospital.Services;
 using DevCoreHospital.Repositories;
 using DevCoreHospital.Configuration;
+using DevCoreHospital.Data;
 
 namespace DevCoreHospital.Views
 {
@@ -17,11 +18,15 @@ namespace DevCoreHospital.Views
         {
             this.InitializeComponent();
 
-            var dbManager = new Data.DatabaseManager(AppSettings.ConnectionString); // Create database manager
+            var dbManager = new DatabaseManager(AppSettings.ConnectionString); // Create database manager
             var appointmentRepository = new AppointmentRepository(dbManager); // Create repository using database manager
-            var service = new DoctorAppointmentService(appointmentRepository); // Pass repository to service
+            var fallbackDataSource = new FallbackDoctorAppointmentDataSource(
+                appointmentRepository,
+                new MockDoctorAppointmentDataSource());
+            var service = new DoctorAppointmentService(fallbackDataSource); // Pass repository with mock fallback to service
 
             ViewModel = new AdminAppointmentsViewModel(service);
+            DataContext = ViewModel;
 
             // Încărcăm doctorii la deschiderea paginii
             Loaded += AppointmentsPage_Loaded;
@@ -30,6 +35,12 @@ namespace DevCoreHospital.Views
         private async void AppointmentsPage_Loaded(object sender, RoutedEventArgs e)
         {
             await ViewModel.LoadDoctorsAsync();
+
+            if (ViewModel.Doctors.Count > 0)
+            {
+                DoctorComboBox.SelectedIndex = 0;
+                FilterDoctorComboBox.SelectedIndex = 0;
+            }
         }
 
         private async void BookAppointment_Click(object sender, RoutedEventArgs e)

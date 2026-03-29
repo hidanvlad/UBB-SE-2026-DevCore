@@ -1,0 +1,20 @@
+﻿<Page
+    x:Class="DevCoreHospital.Views.NotImplementedPlaceholderPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <Grid Background="#FF0B120D" Padding="24">
+        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="12">
+            <TextBlock Text="Not Implemented" 
+                       FontSize="32" 
+                       FontWeight="SemiBold"
+                       Foreground="#FFFFFFFF"
+                       TextAlignment="Center"/>
+            <TextBlock Text="This feature is not yet implemented." 
+                       FontSize="14" 
+                       Foreground="#FFB7C2BA"
+                       TextAlignment="Center"/>
+        </StackPanel>
+    </Grid>
+</Page>
+

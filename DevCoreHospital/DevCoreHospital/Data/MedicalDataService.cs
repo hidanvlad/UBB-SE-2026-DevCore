@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Data;
-using Microsoft.Data.SqlClient; 
+using Microsoft.Data.SqlClient;
 using DevCoreHospital.Models;
 
 namespace DevCoreHospital.Data
@@ -13,7 +13,7 @@ namespace DevCoreHospital.Data
         /// <summary>
         /// USE YOUR OWN CONNECTION HERE
         /// </summary>
-        private readonly string _connectionString = @"Server=LAPTOP-UV77CFP3\SQLEXPRESS;Database=master;Trusted_Connection=True;TrustServerCertificate=True;";
+        private readonly string _connectionString = @"Server=PATRICKPC\SQLEXPRESS;Database=DevCoreHospital;Trusted_Connection=True;TrustServerCertificate=True;";
 
         private static List<Shift> _shiftsMockTable = new List<Shift>();
 

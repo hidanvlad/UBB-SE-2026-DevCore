@@ -101,12 +101,7 @@ namespace DevCoreHospital.Services
         {
             var availableStaff = this._staffRepo.GetAvailableStaff(requiredSpecialization, requiredCertification);
 
-            /*  WARNING! Here, I assume this: * if the location contains "Pharmacy", then I need only pharmacysts
-             
-                           * otherwise, I assume the location of the shift is the same as the doctor's specialization
-                            (e.g., Cardiology, Pediatry etc.), because a doctor is SPECIALIZED for a LOCATION
-                
-             */
+           
 
             if (location.Contains("Pharmacy", StringComparison.OrdinalIgnoreCase))
             {

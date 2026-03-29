@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace DevCoreHospital.Repositories
 {
-    public sealed class AppointmentRepository
+    public class AppointmentRepository : IDoctorAppointmentDataSource
     {
         private readonly ISqlConnectionFactory _connectionFactory;
 
@@ -156,15 +156,30 @@ SELECT COUNT(1)
 FROM dbo.Appointments
 WHERE doctor_id = @DoctorId
   AND status IN ('Scheduled', 'InProgress');";
-
-            using var conn = _connectionFactory.Create();
-            await conn.OpenAsync();
-
+  
             using var cmd = new SqlCommand(sql, conn);
             cmd.Parameters.AddWithValue("@DoctorId", doctorId);
 
             var countObj = await cmd.ExecuteScalarAsync();
             return countObj is int i ? i : Convert.ToInt32(countObj);
+        }
+
+        private async Task<string> ResolveDoctorsTableAsync(DbConnection conn)
+        {
+            var candidates = new[] { "[Doctors]", "[dbo].[Doctors]", "[doctor]" };
+            foreach (var t in candidates)
+                if (await TableExistsWithColumns(conn, t, "FirstName")) return t;
+            return "Doctors"; 
+        }
+
+        private async Task<string> ResolveAppointmentsTableAsync(DbConnection conn)
+        {
+            var candidates = new[] { "[Appointments]", "[dbo].[Appointments]", "[appointment]" };
+            foreach (var t in candidates)
+                if (await TableExistsWithColumns(conn, t, "DoctorId", "PatientName")) return t;
+            return "Appointments"; 
+            using var conn = _connectionFactory.Create();
+            await conn.OpenAsync();
         }
 
         public async Task UpdateDoctorAvailabilityAsync(int doctorId, bool isAvailable)

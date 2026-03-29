@@ -43,7 +43,7 @@
                       Height="40"
                       ItemsSource="{Binding Doctors}"
                       SelectedItem="{Binding SelectedDoctor, Mode=TwoWay}"
-                      DisplayMemberPath="DisplayName"
+                      DisplayMemberPath="DoctorName"
                       PlaceholderText="Select doctor"/>
         </Grid>
 
