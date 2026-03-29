@@ -33,8 +33,9 @@ namespace DevCoreHospital.Services
 
         public async Task BookAppointmentAsync(Appointment appointment)
         {
-            // Orice validare viitoare înainte de salvare o poți pune aici!
+            // !!!
             await _dataSource.AddAppointmentAsync(appointment);
+            await _dataSource.UpdateDoctorStatusAsync(appointment.DoctorId, "IN_EXAMINATION");
         }
 
         public async Task FinishAppointmentAsync(Appointment appointment)

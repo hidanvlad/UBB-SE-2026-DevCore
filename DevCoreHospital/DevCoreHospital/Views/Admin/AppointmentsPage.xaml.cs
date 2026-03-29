@@ -91,7 +91,6 @@ namespace DevCoreHospital.Views
         {
             if (sender is Button btn && btn.Tag is Appointment appt)
             {
-                // Deschidem pagina de detalii și trimitem programarea selectată
                 this.Frame.Navigate(typeof(AppointmentDetailsPage), appt);
             }
         }

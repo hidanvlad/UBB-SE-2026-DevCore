@@ -55,7 +55,6 @@ namespace DevCoreHospital.Views
 
             try
             {
-                // Apelăm regula de business din serviciu
                 await _service.FinishAppointmentAsync(_currentAppointment);
 
                 _currentAppointment.Status = "Finished";
