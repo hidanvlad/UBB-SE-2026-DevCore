@@ -112,11 +112,11 @@ public class PharmacyScheduleViewModel : ObservableObject
     public bool IsEmpty => !IsLoading && string.IsNullOrWhiteSpace(ErrorMessage) && Shifts.Count == 0;
 
     public AsyncRelayCommand RefreshCommand { get; }
-    public RelayCommand TodayCommand { get; }
-    public RelayCommand NextPeriodCommand { get; }
-    public RelayCommand PreviousPeriodCommand { get; }
-    public RelayCommand ShowDailyCommand { get; }
-    public RelayCommand ShowWeeklyCommand { get; }
+    public OldRelayCommand TodayCommand { get; }
+    public OldRelayCommand NextPeriodCommand { get; }
+    public OldRelayCommand PreviousPeriodCommand { get; }
+    public OldRelayCommand ShowDailyCommand { get; }
+    public OldRelayCommand ShowWeeklyCommand { get; }
     public AsyncRelayCommand CompleteHandoverCommand { get; }
 
     public PharmacyScheduleViewModel(
@@ -129,15 +129,15 @@ public class PharmacyScheduleViewModel : ObservableObject
         _handoverService = handoverService;
 
         RefreshCommand = new AsyncRelayCommand(LoadAsync, () => IsPharmacist);
-        TodayCommand = new RelayCommand(() => AnchorDate = DateTime.Today, () => IsPharmacist);
-        NextPeriodCommand = new RelayCommand(
+        TodayCommand = new OldRelayCommand(() => AnchorDate = DateTime.Today, () => IsPharmacist);
+        NextPeriodCommand = new OldRelayCommand(
             () => AnchorDate = IsWeeklyView ? AnchorDate.AddDays(7) : AnchorDate.AddDays(1),
             () => IsPharmacist);
-        PreviousPeriodCommand = new RelayCommand(
+        PreviousPeriodCommand = new OldRelayCommand(
             () => AnchorDate = IsWeeklyView ? AnchorDate.AddDays(-7) : AnchorDate.AddDays(-1),
             () => IsPharmacist);
-        ShowDailyCommand = new RelayCommand(() => IsWeeklyView = false, () => IsPharmacist);
-        ShowWeeklyCommand = new RelayCommand(() => IsWeeklyView = true, () => IsPharmacist);
+        ShowDailyCommand = new OldRelayCommand(() => IsWeeklyView = false, () => IsPharmacist);
+        ShowWeeklyCommand = new OldRelayCommand(() => IsWeeklyView = true, () => IsPharmacist);
         CompleteHandoverCommand = new AsyncRelayCommand(CompleteHandoverAsync, () => CanCompleteShift);
     }
 

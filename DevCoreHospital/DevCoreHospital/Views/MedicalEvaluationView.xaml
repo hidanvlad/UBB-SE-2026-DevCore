@@ -24,7 +24,10 @@
                 <StackPanel Spacing="15" Padding="0,0,15,20">
                     <TextBlock Text="1. MEDICAL EVALUATIONS" FontSize="24" FontWeight="Bold" Margin="0,0,0,10"/>
 
-                    <TextBox Header="Patient ID" Text="7759376" IsReadOnly="True" Background="Transparent"/>
+                    <TextBox Header="Patient ID" 
+                             Text="{x:Bind ViewModel.PatientId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+                             PlaceholderText="Searching for active patient..."
+                             IsEnabled="{x:Bind ViewModel.IsFormEnabled, Mode=OneWay}"/>
 
                     <TextBox Header="Symptoms" 
                              Text="{x:Bind ViewModel.Symptoms, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 

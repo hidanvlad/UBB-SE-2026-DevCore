@@ -30,13 +30,13 @@ namespace DevCoreHospital.ViewModels
         }
 
         public AsyncRelayCommand RunDispatchCommand { get; }
-        public RelayCommand RefreshCommand { get; }
+        public OldRelayCommand RefreshCommand { get; }
 
         public ERDispatchViewModel(IERDispatchService dispatchService)
         {
             _dispatchService = dispatchService;
             RunDispatchCommand = new AsyncRelayCommand(RunDispatch);
-            RefreshCommand = new RelayCommand(RefreshPending);
+            RefreshCommand = new OldRelayCommand(RefreshPending);
 
             RefreshPending();
         }

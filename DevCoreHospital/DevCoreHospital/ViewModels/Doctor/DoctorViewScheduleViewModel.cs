@@ -97,11 +97,11 @@ namespace DevCoreHospital.ViewModels.Doctor
         public bool IsEmpty => !IsLoading && string.IsNullOrWhiteSpace(ErrorMessage) && Appointments.Count == 0;
 
         public AsyncRelayCommand RefreshCommand { get; }
-        public RelayCommand TodayCommand { get; }
-        public RelayCommand NextDayCommand { get; }
-        public RelayCommand PreviousDayCommand { get; }
-        public RelayCommand DailyModeCommand { get; }
-        public RelayCommand WeeklyModeCommand { get; }
+        public OldRelayCommand TodayCommand { get; }
+        public OldRelayCommand NextDayCommand { get; }
+        public OldRelayCommand PreviousDayCommand { get; }
+        public OldRelayCommand DailyModeCommand { get; }
+        public OldRelayCommand WeeklyModeCommand { get; }
 
         public DoctorScheduleViewModel(
             ICurrentUserService currentUser,
@@ -113,12 +113,12 @@ namespace DevCoreHospital.ViewModels.Doctor
             _dialogService = dialogService;
 
             RefreshCommand = new AsyncRelayCommand(LoadAsync, () => IsDoctor);
-            TodayCommand = new RelayCommand(() => SelectedDate = DateTime.Today, () => IsDoctor);
-            NextDayCommand = new RelayCommand(() => SelectedDate = SelectedDate.AddDays(1), () => IsDoctor);
-            PreviousDayCommand = new RelayCommand(() => SelectedDate = SelectedDate.AddDays(-1), () => IsDoctor);
+            TodayCommand = new OldRelayCommand(() => SelectedDate = DateTime.Today, () => IsDoctor);
+            NextDayCommand = new OldRelayCommand(() => SelectedDate = SelectedDate.AddDays(1), () => IsDoctor);
+            PreviousDayCommand = new OldRelayCommand(() => SelectedDate = SelectedDate.AddDays(-1), () => IsDoctor);
 
-            DailyModeCommand = new RelayCommand(() => ViewMode = ScheduleViewMode.Daily, () => IsDoctor);
-            WeeklyModeCommand = new RelayCommand(() => ViewMode = ScheduleViewMode.Weekly, () => IsDoctor);
+            DailyModeCommand = new OldRelayCommand(() => ViewMode = ScheduleViewMode.Daily, () => IsDoctor);
+            WeeklyModeCommand = new OldRelayCommand(() => ViewMode = ScheduleViewMode.Weekly, () => IsDoctor);
         }
 
         public async Task InitializeAsync()
