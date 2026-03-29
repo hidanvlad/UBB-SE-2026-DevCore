@@ -145,19 +145,14 @@ namespace DevCoreHospital.ViewModels.Doctor
         {
             Doctors.Clear();
 
-            // loads all doctors from Staff table (role='Doctor')
             var allDoctors = await _appointmentService.GetAllDoctorsAsync();
 
             foreach (var d in allDoctors.OrderBy(x => x.DoctorName))
             {
-                var split = DoctorOption.SplitFirstLast(d.DoctorName);
-
                 Doctors.Add(new DoctorOption
                 {
                     DoctorId = d.DoctorId,
-                    DoctorName = d.DoctorName,
-                    FirstName = split.FirstName,
-                    LastName = split.LastName
+                    DoctorName = d.DoctorName
                 });
             }
 
@@ -168,6 +163,7 @@ namespace DevCoreHospital.ViewModels.Doctor
                 return;
             }
 
+            // default selection = current user if present, otherwise first
             SelectedDoctor = Doctors.FirstOrDefault(d => d.DoctorId == _currentUser.UserId) ?? Doctors.First();
         }
 
@@ -208,8 +204,15 @@ namespace DevCoreHospital.ViewModels.Doctor
 
                 var filtered = raw
                     .Where(x => x.DoctorId == doctorId)
-                    .Where(x => x.DateTime >= from && x.DateTime < to)
-                    .OrderBy(x => x.DateTime)
+                    .Where(x =>
+                    {
+                        var start = x.Date.Date + x.StartTime;
+                        var end = x.Date.Date + x.EndTime;
+                        if (end <= start) return false;
+                        return start < to && end > from;
+                    })
+                    .OrderBy(x => x.Date)
+                    .ThenBy(x => x.StartTime)
                     .ToList();
 
                 Appointments.Clear();
@@ -246,10 +249,10 @@ namespace DevCoreHospital.ViewModels.Doctor
                 }
 
                 var text =
-                    $"Appointment ID: {d.Id}\n" +
-                    $"Patient ID: {d.PatientId}\n" +
-                    $"Doctor ID: {d.DoctorId}\n" +
-                    $"Date & Time: {d.DateTime:yyyy-MM-dd HH:mm}\n" +
+                    $"Patient: {(string.IsNullOrWhiteSpace(item.PatientName) ? "Patient hidden/unknown" : item.PatientName)}\n" +
+                    $"Type: {(string.IsNullOrWhiteSpace(d.Type) ? "N/A" : d.Type)}\n" +
+                    $"Location: {(string.IsNullOrWhiteSpace(d.Location) ? "Location TBD" : d.Location)}\n" +
+                    $"Time: {d.Date:yyyy-MM-dd} {d.StartTime:hh\\:mm}-{d.EndTime:hh\\:mm}\n" +
                     $"Status: {(string.IsNullOrWhiteSpace(d.Status) ? "Unknown" : d.Status)}";
 
                 await _dialogService.ShowMessageAsync("Appointment Details", text);
@@ -281,7 +284,8 @@ namespace DevCoreHospital.ViewModels.Doctor
                 if (string.IsNullOrWhiteSpace(fullName))
                     return (string.Empty, string.Empty);
 
-                var parts = fullName.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+                var parts = fullName
+                    .Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 
                 if (parts.Length == 1)
                     return (parts[0], string.Empty);
