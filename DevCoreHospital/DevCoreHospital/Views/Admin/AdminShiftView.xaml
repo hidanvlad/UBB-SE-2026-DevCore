@@ -38,6 +38,7 @@
                     <x:String>ER</x:String>
                     <x:String>Cardiology</x:String>
                     <x:String>Central Pharmacy</x:String>
+                    <x:String>Surgery</x:String>
                     <x:String>Neurology</x:String>
                 </ComboBox>
 

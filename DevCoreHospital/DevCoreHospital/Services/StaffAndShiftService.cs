@@ -101,8 +101,6 @@ namespace DevCoreHospital.Services
         {
             var availableStaff = this._staffRepo.GetAvailableStaff(requiredSpecialization, requiredCertification);
 
-           
-
             if (location.Contains("Pharmacy", StringComparison.OrdinalIgnoreCase))
             {
                 return availableStaff.Where(staff => staff is Pharmacyst).ToList();

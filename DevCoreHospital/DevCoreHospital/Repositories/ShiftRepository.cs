@@ -22,11 +22,13 @@ namespace DevCoreHospital.Repositories
 
         public void AddShift(Shift newShift)
         {
-            var saved = _dbManager.AddShift(newShift);
-            if (saved)
-            {
-                _shiftList.Add(newShift);
-            }
+            this._shiftList = _dbManager.GetShifts();
+        }
+
+        public void AddShift(Shift newShift)
+        {
+            _shiftList.Add(newShift);
+            _dbManager.AddNewShift(newShift);
         }
         
         public void CancelShift(int shiftId)
@@ -35,9 +37,10 @@ namespace DevCoreHospital.Repositories
             if (shiftToCancel != null)
             {
                 _shiftList.Remove(shiftToCancel);
+                _dbManager.DeleteShift(shiftId);
             }
         }
-        
+
         public List<Shift> GetShifts()
         {
             return _shiftList;
@@ -90,6 +93,7 @@ namespace DevCoreHospital.Repositories
             if (shiftToUpdate != null)
             {
                 shiftToUpdate.Status = status;
+                _dbManager.UpdateShift(shiftToUpdate);
             }
         }
     }

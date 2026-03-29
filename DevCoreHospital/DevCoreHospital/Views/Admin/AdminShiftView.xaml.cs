@@ -3,7 +3,6 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using DevCoreHospital.ViewModels.Admin;
 using DevCoreHospital.Models;
-// Asigură-te că ai aceste using-uri pentru DB:
 using DevCoreHospital.Configuration;
 using DevCoreHospital.Repositories;
 using DevCoreHospital.Services;
@@ -18,8 +17,6 @@ namespace DevCoreHospital.Views.Admin
         {
             this.InitializeComponent();
 
-            // INIȚIALIZARE CORECTĂ A BAZEI DE DATE
-            // Am scos comentariile tale și am pus codul real de conectare
             var dbManager = new DevCoreHospital.Data.DatabaseManager(AppSettings.ConnectionString);
 
             // Va trebui să ai un StaffRepository și un ShiftRepository construite în proiect
