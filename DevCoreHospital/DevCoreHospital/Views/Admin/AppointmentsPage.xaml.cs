@@ -1,12 +1,13 @@
-﻿using Microsoft.UI.Xaml;
+﻿using DevCoreHospital.Configuration;
+using DevCoreHospital.Data;
+using DevCoreHospital.Models;
+using DevCoreHospital.Repositories;
+using DevCoreHospital.Services;
+using DevCoreHospital.ViewModels;
+using DevCoreHospital.Views.Doctor;
+using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using System;
-using DevCoreHospital.Models;
-using DevCoreHospital.ViewModels;
-using DevCoreHospital.Services;
-using DevCoreHospital.Repositories;
-using DevCoreHospital.Configuration;
-using DevCoreHospital.Data;
 
 namespace DevCoreHospital.Views
 {
@@ -18,17 +19,16 @@ namespace DevCoreHospital.Views
         {
             this.InitializeComponent();
 
-            var dbManager = new DatabaseManager(AppSettings.ConnectionString); // Create database manager
-            var appointmentRepository = new AppointmentRepository(dbManager); // Create repository using database manager
+            var dbManager = new DatabaseManager(AppSettings.ConnectionString);
+            var appointmentRepository = new AppointmentRepository(dbManager);
             var fallbackDataSource = new FallbackDoctorAppointmentDataSource(
                 appointmentRepository,
                 new MockDoctorAppointmentDataSource());
-            var service = new DoctorAppointmentService(fallbackDataSource); // Pass repository with mock fallback to service
+            var service = new DoctorAppointmentService(fallbackDataSource);
 
             ViewModel = new AdminAppointmentsViewModel(service);
             DataContext = ViewModel;
 
-            // Încărcăm doctorii la deschiderea paginii
             Loaded += AppointmentsPage_Loaded;
         }
 
@@ -47,7 +47,6 @@ namespace DevCoreHospital.Views
         {
             string patientId = PatientIdTextBox.Text;
 
-            // Verificăm dacă a selectat un doctor din listă
             if (DoctorComboBox.SelectedValue is not int selectedDoctorId ||
                 string.IsNullOrWhiteSpace(patientId) ||
                 AppointmentDatePicker.Date == null ||
@@ -66,11 +65,9 @@ namespace DevCoreHospital.Views
 
                 ShowMessage($"Appointment booked successfully for {patientId}!", InfoBarSeverity.Success);
 
-                // Resetăm formularul
                 PatientIdTextBox.Text = string.Empty;
                 DoctorComboBox.SelectedIndex = -1;
 
-                // Reîncărcăm calendarul dacă doctorul selectat e același cu cel din filtru
                 if (FilterDoctorComboBox.SelectedValue is int filterDocId && filterDocId == selectedDoctorId)
                 {
                     await ViewModel.LoadAppointmentsForDoctorAsync(filterDocId);
@@ -90,16 +87,11 @@ namespace DevCoreHospital.Views
             }
         }
 
-        private async void FinishAppointment_Click(object sender, RoutedEventArgs e)
+        private void ViewDetails_Click(object sender, RoutedEventArgs e)
         {
             if (sender is Button btn && btn.Tag is Appointment appt)
             {
-                await ViewModel.FinishAppointmentAsync(appt);
-                ShowMessage("Appointment marked as Finished.", InfoBarSeverity.Success);
-
-                // Reîmprospătăm lista
-                if (FilterDoctorComboBox.SelectedValue is int doctorId)
-                    await ViewModel.LoadAppointmentsForDoctorAsync(doctorId);
+                this.Frame.Navigate(typeof(AppointmentDetailsPage), appt);
             }
         }
 

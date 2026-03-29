@@ -12,7 +12,6 @@ namespace DevCoreHospital.ViewModels
     {
         private readonly IDoctorAppointmentService _appointmentService;
 
-        // Listele observabile care vor actualiza automat interfața (UI-ul) când adăugăm/ștergem elemente
         public ObservableCollection<DoctorOption> Doctors { get; } = new();
         public ObservableCollection<Appointment> AppointmentsList { get; } = new ObservableCollection<Appointment>();
 
@@ -21,7 +20,6 @@ namespace DevCoreHospital.ViewModels
             _appointmentService = appointmentService;
         }
 
-        // --- METODE DE ÎNCĂRCARE DATE ---
 
         public async Task LoadDoctorsAsync()
         {
@@ -47,7 +45,6 @@ namespace DevCoreHospital.ViewModels
             }
         }
 
-        // --- METODE DE ACȚIUNE (CREATE, UPDATE, CANCEL) ---
 
         public async Task BookAppointmentAsync(string patientId, int doctorId, DateTime date, TimeSpan time)
         {
@@ -57,7 +54,6 @@ namespace DevCoreHospital.ViewModels
                 DoctorId = doctorId,
                 Date = date.Date,
                 StartTime = time,
-                // Presupunem că o consultație standard durează 30 de minute
                 EndTime = time.Add(TimeSpan.FromMinutes(30)),
                 Status = "Scheduled"
             };
@@ -75,8 +71,6 @@ namespace DevCoreHospital.ViewModels
             await _appointmentService.CancelAppointmentAsync(appointment);
         }
 
-        // --- LOGICA PENTRU INotifyPropertyChanged ---
-        // (Asta îi spune interfeței când o variabilă s-a modificat)
         public event PropertyChangedEventHandler PropertyChanged;
         protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
         {

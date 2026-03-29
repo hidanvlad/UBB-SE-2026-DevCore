@@ -1,43 +1,85 @@
-﻿using DevCoreHospital.ViewModels.Doctor;
+﻿using DevCoreHospital.Configuration;
+using DevCoreHospital.Data;
+using DevCoreHospital.Models;
+using DevCoreHospital.Repositories;
+using DevCoreHospital.Services;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Navigation;
+using System;
 
-namespace DevCoreHospital.Views.Doctor
+namespace DevCoreHospital.Views
 {
     public sealed partial class AppointmentDetailsPage : Page
     {
-        public string TypeLine { get; private set; } = "Type: -";
-        public string LocationLine { get; private set; } = "Location: -";
-        public string StatusLine { get; private set; } = "Status: -";
-        public string TimeLine { get; private set; } = "Time: -";
+        private Appointment _currentAppointment;
+        private DoctorAppointmentService _service;
 
         public AppointmentDetailsPage()
         {
-            InitializeComponent();
-            DataContext = this;
+            this.InitializeComponent();
+
+            var dbManager = new DatabaseManager(AppSettings.ConnectionString);
+            var repo = new AppointmentRepository(dbManager);
+            var fallback = new FallbackDoctorAppointmentDataSource(repo, new MockDoctorAppointmentDataSource());
+            _service = new DoctorAppointmentService(fallback);
         }
 
         protected override void OnNavigatedTo(NavigationEventArgs e)
         {
             base.OnNavigatedTo(e);
 
-            if (e.Parameter is AppointmentItemViewModel item)
+            if (e.Parameter is Appointment appt)
             {
-                TypeLine = $"Type: {item.Type}";
-                LocationLine = $"Location: {item.LocationSafe}";
-                StatusLine = $"Status: {item.Status}";
-                TimeLine = $"Time: {item.Date:yyyy-MM-dd} {item.TimeRangeText}";
+                _currentAppointment = appt;
+                PopulateData();
             }
-
-            DataContext = null;
-            DataContext = this;
         }
 
-        private void Back_Click(object sender, RoutedEventArgs e)
+        private void PopulateData()
         {
-            if (Frame?.CanGoBack == true)
-                Frame.GoBack();
+            PatientNameText.Text = _currentAppointment.PatientName;
+            DoctorNameText.Text = _currentAppointment.DoctorName;
+            DateText.Text = _currentAppointment.Date.ToString("yyyy-MM-dd");
+            TimeText.Text = $"{_currentAppointment.StartTime:hh\\:mm} - {_currentAppointment.EndTime:hh\\:mm}";
+            StatusText.Text = _currentAppointment.Status;
+        }
+
+        private async void FinishBtn_Click(object sender, RoutedEventArgs e)
+        {
+            if (_currentAppointment.Status == "Finished")
+            {
+                ShowMessage("This appointment is already finished.", InfoBarSeverity.Warning);
+                return;
+            }
+
+            try
+            {
+                await _service.FinishAppointmentAsync(_currentAppointment);
+
+                _currentAppointment.Status = "Finished";
+                PopulateData();
+                ShowMessage("Appointment finished successfully! Doctor status updated.", InfoBarSeverity.Success);
+            }
+            catch (Exception ex)
+            {
+                ShowMessage($"Error: {ex.Message}", InfoBarSeverity.Error);
+            }
+        }
+
+        private void GoBack_Click(object sender, RoutedEventArgs e)
+        {
+            if (this.Frame.CanGoBack)
+            {
+                this.Frame.GoBack();
+            }
+        }
+
+        private void ShowMessage(string message, InfoBarSeverity severity)
+        {
+            StatusInfoBar.Message = message;
+            StatusInfoBar.Severity = severity;
+            StatusInfoBar.IsOpen = true;
         }
     }
 }

@@ -85,8 +85,8 @@
                             </StackPanel>
 
                             <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
-                                <Button Content="Finish" Click="FinishAppointment_Click" Tag="{Binding}"
-                                        Background="#2E7D32" Foreground="White"/>
+                                <Button Content="View details" Click="ViewDetails_Click" Tag="{Binding}"
+                                        Background="#0277BD" Foreground="White"/>
                                 <Button Content="Cancel" Click="CancelAppointment_Click" Tag="{Binding}"
                                         Background="#C62828" Foreground="White"/>
                             </StackPanel>
