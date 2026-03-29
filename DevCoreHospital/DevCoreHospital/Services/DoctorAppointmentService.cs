@@ -19,6 +19,7 @@ namespace DevCoreHospital.Services
         public Task<IReadOnlyList<Appointment>> GetUpcomingAppointmentsAsync(int doctorUserId, DateTime fromDate, int skip, int take) =>
             _dataSource.GetUpcomingAppointmentsAsync(doctorUserId, fromDate, skip, take);
 
+        // IMPORTANT: Doctors come from Staff table (role='Doctor')
         public Task<IReadOnlyList<(int DoctorId, string DoctorName)>> GetAllDoctorsAsync() =>
             _dataSource.GetAllDoctorsAsync();
 

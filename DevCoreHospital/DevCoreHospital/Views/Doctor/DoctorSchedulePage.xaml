@@ -26,7 +26,6 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <!-- TOP LINE -->
         <Grid Grid.Row="0">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
@@ -48,7 +47,6 @@
                       PlaceholderText="Select doctor"/>
         </Grid>
 
-        <!-- SECOND LINE -->
         <Grid Grid.Row="1" ColumnSpacing="10">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto"/>
@@ -94,7 +92,6 @@
                     Background="{StaticResource AccentBrush}" Foreground="White" BorderBrush="{StaticResource AccentBrush}"/>
         </Grid>
 
-        <!-- Error -->
         <Border Grid.Row="2"
                 Background="#332A1204"
                 BorderBrush="{StaticResource AccentBrush}"
@@ -105,7 +102,6 @@
             <TextBlock Text="{Binding ErrorMessage}" Foreground="#FFFFB4B4" TextWrapping="Wrap"/>
         </Border>
 
-        <!-- Appointments -->
         <Grid Grid.Row="3">
             <StackPanel HorizontalAlignment="Center"
                         VerticalAlignment="Center"
@@ -145,8 +141,8 @@
 
                                 <StackPanel Spacing="4">
                                     <TextBlock Text="{Binding DateText}" Foreground="{StaticResource MutedBrush}" FontSize="28"/>
-                                    <TextBlock Text="{Binding TimeRangeText}" Foreground="{StaticResource TextBrush}" FontSize="24" FontWeight="SemiBold"/>
-                                    <TextBlock Text="{Binding LocationSafe}" Foreground="{StaticResource MutedBrush}" FontSize="20"/>
+                                    <TextBlock Text="{Binding TimeText}" Foreground="{StaticResource TextBrush}" FontSize="24" FontWeight="SemiBold"/>
+                                    <TextBlock Text="{Binding Status}" Foreground="{StaticResource MutedBrush}" FontSize="20"/>
                                 </StackPanel>
 
                                 <Button Grid.Column="1"

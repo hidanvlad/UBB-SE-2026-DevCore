@@ -6,37 +6,21 @@ namespace DevCoreHospital.ViewModels.Doctor
     public class AppointmentItemViewModel
     {
         public int Id { get; set; }
-        public string PatientName { get; set; } = string.Empty;
-        public DateTime Date { get; set; }
-        public string DateText => Date.ToString("dd MMM yyyy");
-        public string Notes { get; set; } = string.Empty;
-
+        public int PatientId { get; set; }
         public int DoctorId { get; set; }
-        public string DoctorName { get; set; } = string.Empty;
-
-        public string Type { get; set; } = string.Empty;
-        public string Location { get; set; } = string.Empty;
+        public DateTime DateTime { get; set; }
         public string Status { get; set; } = string.Empty;
 
-        public TimeSpan StartTime { get; set; }
-        public TimeSpan EndTime { get; set; }
-
-        public string TimeRangeText => $"{StartTime:hh\\:mm} - {EndTime:hh\\:mm}";
-        public string LocationSafe => string.IsNullOrWhiteSpace(Location) ? "Location TBD" : Location;
+        public string DateText => DateTime.ToString("dd MMM yyyy");
+        public string TimeText => DateTime.ToString("HH:mm");
 
         public AppointmentItemViewModel(Appointment item)
         {
             Id = item.Id;
-            PatientName = item.PatientName ?? string.Empty;
-            Date = item.Date;
-            Notes = item.Notes ?? string.Empty;
+            PatientId = item.PatientId;
             DoctorId = item.DoctorId;
-            DoctorName = item.DoctorName ?? string.Empty;
-            Type = item.Type ?? string.Empty;
-            Location = item.Location ?? string.Empty;
+            DateTime = item.DateTime;
             Status = item.Status ?? string.Empty;
-            StartTime = item.StartTime;
-            EndTime = item.EndTime;
         }
     }
 }

@@ -5,24 +5,25 @@ using System.Data;
 using Microsoft.Data.SqlClient;
 using DevCoreHospital.Models;
 
-namespace DevCoreHospital.Data
+namespace DevCoreHospital.Repositories
+
 {
-    public class MedicalDataService
+    public class EvaluationsRepository
     {
 
         /// <summary>
         /// USE YOUR OWN CONNECTION HERE
         /// </summary>
-        private readonly string _connectionString = @"Server=PATRICKPC\SQLEXPRESS;Database=DevCoreHospital;Trusted_Connection=True;TrustServerCertificate=True;";
+        private readonly string _connectionString = @"Server=LAPTOP-UV77CFP3\SQLEXPRESS;Database=master;Trusted_Connection=True;TrustServerCertificate=True;";
 
         private static List<Shift> _shiftsMockTable = new List<Shift>();
 
-        public MedicalDataService()
+        public EvaluationsRepository()
         {
             if (_shiftsMockTable.Count == 0)
             {
-                _shiftsMockTable.Add(new Shift(1, new Doctor(1, "John", "Doe", "0700-000 000", true, "Cardiology", "12345", DoctorStatus.AVAILABLE), "Cardiology", DateTime.Now, DateTime.Now.AddHours(8), ShiftStatus.ACTIVE));
-                _shiftsMockTable.Add(new Shift(2, new Doctor(2, "Jane", "Smith", "0700-000 001", false, "Neurology", "54321", DoctorStatus.IN_EXAMINATION), "Neurology", DateTime.Now, DateTime.Now.AddHours(8), ShiftStatus.SCHEDULED));
+                _shiftsMockTable.Add(new Shift(1, new Doctor(1, "Vlad", "Hidna", "0700-000 000", true, "Cardiology", "12345", DoctorStatus.AVAILABLE), "Cardiology", DateTime.Now, DateTime.Now.AddHours(8), ShiftStatus.ACTIVE));
+                _shiftsMockTable.Add(new Shift(2, new Doctor(2, "Alex", "Necs", "0700-000 001", false, "Neurology", "54321", DoctorStatus.IN_EXAMINATION), "Neurology", DateTime.Now, DateTime.Now.AddHours(8), ShiftStatus.SCHEDULED));
             }
         }
 
@@ -126,8 +127,6 @@ namespace DevCoreHospital.Data
                 }
             }
         }
-
-        // Helper method to keep domain logic and SQL mapping clean
         private MedicalEvaluation MapReaderToEvaluation(SqlDataReader reader)
         {
             return new MedicalEvaluation
