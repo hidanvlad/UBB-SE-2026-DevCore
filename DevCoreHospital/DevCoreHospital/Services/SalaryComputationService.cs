@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using DevCoreHospital.Models;
 using DevCoreHospital.Data;
@@ -22,17 +21,43 @@ namespace DevCoreHospital.Services
             // Task 3 implemented via DB
             foreach (var shift in monthlyShifts)
             {
-                totalHours += (shift.EndTime - shift.StartTime).TotalHours; // Fallback calculation
+                double dbHours = _dbManager.GetShiftHoursFromDb(shift.Id);
+
+                if (dbHours > 0)
+                {
+                    totalHours += dbHours;
+                }
+                else
+                {
+                    // Fallback calculation in case DB fails
+                    totalHours += (shift.EndTime - shift.StartTime).TotalHours;
+                }
             }
 
             double doctorHourlyRate = 85.0;
             return Task.FromResult(totalHours * doctorHourlyRate);
         }
 
-        // Updated parameter to use 'Pharmacyst' with 'y' to match main branch
         public Task<double> ComputeSalaryPharmacistAsync(Pharmacyst pharmacist, List<Shift> monthlyShifts, int month, int year)
         {
-            double totalHours = monthlyShifts.Sum(s => (s.EndTime - s.StartTime).TotalHours);
+            double totalHours = 0;
+
+            // Compute shift hours using the DB implementation
+            foreach (var shift in monthlyShifts)
+            {
+                double dbHours = _dbManager.GetShiftHoursFromDb(shift.Id);
+
+                if (dbHours > 0)
+                {
+                    totalHours += dbHours;
+                }
+                else
+                {
+                    // Fallback calculation in case DB fails
+                    totalHours += (shift.EndTime - shift.StartTime).TotalHours;
+                }
+            }
+
             double pharmacistHourlyRate = 45.0;
 
             // Task 5 implemented via DB

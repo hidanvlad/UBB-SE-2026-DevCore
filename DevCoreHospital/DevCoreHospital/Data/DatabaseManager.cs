@@ -499,5 +499,32 @@ namespace DevCoreHospital.Data
                 Location = ""
             };
         }
+        public double GetShiftHoursFromDb(int shiftId)
+        {
+            double hours = 0;
+            try
+            {
+                using var connection = GetConnection();
+                connection.Open();
+
+                using var cmd = connection.CreateCommand();
+                // Ensure the column names match the Shifts table in your database
+                cmd.CommandText = "SELECT start_time, end_time FROM Shifts WHERE shift_id = @ShiftId";
+                AddParameter(cmd, "@ShiftId", shiftId);
+
+                using var reader = cmd.ExecuteReader();
+                if (reader.Read())
+                {
+                    DateTime start = reader.GetDateTime(0);
+                    DateTime end = reader.GetDateTime(1);
+                    hours = (end - start).TotalHours;
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error GetShiftHoursFromDb: {ex.Message}");
+            }
+            return hours;
+        }
     }
 }
