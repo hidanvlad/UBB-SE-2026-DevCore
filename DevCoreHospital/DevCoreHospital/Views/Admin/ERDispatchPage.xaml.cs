@@ -1,12 +1,11 @@
 ﻿using DevCoreHospital.Data;
+using DevCoreHospital.Configuration;
 using DevCoreHospital.Services;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
-using System.Linq;
 using System.Runtime.CompilerServices;
 
 namespace DevCoreHospital.Views
@@ -36,7 +35,7 @@ namespace DevCoreHospital.Views
             }
         }
 
-        private string _manualInterventionHint = "Manual override requires IN_EXAMINATION + near end_time.";
+        private string _manualInterventionHint = "Manual override accepts near-end IN_EXAMINATION or not-working doctors.";
         public string ManualInterventionHint
         {
             get => _manualInterventionHint;
@@ -54,7 +53,7 @@ namespace DevCoreHospital.Views
         {
             InitializeComponent();
 
-            _dispatchService = new ERDispatchService(new MockERDispatchDataSource());
+            _dispatchService = new ERDispatchService(new SqlERDispatchDataSource(AppSettings.ConnectionString));
 
             UnmatchedRequests = new ObservableCollection<UnmatchedRequestRow>();
             SuccessfulMatches = new ObservableCollection<SuccessfulMatchRow>();
@@ -69,11 +68,11 @@ namespace DevCoreHospital.Views
             SuccessfulMatches.Clear();
             OverrideCandidates.Clear();
             StatusMessage = "Dispatching...";
-            ManualInterventionHint = "Manual override requires IN_EXAMINATION + near end_time.";
+            ManualInterventionHint = "Manual override accepts near-end IN_EXAMINATION or not-working doctors.";
 
             try
             {
-                var pendingList = new List<int> { 101, 102, 103 };
+                var pendingList = await _dispatchService.GetPendingRequestIdsAsync();
 
                 foreach (var requestId in pendingList)
                 {
@@ -125,7 +124,21 @@ namespace DevCoreHospital.Views
             SuccessfulMatches.Clear();
             OverrideCandidates.Clear();
             StatusMessage = "Ready";
-            ManualInterventionHint = "Manual override requires IN_EXAMINATION + near end_time.";
+            ManualInterventionHint = "Manual override accepts near-end IN_EXAMINATION or not-working doctors.";
+        }
+
+        private async void SimulateIncoming_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var createdIds = await _dispatchService.SimulateIncomingRequestsAsync(3);
+                StatusMessage = $"Simulated {createdIds.Count} incoming request(s) from Clinical Team. Click Run Dispatch.";
+                ManualInterventionHint = "Incoming ER requests were added as PENDING.";
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"Error: {ex.Message}";
+            }
         }
 
         private async void UnmatchedRequestCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -154,6 +167,8 @@ namespace DevCoreHospital.Views
                 ManualInterventionHint = result.Message;
                 return;
             }
+
+            ManualInterventionHint = result.Message;
 
             UnmatchedRequests.Remove(req);
             SuccessfulMatches.Add(new SuccessfulMatchRow
@@ -187,7 +202,7 @@ namespace DevCoreHospital.Views
             {
                 var minutesToEnd = c.ScheduleEnd.HasValue
                     ? Math.Max(0, (int)Math.Round((c.ScheduleEnd.Value - DateTime.Now).TotalMinutes))
-                    : 0;
+                    : -1;
 
                 OverrideCandidates.Add(new OverrideCandidateRow
                 {
@@ -198,7 +213,7 @@ namespace DevCoreHospital.Views
             }
 
             ManualInterventionHint = OverrideCandidates.Count == 0
-                ? $"No eligible override doctor found (needs IN_EXAMINATION and <= {NearEndMinutesThreshold} min to end_time)."
+                ? $"No eligible override doctor found (need near-end IN_EXAMINATION or not-working doctor)."
                 : $"Found {OverrideCandidates.Count} eligible override candidate(s).";
         }
 
@@ -229,7 +244,9 @@ namespace DevCoreHospital.Views
             public string FullName { get; set; } = string.Empty;
             public int MinutesToEnd { get; set; }
 
-            public string DisplayLabel => $"{FullName} (ends in {MinutesToEnd} min)";
+            public string DisplayLabel => MinutesToEnd >= 0
+                ? $"{FullName} (ends in {MinutesToEnd} min)"
+                : FullName;
         }
     }
 }

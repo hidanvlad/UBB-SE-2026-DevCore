@@ -23,6 +23,7 @@ namespace DevCoreHospital.Services
         public AutoAuditResult RunAutoAudit(DateTime weekStart)
         {
             var normalizedWeekStart = StartOfWeek(weekStart);
+            var normalizedWeekEnd = normalizedWeekStart.AddDays(7);
             var weeklyShifts = _dataSource.GetShiftsForWeek(normalizedWeekStart)
                 .OrderBy(s => s.StaffId)
                 .ThenBy(s => s.Start)
@@ -35,7 +36,13 @@ namespace DevCoreHospital.Services
             foreach (var group in weeklyShifts.GroupBy(s => s.StaffId))
             {
                 var staffShifts = group.OrderBy(s => s.Start).ToList();
-                var totalHours = staffShifts.Sum(s => (s.End - s.Start).TotalHours);
+                var staffAllShifts = allShifts
+                    .Where(s => s.StaffId == group.Key)
+                    .OrderBy(s => s.Start)
+                    .ToList();
+                var weeklyShiftIds = staffShifts.Select(s => s.Id).ToHashSet();
+
+                var totalHours = staffShifts.Sum(s => GetOverlapHours(s.Start, s.End, normalizedWeekStart, normalizedWeekEnd));
 
                 if (totalHours > MaxWeeklyHours)
                 {
@@ -54,13 +61,13 @@ namespace DevCoreHospital.Services
                     }
                 }
 
-                for (var i = 1; i < staffShifts.Count; i++)
+                for (var i = 1; i < staffAllShifts.Count; i++)
                 {
-                    var previous = staffShifts[i - 1];
-                    var current = staffShifts[i];
+                    var previous = staffAllShifts[i - 1];
+                    var current = staffAllShifts[i];
                     var restGap = current.Start - previous.End;
 
-                    if (restGap < MinRestGap)
+                    if (restGap < MinRestGap && weeklyShiftIds.Contains(current.Id))
                     {
                         violations.Add(new AuditViolation
                         {
@@ -82,7 +89,7 @@ namespace DevCoreHospital.Services
                 .OrderBy(v => v.ShiftStart)
                 .ToList();
 
-            var suggestions = BuildSuggestions(dedupedViolations, weeklyShifts, allShifts, staffProfiles);
+            var suggestions = BuildSuggestions(dedupedViolations, normalizedWeekStart, weeklyShifts, allShifts, staffProfiles);
 
             return new AutoAuditResult
             {
@@ -98,11 +105,13 @@ namespace DevCoreHospital.Services
 
         private List<AutoSuggestRecommendation> BuildSuggestions(
             IReadOnlyList<AuditViolation> violations,
+            DateTime weekStart,
             IReadOnlyList<RosterShift> weeklyShifts,
             IReadOnlyList<RosterShift> allShifts,
             IReadOnlyList<StaffProfile> staffProfiles)
         {
             var weeklyById = weeklyShifts.ToDictionary(s => s.Id, s => s);
+            var effectiveShifts = allShifts.Select(CloneShift).ToList();
             var output = new List<AutoSuggestRecommendation>();
 
             foreach (var violation in violations)
@@ -110,13 +119,14 @@ namespace DevCoreHospital.Services
                 if (!weeklyById.TryGetValue(violation.ShiftId, out var violatingShift))
                     continue;
 
+                var violatingShiftInPlan = effectiveShifts.FirstOrDefault(s => s.Id == violatingShift.Id) ?? violatingShift;
                 var candidates = staffProfiles
-                    .Where(s => s.StaffId != violatingShift.StaffId)
-                    .Where(s => string.Equals(s.Role, violatingShift.Role, StringComparison.OrdinalIgnoreCase))
-                    .Where(s => string.Equals(s.Specialization, violatingShift.Specialization, StringComparison.OrdinalIgnoreCase))
-                    .Where(s => s.IsAvailable == false)
-                    .Where(s => !HasOverlap(s.StaffId, violatingShift, allShifts))
-                    .OrderBy(s => _dataSource.GetMonthlyWorkedHours(s.StaffId, violatingShift.Start.Year, violatingShift.Start.Month))
+                    .Where(s => s.StaffId != violatingShiftInPlan.StaffId)
+                    .Where(s => string.Equals(s.Role, violatingShiftInPlan.Role, StringComparison.OrdinalIgnoreCase))
+                    .Where(s => string.Equals(s.Specialization, violatingShiftInPlan.Specialization, StringComparison.OrdinalIgnoreCase))
+                    .Where(s => s.IsAvailable)
+                    .Where(s => CanTakeShift(s.StaffId, violatingShiftInPlan, effectiveShifts, weekStart))
+                    .OrderBy(s => _dataSource.GetMonthlyWorkedHours(s.StaffId, violatingShiftInPlan.Start.Year, violatingShiftInPlan.Start.Month))
                     .ThenBy(s => s.FullName)
                     .ToList();
 
@@ -135,19 +145,76 @@ namespace DevCoreHospital.Services
                     continue;
                 }
 
-                var monthlyHours = _dataSource.GetMonthlyWorkedHours(candidate.StaffId, violatingShift.Start.Year, violatingShift.Start.Month);
+                var monthlyHours = _dataSource.GetMonthlyWorkedHours(candidate.StaffId, violatingShiftInPlan.Start.Year, violatingShiftInPlan.Start.Month);
                 output.Add(new AutoSuggestRecommendation
                 {
-                    ShiftId = violatingShift.Id,
-                    OriginalStaffId = violatingShift.StaffId,
-                    OriginalStaffName = violatingShift.StaffName,
+                    ShiftId = violatingShiftInPlan.Id,
+                    OriginalStaffId = violatingShiftInPlan.StaffId,
+                    OriginalStaffName = violatingShiftInPlan.StaffName,
                     SuggestedStaffId = candidate.StaffId,
                     SuggestedStaffName = candidate.FullName,
                     Reason = $"Lowest monthly load in matching pool ({monthlyHours:F1}h)."
                 });
+
+                ApplyTentativeReassignment(effectiveShifts, violatingShiftInPlan.Id, candidate.StaffId, candidate.FullName);
             }
 
             return output;
+        }
+
+        private static bool CanTakeShift(int candidateStaffId, RosterShift proposed, IReadOnlyList<RosterShift> allShifts, DateTime weekStart)
+        {
+            if (HasOverlap(candidateStaffId, proposed, allShifts))
+                return false;
+
+            var candidateShifts = allShifts
+                .Where(s => s.StaffId == candidateStaffId && s.Id != proposed.Id)
+                .OrderBy(s => s.Start)
+                .ToList();
+
+            var previousShift = candidateShifts.LastOrDefault(s => s.End <= proposed.Start);
+            if (previousShift != null && (proposed.Start - previousShift.End) < MinRestGap)
+                return false;
+
+            var nextShift = candidateShifts.FirstOrDefault(s => s.Start >= proposed.End);
+            if (nextShift != null && (nextShift.Start - proposed.End) < MinRestGap)
+                return false;
+
+            var weekEnd = weekStart.AddDays(7);
+            var existingHours = candidateShifts.Sum(s => GetOverlapHours(s.Start, s.End, weekStart, weekEnd));
+            var proposedHours = GetOverlapHours(proposed.Start, proposed.End, weekStart, weekEnd);
+            return existingHours + proposedHours <= MaxWeeklyHours;
+        }
+
+        private static void ApplyTentativeReassignment(IList<RosterShift> allShifts, int shiftId, int newStaffId, string newStaffName)
+        {
+            var shift = allShifts.FirstOrDefault(s => s.Id == shiftId);
+            if (shift is null)
+                return;
+
+            shift.StaffId = newStaffId;
+            shift.StaffName = newStaffName;
+        }
+
+        private static RosterShift CloneShift(RosterShift source)
+        {
+            return new RosterShift
+            {
+                Id = source.Id,
+                StaffId = source.StaffId,
+                StaffName = source.StaffName,
+                Role = source.Role,
+                Specialization = source.Specialization,
+                Start = source.Start,
+                End = source.End
+            };
+        }
+
+        private static double GetOverlapHours(DateTime shiftStart, DateTime shiftEnd, DateTime windowStart, DateTime windowEnd)
+        {
+            var overlapStart = shiftStart > windowStart ? shiftStart : windowStart;
+            var overlapEnd = shiftEnd < windowEnd ? shiftEnd : windowEnd;
+            return overlapEnd <= overlapStart ? 0 : (overlapEnd - overlapStart).TotalHours;
         }
 
         private static bool HasOverlap(int candidateStaffId, RosterShift proposed, IReadOnlyList<RosterShift> allShifts)

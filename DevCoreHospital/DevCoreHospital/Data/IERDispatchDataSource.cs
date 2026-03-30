@@ -9,7 +9,9 @@ namespace DevCoreHospital.Data
     {
         IReadOnlyList<DoctorProfile> GetAvailableDoctors();
         IReadOnlyList<DoctorProfile> GetDoctorsInExamination();
+        IReadOnlyList<DoctorProfile> GetDoctorsNotWorkingNow();
         IReadOnlyList<ERRequest> GetPendingRequests();
+        int CreateIncomingRequest(string specialization, string location);
         ERRequest? GetRequestById(int requestId);
         DoctorProfile? GetDoctorById(int doctorId);
         void UpdateRequestStatus(int requestId, string status, int? assignedDoctorId, string? assignedDoctorName);

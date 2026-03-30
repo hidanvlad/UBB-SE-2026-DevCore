@@ -1,4 +1,5 @@
 ﻿using DevCoreHospital.Data;
+using DevCoreHospital.Configuration;
 using System;
 using System.Linq;
 
@@ -8,7 +9,7 @@ namespace DevCoreHospital.Services
     {
         public static string Run()
         {
-            var service = new FatigueAuditService(new MockFatigueShiftDataSource());
+            var service = new FatigueAuditService(new SqlFatigueShiftDataSource(AppSettings.ConnectionString));
             var result = service.RunAutoAudit(DateTime.Today);
 
             var firstViolation = result.Violations.FirstOrDefault();

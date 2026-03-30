@@ -1,4 +1,5 @@
 ﻿using DevCoreHospital.Data;
+using DevCoreHospital.Configuration;
 using DevCoreHospital.Services;
 using DevCoreHospital.ViewModels;
 using Microsoft.UI;
@@ -17,7 +18,7 @@ namespace DevCoreHospital.Views.Admin
     {
         private readonly FatigueShiftAuditViewModel _viewModel;
         private readonly IFatigueAuditService _auditService;
-        private readonly MockFatigueShiftDataSource _mockDataSource;
+        private readonly SqlFatigueShiftDataSource _sqlDataSource;
 
         public ObservableCollection<FatigueShiftAuditViewModel.AuditViolationRow> Violations { get; } = new();
         public ObservableCollection<FatigueShiftAuditViewModel.AutoSuggestRow> Suggestions { get; } = new();
@@ -113,9 +114,9 @@ namespace DevCoreHospital.Views.Admin
         {
             InitializeComponent();
 
-            // Initialize mock data source and service
-            _mockDataSource = new MockFatigueShiftDataSource();
-            _auditService = new FatigueAuditService(_mockDataSource);
+            // Initialize SQL data source and service
+            _sqlDataSource = new SqlFatigueShiftDataSource(AppSettings.ConnectionString);
+            _auditService = new FatigueAuditService(_sqlDataSource);
             
             // Initialize ViewModel
             _viewModel = new FatigueShiftAuditViewModel(_auditService);
@@ -215,8 +216,8 @@ namespace DevCoreHospital.Views.Admin
                     return;
                 }
 
-                // Apply the reassignment to the mock data source
-                bool success = _mockDataSource.ReassignShift(shiftId, suggestion.SuggestedStaffId.Value);
+                // Apply the reassignment to the SQL data source
+                bool success = _sqlDataSource.ReassignShift(shiftId, suggestion.SuggestedStaffId.Value);
                 if (success)
                 {
                     // Show confirmation dialog

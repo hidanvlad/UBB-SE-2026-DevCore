@@ -30,6 +30,7 @@
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
 
@@ -48,7 +49,15 @@
                         BorderBrush="{StaticResource AccentBrush}"
                         BorderThickness="1"/>
 
-                <StackPanel Grid.Column="2" Margin="12,0,0,0" VerticalAlignment="Center">
+                <Button Grid.Column="2"
+                        Content="Simulate Incoming"
+                        Click="SimulateIncoming_Click"
+                        Background="Transparent"
+                        Foreground="{StaticResource TextBrush}"
+                        BorderBrush="{StaticResource AccentBrush}"
+                        BorderThickness="1"/>
+
+                <StackPanel Grid.Column="3" Margin="12,0,0,0" VerticalAlignment="Center">
                     <TextBlock Text="Dispatch Status:" Foreground="{StaticResource TextBrush}" FontSize="16"/>
                     <TextBlock Text="{Binding StatusMessage}"
                                Foreground="{StaticResource TextBrush}"
@@ -86,7 +95,7 @@
                                   x:Name="OverrideDoctorCombo"
                                   ItemsSource="{Binding OverrideCandidates}"
                                   DisplayMemberPath="DisplayLabel"
-                                  PlaceholderText="Select IN_EXAMINATION doctor near end_time"/>
+                                  PlaceholderText="Select near-end IN_EXAMINATION or not-working doctor"/>
 
                         <Button Grid.Column="2"
                                 Content="Apply Override"

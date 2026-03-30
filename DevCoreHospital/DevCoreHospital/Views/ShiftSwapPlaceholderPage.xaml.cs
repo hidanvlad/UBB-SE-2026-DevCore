@@ -1,4 +1,5 @@
 ﻿using DevCoreHospital.Data;
+using DevCoreHospital.Configuration;
 using DevCoreHospital.Services;
 using DevCoreHospital.ViewModels;
 using Microsoft.UI.Xaml;
@@ -15,7 +16,7 @@ namespace DevCoreHospital.Views
             InitializeComponent();
 
             ViewModel = new FatigueShiftAuditViewModel(
-                new FatigueAuditService(new MockFatigueShiftDataSource()));
+                new FatigueAuditService(new SqlFatigueShiftDataSource(AppSettings.ConnectionString)));
 
             DataContext = ViewModel;
         }
