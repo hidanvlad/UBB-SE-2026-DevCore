@@ -15,27 +15,23 @@ namespace DevCoreHospital.Services
             _dbManager = dbManager;
         }
 
-        public Task<double> ComputeSalaryDoctorAsync(Doctor doctor, List<Shift> monthlyShifts)
+        public async Task<double> ComputeSalaryDoctorAsync(Models.Doctor doctor, List<Shift> monthlyShifts)
         {
             double totalHours = 0;
-
-            // Task 3 implemented via DB
             foreach (var shift in monthlyShifts)
             {
-
-                totalHours += (shift.EndTime - shift.StartTime).TotalHours; // Fallback calculation
+                totalHours += (shift.EndTime - shift.StartTime).TotalHours;
             }
 
             double doctorHourlyRate = 85.0;
-            return Task.FromResult(totalHours * doctorHourlyRate);
+            return totalHours * doctorHourlyRate;
         }
 
-        public Task<double> ComputeSalaryPharmacistAsync(Pharmacist pharmacist, List<Shift> monthlyShifts, int month, int year)
+        public async Task<double> ComputeSalaryPharmacistAsync(Models.Pharmacist pharmacist, List<Shift> monthlyShifts, int month, int year)
         {
             double totalHours = monthlyShifts.Sum(s => (s.EndTime - s.StartTime).TotalHours);
             double pharmacistHourlyRate = 45.0;
 
-            // Task 5 implemented via DB
             int medicinesSold = 0;
             try
             {
@@ -43,13 +39,12 @@ namespace DevCoreHospital.Services
             }
             catch
             {
-                // Fallback if DB isn't connected yet during testing
                 medicinesSold = 150;
             }
 
             double bonusPerMedicine = 1.5;
 
-            return Task.FromResult((totalHours * pharmacistHourlyRate) + (medicinesSold * bonusPerMedicine));
+            return (totalHours * pharmacistHourlyRate) + (medicinesSold * bonusPerMedicine);
         }
     }
 }

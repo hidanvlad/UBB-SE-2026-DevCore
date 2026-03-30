@@ -1,4 +1,4 @@
-﻿using DevCoreHospital.Configuration; // Added to access AppSettings
+﻿using DevCoreHospital.Configuration;
 using DevCoreHospital.Data;
 using DevCoreHospital.Models;
 using DevCoreHospital.Services;
@@ -44,13 +44,11 @@ namespace DevCoreHospital.ViewModels
 
         public SalaryComputationViewModel()
         {
-            // Use the real connection string from your AppSettings file
             _dbManager = new DatabaseManager(AppSettings.ConnectionString);
             _salaryService = new SalaryComputationService(_dbManager);
 
             ComputeSalaryCommand = new AsyncRelayCommand(ComputeSalaryAsync, CanComputeSalary);
 
-            // Fetch from real database on load
             LoadStaffList();
             LoadShiftList();
         }
@@ -88,14 +86,12 @@ namespace DevCoreHospital.ViewModels
 
             try
             {
-                // Filter shifts from DB based on selected staff and date
                 var staffShifts = ShiftList.Where(s => s.AppointedStaff?.StaffID == SelectedStaff.StaffID
                                                     && s.StartTime.Month == SelectedMonth
                                                     && s.StartTime.Year == SelectedYear).ToList();
 
                 double salary = 0;
 
-                // Compute based on real class types
                 if (SelectedStaff is Models.Doctor doctor)
                 {
                     salary = await _salaryService.ComputeSalaryDoctorAsync(doctor, staffShifts);
