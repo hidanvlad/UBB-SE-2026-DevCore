@@ -66,6 +66,54 @@ namespace DevCoreHospital.Services
             return true;
         }
 
+        // ========================= VIEW MODEL METHODS =========================
+
+        // Fix for CS1501: Accepts the 3 arguments passed from AdminShiftViewModel
+        public List<IStaff> GetFilteredStaff(string location, string requiredSpecialization, string requiredCertification)
+        {
+            var allStaff = _staffRepo.LoadAllStaff();
+            var filteredStaff = new List<IStaff>();
+
+            // If specialization is provided, find matching doctors
+            if (!string.IsNullOrEmpty(requiredSpecialization))
+            {
+                filteredStaff.AddRange(allStaff.OfType<Doctor>()
+                    .Where(d => d.Specialization.Contains(requiredSpecialization, StringComparison.OrdinalIgnoreCase)));
+            }
+
+            // If certification is provided, find matching pharmacists
+            if (!string.IsNullOrEmpty(requiredCertification))
+            {
+                filteredStaff.AddRange(allStaff.OfType<Pharmacyst>()
+                    .Where(p => p.Certification.Contains(requiredCertification, StringComparison.OrdinalIgnoreCase)));
+            }
+
+            // If no specific criteria were provided, return all staff
+            if (string.IsNullOrEmpty(requiredSpecialization) && string.IsNullOrEmpty(requiredCertification))
+            {
+                return allStaff;
+            }
+
+            return filteredStaff;
+        }
+
+        // Fix for CS1503: Accepts a 'Shift' object instead of an 'int' ID
+        public List<IStaff> FindStaffReplacements(Shift shift)
+        {
+            if (shift == null || shift.AppointedStaff == null) return new List<IStaff>();
+
+            var currentStaff = shift.AppointedStaff;
+            var allStaff = _staffRepo.LoadAllStaff();
+
+            // Find staff of the same type (Doctor or Pharmacyst) who are not the current staff member
+            // and are not already scheduled during the shift's time.
+            return allStaff.Where(s =>
+                s.GetType() == currentStaff.GetType() &&
+                s.StaffID != currentStaff.StaffID &&
+                ValidateNoOverlap(s.StaffID, shift.StartTime, shift.EndTime)
+            ).ToList();
+        }
+
         // ========================= SHIFT SWAP - REQUEST =========================
         public List<IStaff> GetEligibleSwapColleaguesForShift(int requesterId, int shiftId, out string error)
         {

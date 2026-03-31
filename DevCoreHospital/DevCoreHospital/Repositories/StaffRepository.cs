@@ -49,6 +49,12 @@ namespace DevCoreHospital.Repositories
             return _dbManager.GetStaff().OfType<Pharmacyst>().Where(ph => ph.Available).ToList();
         }
 
+        // ========================= MISSING VIEW METHOD =========================
+        public List<Pharmacyst> GetPharmacists()
+        {
+            return _dbManager.GetStaff().OfType<Pharmacyst>().ToList();
+        }
+
         public List<IStaff> GetPotentialSwapColleagues(IStaff requester)
         {
             // Refresh list so it includes latest DB data
