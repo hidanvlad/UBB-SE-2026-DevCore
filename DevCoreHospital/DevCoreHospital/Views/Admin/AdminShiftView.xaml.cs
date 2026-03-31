@@ -19,8 +19,6 @@ namespace DevCoreHospital.Views.Admin
 
             var dbManager = new DevCoreHospital.Data.DatabaseManager(AppSettings.ConnectionString);
 
-            // Va trebui să ai un StaffRepository și un ShiftRepository construite în proiect
-            // (Comentează liniile astea dacă vă bazați pe Dependency Injection din App.xaml.cs)
             var staffRepo = new StaffRepository(dbManager);
             var shiftRepo = new ShiftRepository(dbManager);
             var service = new StaffAndShiftService(staffRepo, shiftRepo, dbManager);
@@ -30,7 +28,6 @@ namespace DevCoreHospital.Views.Admin
 
         private void LocationComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            // E bine să verificăm dacă ViewModel nu e null (în caz de probleme la instanțiere)
             if (ViewModel == null) return;
 
             if (LocationComboBox.SelectedItem is string selectedLocation)
@@ -48,7 +45,7 @@ namespace DevCoreHospital.Views.Admin
                 !StartTimePicker.SelectedTime.HasValue ||
                 !EndTimePicker.SelectedTime.HasValue)
             {
-                ShowMessage("Te rugăm să completezi toate câmpurile formularului!", InfoBarSeverity.Error);
+                ShowMessage("Please fill all the fields of the form!", InfoBarSeverity.Error);
                 return;
             }
 
@@ -58,13 +55,13 @@ namespace DevCoreHospital.Views.Admin
 
             if (end <= start)
             {
-                ShowMessage("Eroare: Ora de sfârșit trebuie să fie cronologic după ora de început!", InfoBarSeverity.Warning);
+                ShowMessage("Error: End hour must be chronologically after the start hour!", InfoBarSeverity.Warning);
                 return;
             }
 
             ViewModel.CreateNewShift(selectedStaff, start, end, location);
 
-            ShowMessage("Tura a fost programată cu succes!", InfoBarSeverity.Success);
+            ShowMessage("The shift was scheduled successfuly!", InfoBarSeverity.Success);
 
             StaffComboBox.SelectedIndex = -1;
             LocationComboBox.SelectedIndex = -1;
@@ -75,7 +72,7 @@ namespace DevCoreHospital.Views.Admin
             if (sender is Button btn && btn.Tag is int shiftId)
             {
                 ViewModel.SetShiftActive(shiftId);
-                ShowMessage($"Tura #{shiftId} a fost marcată ca activă.", InfoBarSeverity.Success);
+                ShowMessage($"The shift #{shiftId} was marked as active.", InfoBarSeverity.Success);
             }
         }
 
@@ -84,7 +81,7 @@ namespace DevCoreHospital.Views.Admin
             if (sender is Button btn && btn.Tag is int shiftId)
             {
                 ViewModel.CancelShift(shiftId);
-                ShowMessage($"Tura #{shiftId} a fost anulată.", InfoBarSeverity.Informational);
+                ShowMessage($"The shift #{shiftId} was cancelled.", InfoBarSeverity.Informational);
             }
         }
 
@@ -93,7 +90,7 @@ namespace DevCoreHospital.Views.Admin
             if (sender is Button btn && btn.Tag is Shift shiftToReassign)
             {
                 ViewModel.AutoFindReplacement(shiftToReassign);
-                ShowMessage("S-a declanșat căutarea automată a unui înlocuitor.", InfoBarSeverity.Success);
+                ShowMessage("The automatic searching of a replacement has been triggered.", InfoBarSeverity.Success);
             }
         }
 
