@@ -119,14 +119,16 @@ namespace DevCoreHospital.Repositories
 
         public List<Doctor> GetDoctorsBySpecialization(string specialization)
         {
-            return _dbManager.GetStaff().OfType<Doctor>()
+            return _dbManager.GetStaff()
+                .OfType<Doctor>()
                 .Where(doctor => doctor.Specialization.Equals(specialization, StringComparison.OrdinalIgnoreCase))
                 .ToList();
         }
 
         public List<Pharmacyst> GetPharmacystsByCertification(string certification)
         {
-            return _dbManager.GetStaff().OfType<Pharmacyst>()
+            return _dbManager.GetStaff()
+                .OfType<Pharmacyst>()
                 .Where(ph => ph.Certification.Equals(certification, StringComparison.OrdinalIgnoreCase))
                 .ToList();
         }
