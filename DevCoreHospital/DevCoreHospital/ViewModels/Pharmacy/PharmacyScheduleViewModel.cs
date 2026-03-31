@@ -84,7 +84,8 @@ public class PharmacyScheduleViewModel : ObservableObject
             ? $"Week of {StartOfWeek(AnchorDate):dd MMM yyyy}"
             : AnchorDate.ToString("dddd, dd MMM yyyy");
 
-    public bool IsPharmacist => string.Equals(_currentUser.Role, "Pharmacist", StringComparison.OrdinalIgnoreCase);
+    public bool IsPharmacist => string.Equals(_currentUser.Role, "Pharmacist", StringComparison.OrdinalIgnoreCase) ||
+                                string.Equals(_currentUser.Role, "Admin", StringComparison.OrdinalIgnoreCase);
     public bool IsAccessDenied => !IsPharmacist;
     public bool IsEmpty => !IsLoading && string.IsNullOrWhiteSpace(ErrorMessage) && Shifts.Count == 0;
 
