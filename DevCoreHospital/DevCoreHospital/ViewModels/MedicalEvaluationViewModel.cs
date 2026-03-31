@@ -196,7 +196,7 @@ namespace DevCoreHospital.ViewModels
             string warning = _repository.GetHighRiskMedicineWarning(currentMeds);
             if (!string.IsNullOrEmpty(warning))
             {
-                ConflictWarning = $"⚠️ {warning}";
+                ConflictWarning = warning;
                 IsConflictVisible = true;
             }
             else
