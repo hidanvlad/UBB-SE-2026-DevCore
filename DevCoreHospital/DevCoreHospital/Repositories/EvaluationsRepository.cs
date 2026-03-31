@@ -4,17 +4,14 @@ using System.Linq;
 using System.Data;
 using Microsoft.Data.SqlClient;
 using DevCoreHospital.Models;
+using DevCoreHospital.Configuration; // Crucial for AppSettings
 
 namespace DevCoreHospital.Repositories
-
 {
     public class EvaluationsRepository
     {
-
-        /// <summary>
-        /// USE YOUR OWN CONNECTION HERE
-        /// </summary>
-        private readonly string _connectionString = @"Server=LAPTOP-UV77CFP3\SQLEXPRESS;Database=master;Trusted_Connection=True;TrustServerCertificate=True;";
+        // FIX: now point to AppSetting so it works on all laptop
+        private readonly string _connectionString = AppSettings.ConnectionString;
 
         private static List<Shift> _shiftsMockTable = new List<Shift>();
 
@@ -22,8 +19,43 @@ namespace DevCoreHospital.Repositories
         {
             if (_shiftsMockTable.Count == 0)
             {
-                _shiftsMockTable.Add(new Shift(1, new Doctor(1, "Vlad", "Hidna", "0700-000 000", true, "Cardiology", "12345", DoctorStatus.AVAILABLE), "Cardiology", DateTime.Now, DateTime.Now.AddHours(8), ShiftStatus.ACTIVE));
-                _shiftsMockTable.Add(new Shift(2, new Doctor(2, "Alex", "Necs", "0700-000 001", false, "Neurology", "54321", DoctorStatus.IN_EXAMINATION), "Neurology", DateTime.Now, DateTime.Now.AddHours(8), ShiftStatus.SCHEDULED));
+                _shiftsMockTable.Add(new Shift(1, new DevCoreHospital.Models.Doctor(1, "Vlad", "Hidna", "0700-000 000", true, "Cardiology", "12345", DoctorStatus.AVAILABLE), "Cardiology", DateTime.Now, DateTime.Now.AddHours(8), ShiftStatus.ACTIVE));
+                _shiftsMockTable.Add(new Shift(2, new DevCoreHospital.Models.Doctor(2, "Alex", "Necs", "0700-000 001", false, "Neurology", "54321", DoctorStatus.IN_EXAMINATION), "Neurology", DateTime.Now, DateTime.Now.AddHours(8), ShiftStatus.SCHEDULED));
+            }
+        }
+
+        public string GetActivePatientId(int doctorId)
+        {
+            string sql = @"SELECT TOP 1 PatientId 
+                           FROM Appointments 
+                           WHERE DoctorId = @DocId AND Status = 'Active' 
+                           ORDER BY DateTime DESC";
+
+            using (SqlConnection conn = new SqlConnection(_connectionString))
+            {
+                using (SqlCommand cmd = new SqlCommand(sql, conn))
+                {
+                    cmd.Parameters.AddWithValue("@DocId", doctorId);
+                    conn.Open();
+                    var result = cmd.ExecuteScalar();
+                    return result?.ToString() ?? "N/A";
+                }
+            }
+        }
+
+        public string? GetHighRiskMedicineWarning(string medicineName)
+        {
+            string sql = "SELECT WarningMessage FROM HighRiskMedicines WHERE MedicineName = @Name";
+
+            using (SqlConnection conn = new SqlConnection(_connectionString))
+            {
+                using (SqlCommand cmd = new SqlCommand(sql, conn))
+                {
+                    cmd.Parameters.AddWithValue("@Name", medicineName.Trim());
+                    conn.Open();
+                    var result = cmd.ExecuteScalar();
+                    return result?.ToString();
+                }
             }
         }
 
@@ -35,7 +67,7 @@ namespace DevCoreHospital.Repositories
             {
                 using (SqlCommand cmd = new SqlCommand(sql, conn))
                 {
-                    cmd.Parameters.AddWithValue("@Notes", newNotes);
+                    cmd.Parameters.AddWithValue("@Notes", newNotes ?? string.Empty);
                     cmd.Parameters.AddWithValue("@Id", evaluationId);
 
                     conn.Open();
@@ -43,7 +75,6 @@ namespace DevCoreHospital.Repositories
                 }
             }
         }
-
 
         public void SaveEvaluation(MedicalEvaluation record)
         {
@@ -54,10 +85,10 @@ namespace DevCoreHospital.Repositories
             {
                 using (SqlCommand cmd = new SqlCommand(sql, conn))
                 {
-                    cmd.Parameters.AddWithValue("@PatientId", record.PatientId);
-                    cmd.Parameters.AddWithValue("@Symptoms", record.Symptoms);
-                    cmd.Parameters.AddWithValue("@MedsList", record.MedsList);
-                    cmd.Parameters.AddWithValue("@Notes", record.Notes);
+                    cmd.Parameters.AddWithValue("@PatientId", record.PatientId ?? string.Empty);
+                    cmd.Parameters.AddWithValue("@Symptoms", record.Symptoms ?? string.Empty);
+                    cmd.Parameters.AddWithValue("@MedsList", record.MedsList ?? string.Empty);
+                    cmd.Parameters.AddWithValue("@Notes", record.Notes ?? string.Empty);
                     cmd.Parameters.AddWithValue("@Date", record.EvaluationDate);
                     cmd.Parameters.AddWithValue("@DoctorId", record.Evaluator?.StaffID ?? 0);
 
@@ -90,29 +121,6 @@ namespace DevCoreHospital.Repositories
             return results;
         }
 
-        public List<MedicalEvaluation> GetPatientMedicalHistory(string patientId)
-        {
-            var results = new List<MedicalEvaluation>();
-            string sql = "SELECT * FROM MedicalEvaluations WHERE PatientId = @PatientId ORDER BY EvaluationDate DESC";
-
-            using (SqlConnection conn = new SqlConnection(_connectionString))
-            {
-                using (SqlCommand cmd = new SqlCommand(sql, conn))
-                {
-                    cmd.Parameters.AddWithValue("@PatientId", patientId);
-                    conn.Open();
-                    using (SqlDataReader reader = cmd.ExecuteReader())
-                    {
-                        while (reader.Read())
-                        {
-                            results.Add(MapReaderToEvaluation(reader));
-                        }
-                    }
-                }
-            }
-            return results;
-        }
-
         public void DeleteEvaluation(int evaluationId)
         {
             string sql = "DELETE FROM MedicalEvaluations WHERE EvaluationID = @Id";
@@ -127,20 +135,21 @@ namespace DevCoreHospital.Repositories
                 }
             }
         }
+
         private MedicalEvaluation MapReaderToEvaluation(SqlDataReader reader)
         {
             return new MedicalEvaluation
             {
+                
                 EvaluationID = (int)reader["EvaluationID"],
-                PatientId = reader["PatientId"].ToString(),
-                Symptoms = reader["Symptoms"].ToString(),
-                MedsList = reader["MedsList"].ToString(),
-                Notes = reader["Notes"].ToString(),
-                EvaluationDate = (DateTime)reader["EvaluationDate"],
-                Evaluator = new Doctor { StaffID = (int)reader["DoctorId"] }
+                PatientId = reader["PatientId"].ToString() ?? string.Empty,
+                Symptoms = reader["Symptoms"].ToString() ?? string.Empty,
+                MedsList = reader["MedsList"].ToString() ?? string.Empty,
+                Notes = reader["Notes"].ToString() ?? string.Empty,
+                EvaluationDate = (DateTime)reader["EvaluationDate"]
             };
         }
- 
+
         public double GetDoctorFatigueHours(string doctorId) => CalculateMockFatigue(doctorId);
 
         private double CalculateMockFatigue(string doctorId)
@@ -154,9 +163,5 @@ namespace DevCoreHospital.Repositories
                 .Sum(s => (s.EndTime - s.StartTime).TotalHours);
             return activeHours + completedHours;
         }
-
-        public void UpdateAppointmentStatus(string patientId, string status) { }
-        public void UpdateDoctorAvailability(string doctorId) { }
-        public void CreateAdminFatigueAlert(string doctorId) { }
     }
 }
