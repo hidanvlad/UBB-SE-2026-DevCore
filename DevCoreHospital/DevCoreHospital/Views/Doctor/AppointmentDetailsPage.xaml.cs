@@ -21,8 +21,7 @@ namespace DevCoreHospital.Views
 
             var dbManager = new DatabaseManager(AppSettings.ConnectionString);
             var repo = new AppointmentRepository(dbManager);
-            var fallback = new FallbackDoctorAppointmentDataSource(repo, new MockDoctorAppointmentDataSource());
-            _service = new DoctorAppointmentService(fallback);
+            _service = new DoctorAppointmentService(repo);
         }
 
         protected override void OnNavigatedTo(NavigationEventArgs e)

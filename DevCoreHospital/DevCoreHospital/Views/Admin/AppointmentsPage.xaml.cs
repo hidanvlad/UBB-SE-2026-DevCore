@@ -21,10 +21,7 @@ namespace DevCoreHospital.Views
 
             var dbManager = new DatabaseManager(AppSettings.ConnectionString);
             var appointmentRepository = new AppointmentRepository(dbManager);
-            var fallbackDataSource = new FallbackDoctorAppointmentDataSource(
-                appointmentRepository,
-                new MockDoctorAppointmentDataSource());
-            var service = new DoctorAppointmentService(fallbackDataSource);
+            var service = new DoctorAppointmentService(appointmentRepository);
 
             ViewModel = new AdminAppointmentsViewModel(service);
             DataContext = ViewModel;

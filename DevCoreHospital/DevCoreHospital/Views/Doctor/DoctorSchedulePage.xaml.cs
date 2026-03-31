@@ -23,12 +23,9 @@ namespace DevCoreHospital.Views.Doctor
             _dialogService = new DialogService();
             var dbManager = new DatabaseManager(AppSettings.ConnectionString);
             var appointmentRepository = new AppointmentRepository(dbManager);
-            var fallbackDataSource = new FallbackDoctorAppointmentDataSource(
-                appointmentRepository,
-                new MockDoctorAppointmentDataSource());
             _vm = new DoctorScheduleViewModel(
                 new CurrentUserService(),
-                new DoctorAppointmentService(fallbackDataSource),
+                new DoctorAppointmentService(appointmentRepository),
                 _dialogService);
 
             DataContext = _vm;
