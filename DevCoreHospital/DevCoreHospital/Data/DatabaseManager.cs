@@ -352,7 +352,8 @@ namespace DevCoreHospital.Data
 
             using var cmd = conn.CreateCommand();
             cmd.CommandText = @"
-                SELECT a.appointment_id, a.doctor_id, s.first_name + ' ' + s.last_name AS DoctorName, 
+                SELECT a.appointment_id, a.doctor_id,
+                       LTRIM(RTRIM(CONCAT(COALESCE(s.first_name, ''), ' ', COALESCE(s.last_name, '')))) AS DoctorName,
                        a.patient_id, a.start_time, a.end_time, a.status
                 FROM Appointments a
                 INNER JOIN Staff s ON s.staff_id = a.doctor_id
@@ -453,11 +454,15 @@ namespace DevCoreHospital.Data
             await conn.OpenAsync();
 
             using var cmd = conn.CreateCommand();
-            cmd.CommandText = "SELECT staff_id, first_name + ' ' + last_name FROM Staff WHERE role = 'Doctor' ORDER BY first_name;";
+            cmd.CommandText = @"SELECT staff_id,
+                                       LTRIM(RTRIM(CONCAT(COALESCE(first_name, ''), ' ', COALESCE(last_name, ''))))
+                                FROM Staff
+                                WHERE role = 'Doctor'
+                                ORDER BY first_name;";
 
             using var reader = await cmd.ExecuteReaderAsync();
             while (await reader.ReadAsync())
-                items.Add((reader.GetInt32(0), reader.GetString(1)));
+                items.Add((reader.GetInt32(0), reader.IsDBNull(1) ? "" : reader.GetString(1)));
 
             return items;
         }
@@ -480,16 +485,21 @@ namespace DevCoreHospital.Data
 
         private Appointment MapReaderToAppointment(DbDataReader reader, bool hasDoctorName)
         {
-            DateTime startDt = reader.GetDateTime(reader.GetOrdinal("start_time"));
-            DateTime endDt = reader.GetDateTime(reader.GetOrdinal("end_time"));
-            int patId = reader.GetInt32(reader.GetOrdinal("patient_id"));
+            int startOrdinal = reader.GetOrdinal("start_time");
+            int endOrdinal = reader.GetOrdinal("end_time");
+            int patientOrdinal = reader.GetOrdinal("patient_id");
             int statusOrdinal = reader.GetOrdinal("status");
+            int doctorNameOrdinal = hasDoctorName ? reader.GetOrdinal("DoctorName") : -1;
+
+            DateTime startDt = reader.IsDBNull(startOrdinal) ? DateTime.Now : reader.GetDateTime(startOrdinal);
+            DateTime endDt = reader.IsDBNull(endOrdinal) ? startDt : reader.GetDateTime(endOrdinal);
+            int patId = reader.IsDBNull(patientOrdinal) ? 0 : reader.GetInt32(patientOrdinal);
 
             return new Appointment
             {
                 Id = reader.GetInt32(reader.GetOrdinal("appointment_id")),
                 DoctorId = reader.GetInt32(reader.GetOrdinal("doctor_id")),
-                DoctorName = hasDoctorName ? reader.GetString(reader.GetOrdinal("DoctorName")) : "",
+                DoctorName = hasDoctorName && !reader.IsDBNull(doctorNameOrdinal) ? reader.GetString(doctorNameOrdinal) : "",
                 PatientName = "PAT-" + patId,
                 Date = startDt.Date,
                 StartTime = startDt.TimeOfDay,
