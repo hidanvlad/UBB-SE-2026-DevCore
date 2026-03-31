@@ -301,7 +301,7 @@ namespace DevCoreHospital.Services
         }
 
 
-        // ===== Specialization and Certification Filtering for Location =====
+        // ======= Specialization and Certification Filtering for Location =======
         public List<string> GetSpecializationsAndCertificationsForLocation(string location)
         {
             List<string> result = new List<string>();
