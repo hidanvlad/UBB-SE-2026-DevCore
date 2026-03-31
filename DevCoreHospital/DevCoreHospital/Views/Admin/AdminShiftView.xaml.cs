@@ -50,6 +50,7 @@ namespace DevCoreHospital.Views.Admin
             }
         }
 
+
         private void CreateShift_Click(object sender, RoutedEventArgs e)
         {
             if (StaffComboBox.SelectedItem is not IStaff selectedStaff ||

@@ -56,7 +56,6 @@ namespace DevCoreHospital.Repositories
 
         public List<IStaff> GetPotentialSwapColleagues(IStaff requester)
         {
-            // Refresh list so it includes latest DB data
             LoadStaff();
 
             if (requester is Doctor requesterDoctor)

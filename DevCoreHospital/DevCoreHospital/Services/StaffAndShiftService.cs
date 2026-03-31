@@ -323,5 +323,6 @@ namespace DevCoreHospital.Services
             result = result.Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(s => s).ToList();
             return result;
         }
+
     }
 }

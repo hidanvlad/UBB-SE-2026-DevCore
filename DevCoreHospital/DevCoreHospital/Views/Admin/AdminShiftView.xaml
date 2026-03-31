@@ -61,6 +61,7 @@
                         Foreground="{StaticResource TextBrush}"
                         ItemsSource="{x:Bind ViewModel.AvailableStaff, Mode=OneWay}"
                         DisplayMemberPath="FirstName" />
+                
 
                 <TextBlock Text="Qualified found staff:" Foreground="{StaticResource MutedBrush}" FontSize="12" Margin="0,5,0,-10"/>
                 <ListView ItemsSource="{x:Bind ViewModel.AvailableStaff, Mode=OneWay}"
