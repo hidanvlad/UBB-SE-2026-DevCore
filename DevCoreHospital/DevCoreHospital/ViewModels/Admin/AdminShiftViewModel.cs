@@ -14,6 +14,7 @@ namespace DevCoreHospital.ViewModels.Admin
         private readonly StaffAndShiftService _StaffAndShiftService;
         public ObservableCollection<Shift> Shifts { get; set; } = new();
         public ObservableCollection<IStaff> AvailableStaff { get; set; } = new();
+        public ObservableCollection<string> SpecializationsAndCertifications { get; set; } = new();
 
         public AdminShiftViewModel(StaffAndShiftService service)
         {
@@ -28,11 +29,21 @@ namespace DevCoreHospital.ViewModels.Admin
             foreach (var s in allShifts) Shifts.Add(s);
         }
 
+        public void FilterSpecializationsAndCertificationsForLocation(string location)
+        {
+            SpecializationsAndCertifications.Clear();
+            var list = _StaffAndShiftService.GetSpecializationsAndCertificationsForLocation(location);
+            foreach (var item in list)
+            {
+                SpecializationsAndCertifications.Add(item);
+            }
+        }
+
         // Cerința: Filtrare automată bazată pe locație/specializare
-        public void FilterStaffForShift(string location, string requiredSpecialization = "", string requiredCertification = "")
+        public void FilterStaffForShift(string location, string requiredSpecializationOrCertification)
         {
             AvailableStaff.Clear();
-            var filtered = _StaffAndShiftService.GetFilteredStaff(location, requiredSpecialization, requiredCertification);
+            var filtered = _StaffAndShiftService.GetFilteredStaff(location, requiredSpecializationOrCertification);
             
             foreach (var staff in filtered)
             {

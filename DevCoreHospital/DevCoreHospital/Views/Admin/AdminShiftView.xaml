@@ -36,19 +36,31 @@
                           Foreground="{StaticResource TextBrush}"
                           SelectionChanged="LocationComboBox_SelectionChanged">
                     <x:String>ER</x:String>
+                    <x:String>Ward A</x:String>
+                    <x:String>Ward B</x:String>
                     <x:String>Cardiology</x:String>
-                    <x:String>Central Pharmacy</x:String>
                     <x:String>Surgery</x:String>
                     <x:String>Neurology</x:String>
+                    <x:String>Pediatry</x:String>
+                    <x:String>Oncology</x:String>
+                    <x:String>Pharmacy</x:String>
                 </ComboBox>
 
-                <ComboBox x:Name="StaffComboBox" 
-                          Header="Select the employee" 
-                          PlaceholderText="Select an employee for the shift"
+                <ComboBox x:Name="SpecializationCertificationComboBox"
+                          Header="Specialization / Certification"
+                          PlaceholderText="Choose Specialization or Certification"
                           HorizontalAlignment="Stretch"
+                          ItemsSource="{x:Bind ViewModel.SpecializationsAndCertifications, Mode=OneWay}"
                           Foreground="{StaticResource TextBrush}"
-                          ItemsSource="{x:Bind ViewModel.AvailableStaff, Mode=OneWay}"
-                          DisplayMemberPath="FirstName" />
+                          SelectionChanged="SpecializationCertificationComboBox_SelectionChanged" />
+
+                <ComboBox x:Name="StaffComboBox" 
+                        Header="Select the employee" 
+                        PlaceholderText="Select an employee for the shift"
+                        HorizontalAlignment="Stretch"
+                        Foreground="{StaticResource TextBrush}"
+                        ItemsSource="{x:Bind ViewModel.AvailableStaff, Mode=OneWay}"
+                        DisplayMemberPath="FirstName" />
 
                 <TextBlock Text="Qualified found staff:" Foreground="{StaticResource MutedBrush}" FontSize="12" Margin="0,5,0,-10"/>
                 <ListView ItemsSource="{x:Bind ViewModel.AvailableStaff, Mode=OneWay}"

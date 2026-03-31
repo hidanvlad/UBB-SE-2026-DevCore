@@ -8,4 +8,9 @@ public static class AppSettings
         @"Data Source=LAPTOP-UV77CFP3\SQLEXPRESS;Initial Catalog=HospitalDatabase;Integrated Security=True;Trust Server Certificate=True";
 
     public const int DefaultDoctorId = 1;
+<<<<<<< PatrickM-repair-req1-part4
 }
+
+=======
+}
+>>>>>>> main
