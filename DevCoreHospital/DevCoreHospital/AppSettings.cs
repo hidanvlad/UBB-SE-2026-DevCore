@@ -10,20 +10,3 @@ public static class AppSettings
     public const int DefaultDoctorId = 1;
 }
 
-
-
-/*
- 
-<x:String>Emergency</x:String>
-<x:String>Cardiologist</x:String>
-<x:String>Surgeon</x:String>
-<x:String>Neurology</x:String>
-<x:String>Pediatrics</x:String>
-<x:String>Oncologist</x:String>
-<x:String>Pharmacist BPS</x:String>
-<x:String>Pharmacist BCACP</x:String>
-<x:String>Pharmacist BCCP</x:String>
-<x:String>Pharmacist BCCCP</x:String>
-<x:String>Pharmacist BCIDP</x:String>
- 
- */
