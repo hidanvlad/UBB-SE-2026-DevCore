@@ -1,8 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using DevCoreHospital.Models;
 using DevCoreHospital.Data;
 using Microsoft.IdentityModel.Tokens;
@@ -12,23 +10,23 @@ namespace DevCoreHospital.Repositories
     public class StaffRepository
     {
         private List<IStaff> _staffList;
-        private DatabaseManager _dbManager;
+        private readonly DatabaseManager _dbManager;
 
         public StaffRepository(DatabaseManager dbManager)
         {
-            this._staffList = new List<IStaff>();
-            this._dbManager = dbManager;
+            _staffList = new List<IStaff>();
+            _dbManager = dbManager;
             LoadStaff();
         }
 
         public void LoadStaff()
         {
             _staffList = _dbManager.GetStaff();
-            Console.WriteLine("\n\n\n\n\n\n\n");
-            foreach(var staff in _staffList)
-            {
-                Console.WriteLine(staff.FirstName);
-            }
+        }
+
+        public List<IStaff> LoadAllStaff()
+        {
+            return _dbManager.GetStaff();
         }
 
         public void SaveStaffChanges()
@@ -36,83 +34,100 @@ namespace DevCoreHospital.Repositories
             _dbManager.SaveStaff(_staffList);
         }
 
+        public IStaff? GetStaffById(int staffId)
+        {
+            return _staffList.FirstOrDefault(s => s.StaffID == staffId);
+        }
+
         public List<Doctor> GetAvailableDoctors()
         {
-            var availableDoctors = _dbManager.GetStaff().OfType<Doctor>().Where(doctor => doctor.Available).ToList();
-            return availableDoctors;
+            return _dbManager.GetStaff().OfType<Doctor>().Where(doctor => doctor.Available).ToList();
         }
-        
+
         private List<Pharmacyst> GetAvailablePharmacists()
         {
-            var availablePharmacists = _dbManager.GetStaff().OfType<Pharmacyst>().Where(ph => ph.Available).ToList();
-            return availablePharmacists;
+            return _dbManager.GetStaff().OfType<Pharmacyst>().Where(ph => ph.Available).ToList();
         }
-        
+
+        public List<IStaff> GetPotentialSwapColleagues(IStaff requester)
+        {
+            // Refresh list so it includes latest DB data
+            LoadStaff();
+
+            if (requester is Doctor requesterDoctor)
+            {
+                return _staffList
+                    .OfType<Doctor>()
+                    .Where(d =>
+                        d.StaffID != requester.StaffID &&
+                        d.Specialization.Equals(requesterDoctor.Specialization, StringComparison.OrdinalIgnoreCase))
+                    .Cast<IStaff>()
+                    .ToList();
+            }
+
+            if (requester is Pharmacyst requesterPharmacyst)
+            {
+                return _staffList
+                    .OfType<Pharmacyst>()
+                    .Where(p =>
+                        p.StaffID != requester.StaffID &&
+                        p.Certification.Equals(requesterPharmacyst.Certification, StringComparison.OrdinalIgnoreCase))
+                    .Cast<IStaff>()
+                    .ToList();
+            }
+
+            return new List<IStaff>();
+        }
+
         public List<IStaff> GetAvailableStaff(string doctorSpecialization, string pharmacystCertification)
         {
             var availableDoctors = GetAvailableDoctors();
             var availablePharmacists = GetAvailablePharmacists();
             var availableStaff = new List<IStaff>();
 
-            if (!string.IsNullOrEmpty(doctorSpecialization) && !string.IsNullOrEmpty(pharmacystCertification)) // in this case, we need doctors & pharmacysts
+            if (!string.IsNullOrEmpty(doctorSpecialization) && !string.IsNullOrEmpty(pharmacystCertification))
             {
                 var filteredDoctors = availableDoctors.Where(doctor => doctor.Specialization.Equals(doctorSpecialization, StringComparison.OrdinalIgnoreCase));
                 var filteredPharmacists = availablePharmacists.Where(ph => ph.Certification.Equals(pharmacystCertification, StringComparison.OrdinalIgnoreCase));
                 availableStaff.AddRange(filteredDoctors);
                 availableStaff.AddRange(filteredPharmacists);
-            } else if (!doctorSpecialization.IsNullOrEmpty()) 
+            }
+            else if (!doctorSpecialization.IsNullOrEmpty())
             {
                 var filteredDoctors = availableDoctors.Where(doctor => doctor.Specialization.Equals(doctorSpecialization, StringComparison.OrdinalIgnoreCase));
                 availableStaff.AddRange(filteredDoctors);
-            } else if (!pharmacystCertification.IsNullOrEmpty()) 
+            }
+            else if (!pharmacystCertification.IsNullOrEmpty())
             {
                 var filteredPharmacists = availablePharmacists.Where(ph => ph.Certification.Equals(pharmacystCertification, StringComparison.OrdinalIgnoreCase));
                 availableStaff.AddRange(filteredPharmacists);
             }
-            else 
+            else
             {
                 availableStaff.AddRange(availableDoctors);
                 availableStaff.AddRange(availablePharmacists);
             }
+
             return availableStaff;
         }
 
-        public void RegisterStaff(IStaff newStaff)
-        {
-           
-            _staffList.Add(newStaff);
-        }
-        
-        public void RemoveStaff(int staffId)
-        {
-            var staffToRemove = _staffList.FirstOrDefault(staff => staff.StaffID == staffId);
-            if (staffToRemove != null)
-            {
-                
-                _staffList.Remove(staffToRemove);
-            }
-        }
-        
         public List<Doctor> GetDoctorsBySpecialization(string specialization)
         {
-            var doctors = _dbManager.GetStaff().OfType<Doctor>().Where(doctor => doctor.Specialization.Equals(specialization, StringComparison.OrdinalIgnoreCase)).ToList();
-            return doctors;
+            return _dbManager.GetStaff().OfType<Doctor>()
+                .Where(doctor => doctor.Specialization.Equals(specialization, StringComparison.OrdinalIgnoreCase))
+                .ToList();
         }
 
-        public List<Pharmacyst> GetPharmacists()
-        {
-            return _dbManager.GetStaff().OfType<Pharmacyst>().ToList();
-        }
-        
         public List<Pharmacyst> GetPharmacystsByCertification(string certification)
         {
-            var pharmacysts = _dbManager.GetStaff().OfType<Pharmacyst>().Where(ph => ph.Certification.Equals(certification, StringComparison.OrdinalIgnoreCase)).ToList();
-            return pharmacysts;
+            return _dbManager.GetStaff().OfType<Pharmacyst>()
+                .Where(ph => ph.Certification.Equals(certification, StringComparison.OrdinalIgnoreCase))
+                .ToList();
         }
-        
+
         public void UpdateStaffAvailability(int staffId, bool isAvailable, DoctorStatus status = DoctorStatus.OFF_DUTY)
         {
-            var staff = _staffList.FirstOrDefault(staff => staff.StaffID == staffId);
+            var staff = _staffList.FirstOrDefault(st => st.StaffID == staffId);
             if (staff != null)
             {
                 staff.Available = isAvailable;

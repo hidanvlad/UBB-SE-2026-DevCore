@@ -23,7 +23,7 @@ namespace DevCoreHospital.Views.Admin
             // (Comentează liniile astea dacă vă bazați pe Dependency Injection din App.xaml.cs)
             var staffRepo = new StaffRepository(dbManager);
             var shiftRepo = new ShiftRepository(dbManager);
-            var service = new StaffAndShiftService(staffRepo, shiftRepo);
+            var service = new StaffAndShiftService(staffRepo, shiftRepo, dbManager);
 
             ViewModel = new AdminShiftViewModel(service);
         }

@@ -52,7 +52,8 @@ namespace DevCoreHospital.Views
 
                 case UserRole.Doctor:
                     Add("Medical Evaluation", "doctor-medical", typeof(DevCoreHospital.Views.MedicalEvaluationView));
-                    Add("Shift Swap", "doctor-shift-swap", typeof(ShiftSwapPlaceholderPage));
+                    Add("Shift Swap Request", "doctor-shift-swap-request", typeof(MySchedulePage));
+                    Add("Incoming Swap Requests", "doctor-shift-swap-incoming", typeof(IncomingSwapRequestsPage));
                     Add("See Schedule", "doctor-schedule", typeof(DoctorSchedulePage));
                     Add("Salary", "doctor-salary", typeof(DevCoreHospital.Views.SalaryPlaceholderPage));
                     Add("Hang Out", "doctor-hangout", typeof(HangOutPlaceholderPage));

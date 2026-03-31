@@ -9,22 +9,21 @@ namespace DevCoreHospital.Repositories
     public class ShiftRepository : IShiftRepository
     {
         private List<Shift> _shiftList;
-        private DatabaseManager _dbManager;
+        private readonly DatabaseManager _dbManager;
 
         public ShiftRepository(DatabaseManager dbManager)
         {
-            this._shiftList = new List<Shift>();
-            this._dbManager = dbManager;
+            _shiftList = new List<Shift>();
+            _dbManager = dbManager;
             _shiftList = _dbManager.GetShifts();
         }
-
 
         public void AddShift(Shift newShift)
         {
             _shiftList.Add(newShift);
             _dbManager.AddNewShift(newShift);
         }
-        
+
         public void CancelShift(int shiftId)
         {
             var shiftToCancel = _shiftList.FirstOrDefault(shift => shift.Id == shiftId);
@@ -35,37 +34,36 @@ namespace DevCoreHospital.Repositories
             }
         }
 
-        public List<Shift> GetShifts()
-        {
-            return _shiftList;
-        }
-        
+        public List<Shift> GetShifts() => _shiftList;
+
+        public Shift? GetShiftById(int shiftId)
+            => _shiftList.FirstOrDefault(shift => shift.Id == shiftId);
+
         public List<Shift> GetShiftsByStaffID(int staffId)
-        {
-            var shifts = _shiftList.Where(shift => shift.AppointedStaff.StaffID == staffId).ToList();
-            return shifts;
-        }
-        
+            => _shiftList.Where(shift => shift.AppointedStaff.StaffID == staffId).ToList();
+
         public List<Shift> GetActiveShifts()
-        {
-            var activeShifts = _shiftList.Where(shift => shift.Status == ShiftStatus.ACTIVE).ToList();
-            return activeShifts;
-        }
-        
+            => _shiftList.Where(shift => shift.Status == ShiftStatus.ACTIVE).ToList();
+
+        // REQUIRED by IShiftRepository (fix CS0535)
         public float GetWeeklyHours(int staffId)
         {
             var shifts = GetShiftsByStaffID(staffId);
             float totalHours = 0;
-            var monday = DateTime.Now.AddDays(-(int)DateTime.Now.DayOfWeek + (int)DayOfWeek.Monday);
-            var sunday = monday.AddDays(6);
+
+            var now = DateTime.Now;
+            int diff = (7 + (now.DayOfWeek - DayOfWeek.Monday)) % 7;
+            var monday = now.Date.AddDays(-diff);
+            var nextMonday = monday.AddDays(7);
 
             foreach (var shift in shifts)
             {
-                if (shift.StartTime >= monday && shift.EndTime <= sunday)
+                if (shift.StartTime >= monday && shift.StartTime < nextMonday)
                 {
                     totalHours += (float)(shift.EndTime - shift.StartTime).TotalHours;
                 }
             }
+
             return totalHours;
         }
 
@@ -81,6 +79,9 @@ namespace DevCoreHospital.Repositories
                 .ToList();
         }
 
+        public bool IsStaffWorkingDuring(int staffId, DateTime start, DateTime end)
+            => _dbManager.IsStaffWorkingDuring(staffId, start, end);
+
         public void UpdateShiftStatus(int shiftId, ShiftStatus status)
         {
             var shiftToUpdate = _shiftList.FirstOrDefault(shift => shift.Id == shiftId);
@@ -89,6 +90,11 @@ namespace DevCoreHospital.Repositories
                 shiftToUpdate.Status = status;
                 _dbManager.UpdateShift(shiftToUpdate);
             }
+        }
+
+        public void Refresh()
+        {
+            _shiftList = _dbManager.GetShifts();
         }
     }
 }

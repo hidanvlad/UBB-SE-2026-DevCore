@@ -1,10 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using DevCoreHospital.Models;
 using DevCoreHospital.Repositories;
+using DevCoreHospital.Data;
 using Microsoft.IdentityModel.Tokens;
 
 namespace DevCoreHospital.Services
@@ -13,11 +12,13 @@ namespace DevCoreHospital.Services
     {
         private readonly StaffRepository _staffRepo;
         private readonly ShiftRepository _shiftRepo;
+        private readonly DatabaseManager _dbManager;
 
-        public StaffAndShiftService(StaffRepository staffRepo, ShiftRepository shiftRepo)
+        public StaffAndShiftService(StaffRepository staffRepo, ShiftRepository shiftRepo, DatabaseManager dbManager)
         {
             _staffRepo = staffRepo;
             _shiftRepo = shiftRepo;
+            _dbManager = dbManager;
         }
 
         public void SetShiftActive(int shiftId)
@@ -46,15 +47,10 @@ namespace DevCoreHospital.Services
                 ((start >= shift.StartTime && start < shift.EndTime) || (end > shift.StartTime && end <= shift.EndTime)));
         }
 
-        public void AddShift(Shift shift)
-        {
-            this._shiftRepo.AddShift(shift);
-        }
+        public void AddShift(Shift shift) => _shiftRepo.AddShift(shift);
 
         public List<Shift> GetDailyShifts(DateTime date)
-        {
-            return _shiftRepo.GetShifts().Where(shift => shift.StartTime.Date == date.Date).ToList();
-        }
+            => _shiftRepo.GetShifts().Where(shift => shift.StartTime.Date == date.Date).ToList();
 
         public List<Shift> GetWeeklyShifts(DateTime date)
         {
@@ -63,66 +59,200 @@ namespace DevCoreHospital.Services
             return _shiftRepo.GetShifts().Where(shift => shift.StartTime >= monday && shift.StartTime < sunday).ToList();
         }
 
-        public List<IStaff> FindStaffReplacements(Shift shift)
-        {
-            if (shift != null)
-            {
-                if (shift.AppointedStaff is Doctor doc)
-                {
-                    return _staffRepo.GetDoctorsBySpecialization(doc.Specialization)
-                        .Where(doctor => doctor.Available && ValidateNoOverlap(doctor.StaffID, shift.StartTime, shift.EndTime))
-                        .Cast<IStaff>()
-                        .ToList();
-                }
-                else if (shift.AppointedStaff is Pharmacyst ph)
-                {
-                    return _staffRepo.GetPharmacystsByCertification(ph.Certification)
-                        .Where(pharmacyst => pharmacyst.Available && ValidateNoOverlap(pharmacyst.StaffID, shift.StartTime, shift.EndTime))
-                        .Cast<IStaff>()
-                        .ToList();
-                }
-            }
-            return new List<IStaff>();
-        }
-
-        public bool ValidateRestPeriod(int staffId, DateTime newShiftStart)
-        {
-            var lastShift = _shiftRepo.GetShiftsByStaffID(staffId).OrderByDescending(shift => shift.EndTime).FirstOrDefault();
-            if (lastShift != null)
-            {
-                var restPeriod = (newShiftStart - lastShift.EndTime).TotalHours;
-                return restPeriod >= 12; // Minimum rest period of 12 hours
-            }
-            return true; // If there are no previous shifts, the staff member had enough rest and we can assign the new shift
-
-        }
-
-        public List<IStaff> GetFilteredStaff(string location, string requiredSpecialization, string requiredCertification)
-        {
-            var availableStaff = this._staffRepo.GetAvailableStaff(requiredSpecialization, requiredCertification);
-
-            if (location.Contains("Pharmacy", StringComparison.OrdinalIgnoreCase))
-            {
-                return availableStaff.Where(staff => staff is Pharmacyst).ToList();
-            } else
-            {
-                return availableStaff.Where(staff => staff is Doctor doctor && doctor.Specialization.Equals(location, StringComparison.OrdinalIgnoreCase)).ToList();
-            }
-        }
-
         public bool ReassignShift(Shift shift, IStaff newStaff)
         {
-            var staffReplacements = FindStaffReplacements(shift);
-            if (!staffReplacements.IsNullOrEmpty())
+            if (shift == null || newStaff == null) return false;
+            shift.AppointedStaff = newStaff;
+            return true;
+        }
+
+        // ========================= SHIFT SWAP - REQUEST =========================
+        public List<IStaff> GetEligibleSwapColleaguesForShift(int requesterId, int shiftId, out string error)
+        {
+            error = string.Empty;
+
+            var shift = _shiftRepo.GetShiftById(shiftId);
+            if (shift == null)
             {
-                shift.AppointedStaff = staffReplacements.First();
-                this._staffRepo.SaveStaffChanges();
-                return true;
-            } else
+                error = "Shift not found.";
+                return new List<IStaff>();
+            }
+
+            if (shift.AppointedStaff.StaffID != requesterId)
             {
+                error = "You can only request swap for your own shift.";
+                return new List<IStaff>();
+            }
+
+            if (shift.StartTime <= DateTime.Now)
+            {
+                error = "You can only request swap for a future shift.";
+                return new List<IStaff>();
+            }
+
+            var requester = _staffRepo.GetStaffById(requesterId);
+            if (requester == null)
+            {
+                error = "Requester not found.";
+                return new List<IStaff>();
+            }
+
+            return _staffRepo.GetPotentialSwapColleagues(requester);
+        }
+
+        public bool RequestShiftSwap(int requesterId, int shiftId, int colleagueId, out string message)
+        {
+            message = string.Empty;
+
+            var shift = _shiftRepo.GetShiftById(shiftId);
+            if (shift == null)
+            {
+                message = "Shift not found.";
                 return false;
             }
+
+            if (shift.AppointedStaff.StaffID != requesterId)
+            {
+                message = "You can only request swap for your own shift.";
+                return false;
+            }
+
+            if (shift.StartTime <= DateTime.Now)
+            {
+                message = "Only future shifts can be swapped.";
+                return false;
+            }
+
+            var requester = _staffRepo.GetStaffById(requesterId);
+            var colleague = _staffRepo.GetStaffById(colleagueId);
+            if (requester == null || colleague == null)
+            {
+                message = "Requester or colleague not found.";
+                return false;
+            }
+
+            var eligible = _staffRepo.GetPotentialSwapColleagues(requester).Any(c => c.StaffID == colleagueId);
+            if (!eligible)
+            {
+                message = "Selected colleague is not from the same role/profile.";
+                return false;
+            }
+
+            var isWorking = _shiftRepo.IsStaffWorkingDuring(colleagueId, shift.StartTime, shift.EndTime);
+            if (!isWorking)
+            {
+                message = "Selected colleague is not working during that time interval.";
+                return false;
+            }
+
+            var request = new ShiftSwapRequest
+            {
+                ShiftId = shiftId,
+                RequesterId = requesterId,
+                ColleagueId = colleagueId,
+                RequestedAt = DateTime.UtcNow,
+                Status = ShiftSwapRequestStatus.PENDING
+            };
+
+            var swapId = _dbManager.CreateShiftSwapRequest(request);
+            if (swapId <= 0)
+            {
+                message = "Failed to create shift swap request.";
+                return false;
+            }
+
+            _dbManager.AddNotification(
+                colleagueId,
+                "New Shift Swap Request",
+                $"You received a shift swap request from {requester.FirstName} {requester.LastName} for shift #{shiftId} ({shift.StartTime:yyyy-MM-dd HH:mm} - {shift.EndTime:HH:mm}).");
+
+            message = "Shift swap request sent successfully.";
+            return true;
+        }
+
+        // ========================= SHIFT SWAP - ACCEPT/REJECT =========================
+        public List<ShiftSwapRequest> GetIncomingSwapRequests(int colleagueId)
+        {
+            return _dbManager.GetPendingSwapRequestsForColleague(colleagueId);
+        }
+
+        public bool AcceptSwapRequest(int swapId, int colleagueId, out string message)
+        {
+            message = string.Empty;
+
+            var req = _dbManager.GetShiftSwapRequestById(swapId);
+            if (req == null)
+            {
+                message = "Swap request not found.";
+                return false;
+            }
+
+            if (req.ColleagueId != colleagueId)
+            {
+                message = "You cannot accept this request.";
+                return false;
+            }
+
+            if (req.Status != ShiftSwapRequestStatus.PENDING)
+            {
+                message = "This request is no longer pending.";
+                return false;
+            }
+
+            var shift = _shiftRepo.GetShiftById(req.ShiftId);
+            if (shift == null)
+            {
+                message = "Shift not found.";
+                return false;
+            }
+
+            if (!_shiftRepo.IsStaffWorkingDuring(colleagueId, shift.StartTime, shift.EndTime))
+            {
+                message = "You are no longer working in that interval.";
+                return false;
+            }
+
+            if (!_dbManager.ReassignShiftToStaff(req.ShiftId, colleagueId))
+            {
+                message = "Failed to reassign shift.";
+                return false;
+            }
+
+            _dbManager.UpdateShiftSwapRequestStatus(swapId, "ACCEPTED");
+            _dbManager.AddNotification(req.RequesterId, "Shift Swap Accepted", $"Your swap request #{swapId} was accepted.");
+
+            _shiftRepo.Refresh();
+            message = "Swap accepted.";
+            return true;
+        }
+
+        public bool RejectSwapRequest(int swapId, int colleagueId, out string message)
+        {
+            message = string.Empty;
+
+            var req = _dbManager.GetShiftSwapRequestById(swapId);
+            if (req == null)
+            {
+                message = "Swap request not found.";
+                return false;
+            }
+
+            if (req.ColleagueId != colleagueId)
+            {
+                message = "You cannot reject this request.";
+                return false;
+            }
+
+            if (req.Status != ShiftSwapRequestStatus.PENDING)
+            {
+                message = "This request is no longer pending.";
+                return false;
+            }
+
+            _dbManager.UpdateShiftSwapRequestStatus(swapId, "REJECTED");
+            _dbManager.AddNotification(req.RequesterId, "Shift Swap Rejected", $"Your swap request #{swapId} was rejected.");
+            message = "Swap rejected.";
+            return true;
         }
     }
 }
-        
