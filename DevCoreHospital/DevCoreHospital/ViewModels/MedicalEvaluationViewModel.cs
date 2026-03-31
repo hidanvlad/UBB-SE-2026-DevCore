@@ -300,7 +300,7 @@ namespace DevCoreHospital.ViewModels
         public void ExecuteDeletion()
         {
             if (SelectedEvaluation == null) return;
-            _repository.DeleteEvaluation(SelectedEvaluation.EvaluationID);
+            _repository.deleteEval(SelectedEvaluation.EvaluationID);
             ResetForm();
             PopulateHistory();
         }
