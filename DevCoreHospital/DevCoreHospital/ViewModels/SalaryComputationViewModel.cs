@@ -7,7 +7,6 @@ using System;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
- 
 
 namespace DevCoreHospital.ViewModels
 {
@@ -87,6 +86,7 @@ namespace DevCoreHospital.ViewModels
 
             try
             {
+                // The ViewModel filters the shifts for the specific month/year
                 var staffShifts = ShiftList.Where(s => s.AppointedStaff?.StaffID == SelectedStaff.StaffID
                                                     && s.StartTime.Month == SelectedMonth
                                                     && s.StartTime.Year == SelectedYear).ToList();
@@ -95,11 +95,13 @@ namespace DevCoreHospital.ViewModels
 
                 if (SelectedStaff is Models.Doctor doctor)
                 {
-                    salary = await _salaryService.ComputeSalaryDoctorAsync(doctor, staffShifts);
+                    // Pass the month and year to the doctor calculation
+                    salary = await _salaryService.ComputeSalaryDoctorAsync(doctor, staffShifts, SelectedMonth, SelectedYear);
                 }
-                else if (SelectedStaff is Models.Pharmacyst pharmacist)
+                else if (SelectedStaff is Models.Pharmacyst pharmacyst)
                 {
-                    salary = await _salaryService.ComputeSalaryPharmacistAsync(pharmacist, staffShifts, SelectedMonth, SelectedYear);
+                    // Pass the month and year to the pharmacyst calculation
+                    salary = await _salaryService.ComputeSalaryPharmacistAsync(pharmacyst, staffShifts, SelectedMonth, SelectedYear);
                 }
                 else
                 {

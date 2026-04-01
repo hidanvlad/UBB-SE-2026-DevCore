@@ -28,9 +28,9 @@ namespace DevCoreHospital.Data
 
                 using var cmd = connection.CreateCommand();
                 cmd.CommandText = @"
-                    SELECT staff_id, role, first_name, last_name, contact_info, 
-                           is_available, license_number, specialization, status, certification 
-                    FROM Staff";
+                        SELECT staff_id, role, first_name, last_name, contact_info, 
+                        is_available, license_number, specialization, status, certification, years_of_experience 
+                        FROM Staff";
 
                 using var reader = cmd.ExecuteReader();
                 while (reader.Read())
@@ -45,13 +45,23 @@ namespace DevCoreHospital.Data
                     string special = reader.IsDBNull(7) ? "" : reader.GetString(7);
                     string statusStr = reader.IsDBNull(8) ? "Available" : reader.GetString(8);
                     string cert = reader.IsDBNull(9) ? "" : reader.GetString(9);
+                    int yearsExp = reader.IsDBNull(10) ? 0 : reader.GetInt32(10); 
 
                     Enum.TryParse<DoctorStatus>(statusStr, true, out DoctorStatus docStatus);
 
                     if (role == "Doctor")
-                        staffList.Add(new Doctor(id, firstName, lastName, contactInfo, isAvailable, special, license, docStatus));
+                    {
+                        var doc = new Doctor(id, firstName, lastName, contactInfo, isAvailable, special, license, docStatus,yearsExp);
+                        doc.YearsOfExperience = yearsExp;
+                        staffList.Add(doc);
+                    }
                     else if (role == "Pharmacist")
-                        staffList.Add(new Pharmacyst(id, firstName, lastName, contactInfo, isAvailable, cert));
+                    {
+                       
+                        var pharm = new Pharmacyst(id, firstName, lastName, contactInfo, isAvailable, cert,yearsExp);
+                        
+                        staffList.Add(pharm);
+                    }
                 }
             }
             catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"Eroare GetStaff: {ex.Message}"); }
@@ -680,6 +690,166 @@ namespace DevCoreHospital.Data
                 Type = "",
                 Location = ""
             };
+        }
+        // ==========================================
+        // HANGOUTS CRUD
+        // ==========================================
+        public int InsertHangout(string title, string description, DateTime date, int maxParticipants)
+        {
+            using var conn = GetConnection();
+            conn.Open();
+            using var cmd = conn.CreateCommand();
+            cmd.CommandText = @"
+        INSERT INTO Hangouts (title, description, date_time, max_staff)
+        OUTPUT INSERTED.hangout_id
+        VALUES (@Title, @Description, @Date, @MaxStaff);";
+
+            AddParameter(cmd, "@Title", title);
+            AddParameter(cmd, "@Description", string.IsNullOrEmpty(description) ? DBNull.Value : description);
+            AddParameter(cmd, "@Date", date);
+            AddParameter(cmd, "@MaxStaff", maxParticipants);
+
+            return (int)cmd.ExecuteScalar();
+        }
+
+        public void InsertHangoutParticipant(int hangoutId, int staffId)
+        {
+            using var conn = GetConnection();
+            conn.Open();
+            using var cmd = conn.CreateCommand();
+            cmd.CommandText = "INSERT INTO Hangout_Participants (hangout_id, staff_id) VALUES (@HId, @SId)";
+            AddParameter(cmd, "@HId", hangoutId);
+            AddParameter(cmd, "@SId", staffId);
+            cmd.ExecuteNonQuery();
+        }
+
+        public List<Hangout> GetAllHangouts()
+        {
+            var list = new List<Hangout>();
+            using var conn = GetConnection();
+            conn.Open();
+            using var cmd = conn.CreateCommand();
+            cmd.CommandText = "SELECT hangout_id, title, description, date_time, max_staff FROM Hangouts";
+            using var reader = cmd.ExecuteReader();
+            while (reader.Read())
+            {
+                list.Add(new Hangout(
+                    reader.GetInt32(0),
+                    reader.GetString(1),
+                    reader.IsDBNull(2) ? "" : reader.GetString(2),
+                    reader.GetDateTime(3),
+                    reader.GetInt32(4)
+                ));
+            }
+            return list;
+        }
+
+        public Hangout? GetHangoutById(int id)
+        {
+            using var conn = GetConnection();
+            conn.Open();
+            using var cmd = conn.CreateCommand();
+            cmd.CommandText = "SELECT hangout_id, title, description, date_time, max_staff FROM Hangouts WHERE hangout_id = @Id";
+            AddParameter(cmd, "@Id", id);
+            using var reader = cmd.ExecuteReader();
+            if (reader.Read())
+            {
+                return new Hangout(
+                    id,
+                    reader.GetString(1),
+                    reader.IsDBNull(2) ? "" : reader.GetString(2),
+                    reader.GetDateTime(3),
+                    reader.GetInt32(4)
+                );
+            }
+            return null;
+        }
+
+        public List<IStaff> GetHangoutParticipants(int hangoutId)
+        {
+            var participants = new List<IStaff>();
+            using var conn = GetConnection();
+            conn.Open();
+            using var cmd = conn.CreateCommand();
+            cmd.CommandText = @"
+        SELECT s.staff_id, s.first_name, s.last_name 
+        FROM Hangout_Participants hp
+        JOIN Staff s ON hp.staff_id = s.staff_id
+        WHERE hp.hangout_id = @HId";
+            AddParameter(cmd, "@HId", hangoutId);
+            using var reader = cmd.ExecuteReader();
+            while (reader.Read())
+            {
+                participants.Add(new Doctor
+                {
+                    StaffID = reader.GetInt32(0),
+                    FirstName = reader.GetString(1),
+                    LastName = reader.GetString(2)
+                });
+            }
+            return participants;
+        }
+
+        public List<string> GetAppointmentStatusesForStaffOnDate(int staffId, DateTime date)
+        {
+            var statuses = new List<string>();
+            try
+            {
+                using var connection = GetConnection();
+                connection.Open();
+
+                using var cmd = connection.CreateCommand();
+                // Just retrieving the data, NO business logic inside the SQL!
+                cmd.CommandText = @"
+            SELECT status 
+            FROM Appointments 
+            WHERE doctor_id = @StaffId 
+              AND CAST(start_time AS DATE) = CAST(@Date AS DATE)";
+
+                AddParameter(cmd, "@StaffId", staffId);
+                AddParameter(cmd, "@Date", date.Date);
+
+                using var reader = cmd.ExecuteReader();
+                while (reader.Read())
+                {
+                    statuses.Add(reader.IsDBNull(0) ? "" : reader.GetString(0));
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error GetAppointmentStatuses: {ex.Message}");
+            }
+            return statuses;
+        }
+        //for salary bonus
+        public bool DidStaffParticipateInHangout(int staffId, int month, int year)
+        {
+            try
+            {
+                using var conn = GetConnection();
+                conn.Open();
+                using var cmd = conn.CreateCommand();
+                // Check if there's at least one hangout the staff joined in the given month/year
+                cmd.CommandText = @"
+            SELECT COUNT(*) 
+            FROM Hangout_Participants hp
+            JOIN Hangouts h ON hp.hangout_id = h.hangout_id
+            WHERE hp.staff_id = @StaffId 
+              AND MONTH(h.date_time) = @Month 
+              AND YEAR(h.date_time) = @Year";
+
+                AddParameter(cmd, "@StaffId", staffId);
+                AddParameter(cmd, "@Month", month);
+                AddParameter(cmd, "@Year", year);
+
+                int count = Convert.ToInt32(cmd.ExecuteScalar());
+                return count > 0; // True if they joined 1 or more hangouts
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error checking hangout bonus: {ex.Message}");
+                return false;
+            }
         }
     }
 }

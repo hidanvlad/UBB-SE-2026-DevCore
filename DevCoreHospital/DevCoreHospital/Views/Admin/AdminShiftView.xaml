@@ -110,12 +110,12 @@
                 <ListView.ItemTemplate>
                     <DataTemplate x:DataType="models:Shift">
                         <Grid Padding="15" Margin="0,0,0,10" Background="#1A241C" CornerRadius="8">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
 
-                            <StackPanel Grid.Column="0" Spacing="5">
+                            <StackPanel Grid.Row="0" Spacing="5">
                                 <StackPanel Orientation="Horizontal" Spacing="5">
                                     <TextBlock Text="{x:Bind AppointedStaff.FirstName}" Foreground="{StaticResource TextBrush}" FontWeight="Bold" FontSize="16"/>
                                     <TextBlock Text="{x:Bind AppointedStaff.LastName}" Foreground="{StaticResource TextBrush}" FontWeight="Bold" FontSize="16"/>
@@ -129,7 +129,7 @@
                                 <TextBlock Text="{x:Bind Status}" Foreground="#4CAF50" FontWeight="SemiBold"/>
                             </StackPanel>
 
-                            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                            <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
                                 <Button Content="Set Active" Click="SetActive_Click" Tag="{x:Bind Id}" Background="#2E7D32" Foreground="White"/>
                                 <Button Content="Cancel" Click="CancelShift_Click" Tag="{x:Bind Id}" Background="#C62828" Foreground="White"/>
                                 <Button Content="Auto-Reassign" Click="AutoReassign_Click" Tag="{x:Bind}" Background="#0277BD" Foreground="White"/>

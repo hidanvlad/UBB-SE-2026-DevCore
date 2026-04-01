@@ -17,6 +17,13 @@
         <StackPanel Grid.Column="0" Spacing="16" Margin="0,0,24,0">
             <TextBlock Text="Create Hangout" FontSize="28" FontWeight="SemiBold"/>
 
+            <ComboBox Header="Select Doctor" 
+                      ItemsSource="{x:Bind ViewModel.Doctors}"
+                      SelectedItem="{x:Bind ViewModel.SelectedDoctor, Mode=TwoWay}"
+                      DisplayMemberPath="DoctorName"
+                      PlaceholderText="Select doctor"
+                      HorizontalAlignment="Stretch"/>
+
             <TextBox Header="Title" Text="{x:Bind ViewModel.Title, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" PlaceholderText="5-25 characters" MaxLength="25"/>
             <TextBox Header="Description" Text="{x:Bind ViewModel.Description, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" PlaceholderText="Max 100 characters" AcceptsReturn="True" Height="100" MaxLength="100"/>
 

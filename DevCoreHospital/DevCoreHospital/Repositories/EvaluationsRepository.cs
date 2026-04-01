@@ -19,8 +19,8 @@ namespace DevCoreHospital.Repositories
         {
             if (_shiftsMockTable.Count == 0)
             {
-                _shiftsMockTable.Add(new Shift(1, new DevCoreHospital.Models.Doctor(1, "Vlad", "Hidna", "0700-000 000", true, "Cardiology", "12345", DoctorStatus.AVAILABLE), "Cardiology", DateTime.Now, DateTime.Now.AddHours(8), ShiftStatus.ACTIVE));
-                _shiftsMockTable.Add(new Shift(2, new DevCoreHospital.Models.Doctor(2, "Alex", "Necs", "0700-000 001", false, "Neurology", "54321", DoctorStatus.IN_EXAMINATION), "Neurology", DateTime.Now, DateTime.Now.AddHours(8), ShiftStatus.SCHEDULED));
+                _shiftsMockTable.Add(new Shift(1, new DevCoreHospital.Models.Doctor(1, "Vlad", "Hidna", "0700-000 000", true, "Cardiology", "12345", DoctorStatus.AVAILABLE, 10), "Cardiology", DateTime.Now, DateTime.Now.AddHours(8), ShiftStatus.ACTIVE));
+                _shiftsMockTable.Add(new Shift(2, new DevCoreHospital.Models.Doctor(2, "Alex", "Necs", "0700-000 001", false, "Neurology", "54321", DoctorStatus.IN_EXAMINATION, 15), "Neurology", DateTime.Now, DateTime.Now.AddHours(8), ShiftStatus.SCHEDULED));
             }
         }
 

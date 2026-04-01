@@ -63,7 +63,7 @@ namespace DevCoreHospital.Views.Admin
                 return;
             }
 
-            DateTime date = ShiftDatePicker.Date.Value.DateTime;
+            DateTime date = ShiftDatePicker.Date.Value.Date;
             DateTime start = date.Add(StartTimePicker.SelectedTime.Value);
             DateTime end = date.Add(EndTimePicker.SelectedTime.Value);
 
@@ -75,7 +75,7 @@ namespace DevCoreHospital.Views.Admin
 
             ViewModel.CreateNewShift(selectedStaff, start, end, location);
 
-            ShowMessage("The shift was scheduled successfuly!", InfoBarSeverity.Success);
+            //ShowMessage("The shift was scheduled successfuly!", InfoBarSeverity.Success);
 
             StaffComboBox.SelectedIndex = -1;
             LocationComboBox.SelectedIndex = -1;

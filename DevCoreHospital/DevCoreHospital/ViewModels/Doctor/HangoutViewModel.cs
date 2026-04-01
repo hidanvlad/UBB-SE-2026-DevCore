@@ -1,18 +1,32 @@
 ﻿using System;
 using System.Collections.ObjectModel;
+using System.Linq;
+using System.Threading.Tasks;
 using DevCoreHospital.Models;
 using DevCoreHospital.Services;
 using DevCoreHospital.Repositories;
 using DevCoreHospital.ViewModels.Base;
+using DevCoreHospital.Configuration; // Needed for AppSettings
+using DevCoreHospital.Data;
 
 namespace DevCoreHospital.ViewModels.Doctor
 {
     public class HangoutViewModel : ObservableObject
     {
         private readonly HangoutService _hangoutService;
-        private readonly ICurrentUserService _currentUserService;
+        private readonly DatabaseManager _dbManager; // Added DatabaseManager
 
         public ObservableCollection<Hangout> Hangouts { get; } = new ObservableCollection<Hangout>();
+
+        // Add Doctor Collection and Selected Doctor
+        public ObservableCollection<DoctorScheduleViewModel.DoctorOption> Doctors { get; } = new();
+
+        private DoctorScheduleViewModel.DoctorOption? _selectedDoctor;
+        public DoctorScheduleViewModel.DoctorOption? SelectedDoctor
+        {
+            get => _selectedDoctor;
+            set { SetProperty(ref _selectedDoctor, value); CreateCommand.RaiseCanExecuteChanged(); }
+        }
 
         private string _title = string.Empty;
         public string Title { get => _title; set { SetProperty(ref _title, value); CreateCommand.RaiseCanExecuteChanged(); } }
@@ -36,16 +50,44 @@ namespace DevCoreHospital.ViewModels.Doctor
 
         public RelayCommand CreateCommand { get; }
 
-        // Shared static repo instance across page navigations to persist memory
         private static HangoutRepository _globalRepo = new HangoutRepository();
 
         public HangoutViewModel()
         {
             _hangoutService = new HangoutService(_globalRepo);
-            _currentUserService = new CurrentUserService();
+            _dbManager = new DatabaseManager(AppSettings.ConnectionString); // Initialize DB Manager
 
             CreateCommand = new RelayCommand(CreateHangout, CanCreateHangout);
             LoadHangouts();
+            _ = LoadDoctorsAsync(); // Load Doctors when VM initializes
+        }
+
+        private async Task LoadDoctorsAsync()
+        {
+            Doctors.Clear();
+            try
+            {
+                var allDoctors = await _dbManager.GetAllDoctorsAsync();
+                foreach (var d in allDoctors.OrderBy(x => x.DoctorName))
+                {
+                    Doctors.Add(new DoctorScheduleViewModel.DoctorOption
+                    {
+                        DoctorId = d.DoctorId,
+                        DoctorName = d.DoctorName,
+                        FirstName = DoctorScheduleViewModel.DoctorOption.SplitFirstLast(d.DoctorName).FirstName,
+                        LastName = DoctorScheduleViewModel.DoctorOption.SplitFirstLast(d.DoctorName).LastName
+                    });
+                }
+
+                if (Doctors.Any())
+                {
+                    SelectedDoctor = Doctors.First();
+                }
+            }
+            catch (Exception ex)
+            {
+                ErrorMessage = $"Failed to load doctors: {ex.Message}";
+            }
         }
 
         private void LoadHangouts()
@@ -57,7 +99,8 @@ namespace DevCoreHospital.ViewModels.Doctor
             }
         }
 
-        private bool CanCreateHangout() => Title.Length >= 5 && Title.Length <= 25 && Description.Length <= 100;
+        // Must have a title, description, and a doctor selected
+        private bool CanCreateHangout() => Title.Length >= 5 && Title.Length <= 25 && Description.Length <= 100 && SelectedDoctor != null;
 
         private void CreateHangout()
         {
@@ -65,7 +108,14 @@ namespace DevCoreHospital.ViewModels.Doctor
             SuccessMessage = string.Empty;
             try
             {
-                var currentDoctor = new Models.Doctor { StaffID = _currentUserService.UserId, FirstName = "Current", LastName = "User" };
+                // Create a doctor object based on the SelectedDoctor dropdown
+                var currentDoctor = new Models.Doctor
+                {
+                    StaffID = SelectedDoctor!.DoctorId,
+                    FirstName = SelectedDoctor.FirstName,
+                    LastName = SelectedDoctor.LastName
+                };
+
                 _hangoutService.CreateHangout(Title, Description, SelectedDate.DateTime, MaxParticipants, currentDoctor);
                 SuccessMessage = "Hangout created successfully!";
                 LoadHangouts();
@@ -83,9 +133,23 @@ namespace DevCoreHospital.ViewModels.Doctor
         {
             ErrorMessage = string.Empty;
             SuccessMessage = string.Empty;
+
+            if (SelectedDoctor == null)
+            {
+                ErrorMessage = "Please select a doctor to join the hangout.";
+                return;
+            }
+
             try
             {
-                var currentDoctor = new Models.Doctor { StaffID = _currentUserService.UserId, FirstName = "Current", LastName = "User" };
+                // Create a doctor object based on the SelectedDoctor dropdown
+                var currentDoctor = new Models.Doctor
+                {
+                    StaffID = SelectedDoctor.DoctorId,
+                    FirstName = SelectedDoctor.FirstName,
+                    LastName = SelectedDoctor.LastName
+                };
+
                 _hangoutService.JoinHangout(id, currentDoctor);
                 SuccessMessage = "Joined hangout successfully!";
                 LoadHangouts();

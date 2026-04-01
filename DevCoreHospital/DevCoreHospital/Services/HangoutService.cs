@@ -26,7 +26,9 @@ namespace DevCoreHospital.Services
             if (date.Date < DateTime.Now.Date.AddDays(7))
                 throw new ArgumentException("The hangout date must be at least 1 week away from today.");
 
-            // TODO: Validate that the creator has no appointments or medical evaluations scheduled for that day.
+            // Check if the doctor has any non-finished/canceled appointments
+            if (hangoutRepository.HasConflictsOnDate(creator.StaffID, date))
+                throw new InvalidOperationException("You cannot create a hangout on a day where you have active scheduled appointments.");
 
             // Provide 0 as a placeholder ID. The database handles real identity ID generation.
             Hangout newHangout = new Hangout(0, title, description, date, maxParticipants);
@@ -47,9 +49,10 @@ namespace DevCoreHospital.Services
             if (hangout.participantList.Any(p => p.StaffID == staff.StaffID))
                 throw new InvalidOperationException("You have already joined this hangout.");
 
-            // TODO: Validate that the staff member has no appointments or medical evaluations scheduled for that day.
+            // Check if the doctor has any non-finished/canceled appointments
+            if (hangoutRepository.HasConflictsOnDate(staff.StaffID, hangout.date))
+                throw new InvalidOperationException("You cannot join a hangout on a day where you have active scheduled appointments.");
 
-            // Persist the newly joined participant to the database
             hangoutRepository.AddParticipant(hangoutId, staff.StaffID);
         }
 

@@ -9,76 +9,87 @@ namespace DevCoreHospital.Data
     public sealed class SqlERDispatchDataSource : IERDispatchDataSource
     {
         private readonly string _connectionString;
+        private readonly ShiftSchemaCapabilities _shiftSchema;
 
         public SqlERDispatchDataSource(string? connectionString = null)
         {
             _connectionString = string.IsNullOrWhiteSpace(connectionString)
                 ? AppSettings.ConnectionString
                 : connectionString;
-
-            EnsureReq4Schema();
+            _shiftSchema = DetectShiftSchemaCapabilities();
         }
 
-        public IReadOnlyList<DoctorProfile> GetAvailableDoctors()
+        public IReadOnlyList<DoctorRosterEntry> GetRosterEntries()
         {
-            return GetDoctorsByStatus("AVAILABLE");
-        }
-
-        public IReadOnlyList<DoctorProfile> GetDoctorsInExamination()
-        {
-            return GetDoctorsByStatus("IN_EXAMINATION");
-        }
-
-        public IReadOnlyList<DoctorProfile> GetDoctorsNotWorkingNow()
-        {
-            var doctors = new List<DoctorProfile>();
+            var entries = new List<DoctorRosterEntry>();
 
             using (SqlConnection connection = new SqlConnection(_connectionString))
             {
                 connection.Open();
                 using (SqlCommand command = connection.CreateCommand())
                 {
-                    command.CommandText = @"
+                    command.CommandText = $@"
                         SELECT s.staff_id,
                                s.first_name + ' ' + s.last_name AS full_name,
-                               COALESCE(NULLIF(s.specialization, ''), 'General') AS specialization,
-                               COALESCE(s.status, 'OFF_DUTY') AS doctor_status
+                               COALESCE(s.role, '') AS role_raw,
+                               COALESCE(NULLIF(s.specialization, ''), '') AS specialization,
+                               COALESCE(s.status, '') AS doctor_status,
+                               COALESCE(sh.location, '') AS location,
+                               {BuildShiftIsActiveProjection("sh")}
+                               {BuildShiftStatusProjection("sh")}
+                               sh.start_time,
+                               sh.end_time
                         FROM Staff s
-                        WHERE UPPER(LTRIM(RTRIM(COALESCE(s.role, '')))) = 'DOCTOR'
-                          AND UPPER(COALESCE(s.status, 'OFF_DUTY')) IN ('OFF_DUTY', 'AVAILABLE')
-                          AND NOT EXISTS
-                          (
-                              SELECT 1
-                              FROM Shifts sh
-                              WHERE sh.staff_id = s.staff_id
-                                AND sh.start_time <= GETDATE()
-                                AND sh.end_time >= GETDATE()
-                                AND (sh.is_active = 1 OR UPPER(COALESCE(sh.status, '')) = 'ACTIVE')
-                          );";
+                        LEFT JOIN Shifts sh ON sh.staff_id = s.staff_id;";
 
                     using (SqlDataReader reader = command.ExecuteReader())
                     {
                         while (reader.Read())
-                        {
-                            doctors.Add(new DoctorProfile
-                            {
-                                DoctorId = reader.GetInt32(0),
-                                FullName = reader.IsDBNull(1) ? string.Empty : reader.GetString(1),
-                                Specialization = reader.IsDBNull(2) ? string.Empty : reader.GetString(2),
-                                Status = ParseStatus(reader.IsDBNull(3) ? null : reader.GetString(3)),
-                                Location = string.Empty,
-                                ScheduleStart = null,
-                                ScheduleEnd = null
-                            });
-                        }
+                            entries.Add(ReadDoctorRosterEntry(reader));
                     }
                 }
             }
 
-            return doctors;
+            return entries;
         }
 
-        public IReadOnlyList<ERRequest> GetPendingRequests()
+        public IReadOnlyList<DoctorRosterEntry> GetRosterEntriesByStaffId(int staffId)
+        {
+            var entries = new List<DoctorRosterEntry>();
+
+            using (SqlConnection connection = new SqlConnection(_connectionString))
+            {
+                connection.Open();
+                using (SqlCommand command = connection.CreateCommand())
+                {
+                    command.CommandText = $@"
+                        SELECT s.staff_id,
+                               s.first_name + ' ' + s.last_name AS full_name,
+                               COALESCE(s.role, '') AS role_raw,
+                               COALESCE(NULLIF(s.specialization, ''), '') AS specialization,
+                               COALESCE(s.status, '') AS doctor_status,
+                               COALESCE(sh.location, '') AS location,
+                               {BuildShiftIsActiveProjection("sh")}
+                               {BuildShiftStatusProjection("sh")}
+                               sh.start_time,
+                               sh.end_time
+                        FROM Staff s
+                        LEFT JOIN Shifts sh ON sh.staff_id = s.staff_id
+                        WHERE s.staff_id = @StaffId;";
+                    AddParameter(command, "@StaffId", staffId);
+
+                    using (SqlDataReader reader = command.ExecuteReader())
+                    {
+                        while (reader.Read())
+                            entries.Add(ReadDoctorRosterEntry(reader));
+                    }
+                }
+            }
+
+            return entries;
+        }
+
+        public IReadOnlyList<ERRequest> GetRequests()
         {
             var requests = new List<ERRequest>();
 
@@ -90,7 +101,6 @@ namespace DevCoreHospital.Data
                     command.CommandText = @"
                         SELECT request_id, specialization, location, created_at, status, assigned_doctor_id, assigned_doctor_name
                         FROM dbo.ER_Requests
-                        WHERE UPPER(COALESCE(status, '')) = 'PENDING'
                         ORDER BY created_at;";
 
                     using (SqlDataReader reader = command.ExecuteReader())
@@ -103,7 +113,7 @@ namespace DevCoreHospital.Data
                                 Specialization = reader.IsDBNull(1) ? string.Empty : reader.GetString(1),
                                 Location = reader.IsDBNull(2) ? string.Empty : reader.GetString(2),
                                 CreatedAt = reader.IsDBNull(3) ? DateTime.MinValue : reader.GetDateTime(3),
-                                Status = reader.IsDBNull(4) ? "PENDING" : reader.GetString(4),
+                                Status = reader.IsDBNull(4) ? string.Empty : reader.GetString(4),
                                 AssignedDoctorId = reader.IsDBNull(5) ? null : reader.GetInt32(5),
                                 AssignedDoctorName = reader.IsDBNull(6) ? null : reader.GetString(6)
                             });
@@ -115,7 +125,7 @@ namespace DevCoreHospital.Data
             return requests;
         }
 
-        public int CreateIncomingRequest(string specialization, string location)
+        public int CreateRequest(string specialization, string location, string status)
         {
             using (SqlConnection connection = new SqlConnection(_connectionString))
             {
@@ -125,10 +135,11 @@ namespace DevCoreHospital.Data
                     command.CommandText = @"
                         INSERT INTO dbo.ER_Requests (specialization, [location], created_at, [status], assigned_doctor_id, assigned_doctor_name)
                         OUTPUT INSERTED.request_id
-                        VALUES (@Specialization, @Location, GETDATE(), 'PENDING', NULL, NULL);";
+                        VALUES (@Specialization, @Location, GETDATE(), @Status, NULL, NULL);";
 
                     AddParameter(command, "@Specialization", specialization);
                     AddParameter(command, "@Location", location);
+                    AddParameter(command, "@Status", status);
 
                     return (int)command.ExecuteScalar()!;
                 }
@@ -159,53 +170,9 @@ namespace DevCoreHospital.Data
                             Specialization = reader.IsDBNull(1) ? string.Empty : reader.GetString(1),
                             Location = reader.IsDBNull(2) ? string.Empty : reader.GetString(2),
                             CreatedAt = reader.IsDBNull(3) ? DateTime.MinValue : reader.GetDateTime(3),
-                            Status = reader.IsDBNull(4) ? "PENDING" : reader.GetString(4),
+                            Status = reader.IsDBNull(4) ? string.Empty : reader.GetString(4),
                             AssignedDoctorId = reader.IsDBNull(5) ? null : reader.GetInt32(5),
                             AssignedDoctorName = reader.IsDBNull(6) ? null : reader.GetString(6)
-                        };
-                    }
-                }
-            }
-        }
-
-        public DoctorProfile? GetDoctorById(int doctorId)
-        {
-            using (SqlConnection connection = new SqlConnection(_connectionString))
-            {
-                connection.Open();
-                using (SqlCommand command = connection.CreateCommand())
-                {
-                    command.CommandText = @"
-                        SELECT s.staff_id,
-                               s.first_name + ' ' + s.last_name AS full_name,
-                               COALESCE(NULLIF(s.specialization, ''), 'General') AS specialization,
-                               COALESCE(s.status, 'OFF_DUTY') AS doctor_status,
-                               COALESCE(sh.location, '') AS location,
-                               sh.start_time,
-                               sh.end_time
-                        FROM Staff s
-                        LEFT JOIN Shifts sh ON sh.staff_id = s.staff_id
-                           AND sh.start_time <= GETDATE()
-                           AND sh.end_time >= GETDATE()
-                           AND (sh.is_active = 1 OR UPPER(COALESCE(sh.status, '')) = 'ACTIVE')
-                        WHERE UPPER(LTRIM(RTRIM(COALESCE(s.role, '')))) = 'DOCTOR'
-                          AND s.staff_id = @DoctorId;";
-                    AddParameter(command, "@DoctorId", doctorId);
-
-                    using (SqlDataReader reader = command.ExecuteReader())
-                    {
-                        if (!reader.Read())
-                            return null;
-
-                        return new DoctorProfile
-                        {
-                            DoctorId = reader.GetInt32(0),
-                            FullName = reader.IsDBNull(1) ? string.Empty : reader.GetString(1),
-                            Specialization = reader.IsDBNull(2) ? string.Empty : reader.GetString(2),
-                            Status = ParseStatus(reader.IsDBNull(3) ? null : reader.GetString(3)),
-                            Location = reader.IsDBNull(4) ? string.Empty : reader.GetString(4),
-                            ScheduleStart = reader.IsDBNull(5) ? null : reader.GetDateTime(5),
-                            ScheduleEnd = reader.IsDBNull(6) ? null : reader.GetDateTime(6)
                         };
                     }
                 }
@@ -245,8 +212,7 @@ namespace DevCoreHospital.Data
                     command.CommandText = @"
                         UPDATE Staff
                         SET status = @Status
-                        WHERE staff_id = @DoctorId
-                          AND UPPER(LTRIM(RTRIM(COALESCE(role, '')))) = 'DOCTOR';";
+                        WHERE staff_id = @DoctorId;";
                     AddParameter(command, "@Status", status.ToString());
                     AddParameter(command, "@DoctorId", doctorId);
                     command.ExecuteNonQuery();
@@ -254,60 +220,35 @@ namespace DevCoreHospital.Data
             }
         }
 
-        private IReadOnlyList<DoctorProfile> GetDoctorsByStatus(string status)
+        private static DoctorRosterEntry ReadDoctorRosterEntry(SqlDataReader reader)
         {
-            var doctors = new List<DoctorProfile>();
-
-            using (SqlConnection connection = new SqlConnection(_connectionString))
+            return new DoctorRosterEntry
             {
-                connection.Open();
-                using (SqlCommand command = connection.CreateCommand())
-                {
-                    command.CommandText = @"
-                        SELECT s.staff_id,
-                               s.first_name + ' ' + s.last_name AS full_name,
-                               COALESCE(NULLIF(s.specialization, ''), 'General') AS specialization,
-                               COALESCE(s.status, 'OFF_DUTY') AS doctor_status,
-                               sh.location,
-                               sh.start_time,
-                               sh.end_time
-                        FROM Staff s
-                        INNER JOIN Shifts sh ON sh.staff_id = s.staff_id
-                        WHERE UPPER(LTRIM(RTRIM(COALESCE(s.role, '')))) = 'DOCTOR'
-                          AND UPPER(COALESCE(s.status, '')) = @Status
-                          AND sh.start_time <= GETDATE()
-                          AND sh.end_time >= GETDATE()
-                          AND (sh.is_active = 1 OR UPPER(COALESCE(sh.status, '')) = 'ACTIVE');";
-                    AddParameter(command, "@Status", status);
-
-                    using (SqlDataReader reader = command.ExecuteReader())
-                    {
-                        while (reader.Read())
-                        {
-                            doctors.Add(new DoctorProfile
-                            {
-                                DoctorId = reader.GetInt32(0),
-                                FullName = reader.IsDBNull(1) ? string.Empty : reader.GetString(1),
-                                Specialization = reader.IsDBNull(2) ? string.Empty : reader.GetString(2),
-                                Status = ParseStatus(reader.IsDBNull(3) ? null : reader.GetString(3)),
-                                Location = reader.IsDBNull(4) ? string.Empty : reader.GetString(4),
-                                ScheduleStart = reader.IsDBNull(5) ? null : reader.GetDateTime(5),
-                                ScheduleEnd = reader.IsDBNull(6) ? null : reader.GetDateTime(6)
-                            });
-                        }
-                    }
-                }
-            }
-
-            return doctors;
+                DoctorId = reader.GetInt32(0),
+                FullName = reader.IsDBNull(1) ? string.Empty : reader.GetString(1),
+                RoleRaw = reader.IsDBNull(2) ? string.Empty : reader.GetString(2),
+                Specialization = reader.IsDBNull(3) ? string.Empty : reader.GetString(3),
+                StatusRaw = reader.IsDBNull(4) ? string.Empty : reader.GetString(4),
+                Location = reader.IsDBNull(5) ? string.Empty : reader.GetString(5),
+                IsShiftActive = reader.IsDBNull(6) ? null : reader.GetBoolean(6),
+                ShiftStatusRaw = reader.IsDBNull(7) ? string.Empty : reader.GetString(7),
+                ScheduleStart = reader.IsDBNull(8) ? null : reader.GetDateTime(8),
+                ScheduleEnd = reader.IsDBNull(9) ? null : reader.GetDateTime(9)
+            };
         }
 
-        private static DoctorStatus ParseStatus(string? raw)
+        private string BuildShiftIsActiveProjection(string shiftAlias)
         {
-            var token = (raw ?? string.Empty).Trim().Replace(" ", "_");
-            return Enum.TryParse<DoctorStatus>(token, true, out var status)
-                ? status
-                : DoctorStatus.OFF_DUTY;
+            return _shiftSchema.HasIsActive
+                ? $"{shiftAlias}.is_active AS shift_is_active,"
+                : "CAST(NULL AS bit) AS shift_is_active,";
+        }
+
+        private string BuildShiftStatusProjection(string shiftAlias)
+        {
+            return _shiftSchema.HasStatus
+                ? $"COALESCE({shiftAlias}.status, '') AS shift_status,"
+                : "CAST('' AS VARCHAR(50)) AS shift_status,";
         }
 
         private static void AddParameter(SqlCommand command, string name, object value)
@@ -318,33 +259,45 @@ namespace DevCoreHospital.Data
             command.Parameters.Add(parameter);
         }
 
-        private void EnsureReq4Schema()
+        private ShiftSchemaCapabilities DetectShiftSchemaCapabilities()
         {
             using (SqlConnection connection = new SqlConnection(_connectionString))
             {
                 connection.Open();
-                using (SqlCommand command = connection.CreateCommand())
-                {
-                    command.CommandText = @"
-                        IF OBJECT_ID(N'dbo.ER_Requests', N'U') IS NULL
-                        BEGIN
-                            CREATE TABLE dbo.ER_Requests
-                            (
-                                request_id INT IDENTITY(101,1) PRIMARY KEY,
-                                specialization VARCHAR(100) NOT NULL,
-                                [location] VARCHAR(100) NOT NULL,
-                                created_at DATETIME NOT NULL CONSTRAINT DF_ER_Requests_created_at DEFAULT GETDATE(),
-                                [status] VARCHAR(50) NOT NULL,
-                                assigned_doctor_id INT NULL,
-                                assigned_doctor_name VARCHAR(200) NULL,
-                                CONSTRAINT CK_ER_Requests_status CHECK (UPPER([status]) IN ('PENDING','ASSIGNED','UNMATCHED','COMPLETED')),
-                                CONSTRAINT FK_ER_Requests_staff FOREIGN KEY (assigned_doctor_id) REFERENCES dbo.Staff(staff_id)
-                            );
-                        END;";
-
-                    command.ExecuteNonQuery();
-                }
+                return new ShiftSchemaCapabilities(
+                    ColumnExists(connection, "Shifts", "is_active"),
+                    ColumnExists(connection, "Shifts", "status"));
             }
+        }
+
+        private static bool ColumnExists(SqlConnection connection, string tableName, string columnName)
+        {
+            using (SqlCommand command = connection.CreateCommand())
+            {
+                command.CommandText = @"
+                    SELECT COUNT(*)
+                    FROM INFORMATION_SCHEMA.COLUMNS
+                    WHERE TABLE_NAME = @TableName
+                      AND COLUMN_NAME = @ColumnName;";
+
+                AddParameter(command, "@TableName", tableName);
+                AddParameter(command, "@ColumnName", columnName);
+                return Convert.ToInt32(command.ExecuteScalar()) > 0;
+            }
+        }
+
+
+
+        private sealed class ShiftSchemaCapabilities
+        {
+            public ShiftSchemaCapabilities(bool hasIsActive, bool hasStatus)
+            {
+                HasIsActive = hasIsActive;
+                HasStatus = hasStatus;
+            }
+
+            public bool HasIsActive { get; }
+            public bool HasStatus { get; }
         }
     }
 }

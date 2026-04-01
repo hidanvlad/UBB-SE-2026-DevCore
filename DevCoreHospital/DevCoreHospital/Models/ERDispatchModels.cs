@@ -34,5 +34,19 @@ namespace DevCoreHospital.Models
         public DateTime? ScheduleStart { get; set; }
         public DateTime? ScheduleEnd { get; set; }
     }
+
+    public sealed class DoctorRosterEntry
+    {
+        public int DoctorId { get; set; }
+        public string FullName { get; set; } = string.Empty;
+        public string RoleRaw { get; set; } = string.Empty;
+        public string Specialization { get; set; } = string.Empty;
+        public string StatusRaw { get; set; } = string.Empty;
+        public string Location { get; set; } = string.Empty;
+        public bool? IsShiftActive { get; set; }
+        public string ShiftStatusRaw { get; set; } = string.Empty;
+        public DateTime? ScheduleStart { get; set; }
+        public DateTime? ScheduleEnd { get; set; }
+    }
 }
 
