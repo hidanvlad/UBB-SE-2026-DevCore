@@ -127,9 +127,8 @@ namespace DevCoreHospital.Services
                 var violatingShiftInPlan = effectiveShifts.FirstOrDefault(s => s.Id == violatingShift.Id) ?? violatingShift;
                 var candidates = staffProfiles
                     .Where(s => s.StaffId != violatingShiftInPlan.StaffId)
-                    .Where(s => string.Equals(s.Role, violatingShiftInPlan.Role, StringComparison.OrdinalIgnoreCase))
-                    .Where(s => string.Equals(s.Specialization, violatingShiftInPlan.Specialization, StringComparison.OrdinalIgnoreCase))
-                    .Where(s => s.IsAvailable == true)
+                    .Where(s => MatchesRoleAndSpecialization(s, violatingShiftInPlan))
+                    .Where(IsStaffAvailableForReassignment)
                     .Where(s => CanTakeShift(s.StaffId, violatingShiftInPlan, effectiveShifts, weekStart))
                     .OrderBy(s => GetMonthlyWorkedHoursFromShifts(s.StaffId, violatingShiftInPlan.Start.Year, violatingShiftInPlan.Start.Month, effectiveShifts))
                     .ThenBy(s => s.FullName)
@@ -224,7 +223,39 @@ namespace DevCoreHospital.Services
         private static bool IsEligibleStaff(StaffProfile staff)
         {
             var isInactiveByStatus = string.Equals(staff.Status, "INACTIVE", StringComparison.OrdinalIgnoreCase);
-            return staff.IsActive == true && !isInactiveByStatus;
+            // Some datasets do not expose is_active/is_available; null means unknown, not blocked.
+            return staff.IsActive != false && !isInactiveByStatus;
+        }
+
+        private static bool IsStaffAvailableForReassignment(StaffProfile staff)
+        {
+            return staff.IsAvailable != false;
+        }
+
+        private static bool MatchesRoleAndSpecialization(StaffProfile candidate, RosterShift shift)
+        {
+            if (!string.Equals(NormalizeText(candidate.Role), NormalizeText(shift.Role), StringComparison.OrdinalIgnoreCase))
+                return false;
+
+            var candidateSpecialization = NormalizeText(candidate.Specialization);
+            var shiftSpecialization = NormalizeText(shift.Specialization);
+            if (string.Equals(candidateSpecialization, shiftSpecialization, StringComparison.OrdinalIgnoreCase))
+                return true;
+
+            return IsGenericSpecialization(candidateSpecialization) || IsGenericSpecialization(shiftSpecialization);
+        }
+
+        private static bool IsGenericSpecialization(string? specialization)
+        {
+            if (string.IsNullOrWhiteSpace(specialization))
+                return true;
+
+            return string.Equals(specialization.Trim(), "General", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static string NormalizeText(string? value)
+        {
+            return string.IsNullOrWhiteSpace(value) ? string.Empty : value.Trim();
         }
 
         private static bool OverlapsWindow(RosterShift shift, DateTime windowStart, DateTime windowEnd)
