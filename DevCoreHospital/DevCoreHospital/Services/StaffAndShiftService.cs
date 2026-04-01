@@ -75,13 +75,13 @@ namespace DevCoreHospital.Services
 
             if (location.Equals("Pharmacy", StringComparison.OrdinalIgnoreCase))
             {
-                // If location is Pharmacy, we only care about Pharmacysts
-                filteredStaff.AddRange(allStaff.OfType<Pharmacyst>().Where(p => p.Certification.Contains(requiredSpecializationOrCertification, StringComparison.OrdinalIgnoreCase)));
+                filteredStaff.AddRange(allStaff.OfType<Pharmacyst>()
+                    .Where(p => p.Certification.Contains(requiredSpecializationOrCertification, StringComparison.OrdinalIgnoreCase)));
             }
             else
             {
-                // For other locations, we care about Doctors
-                filteredStaff.AddRange(allStaff.OfType<Doctor>().Where(d => d.Specialization.Contains(requiredSpecializationOrCertification, StringComparison.OrdinalIgnoreCase)));
+                filteredStaff.AddRange(allStaff.OfType<Doctor>()
+                    .Where(d => d.Specialization.Contains(requiredSpecializationOrCertification, StringComparison.OrdinalIgnoreCase)));
             }
 
             return filteredStaff;
@@ -94,14 +94,14 @@ namespace DevCoreHospital.Services
             var currentStaff = shift.AppointedStaff;
             var allStaff = _staffRepo.LoadAllStaff();
 
-            // Find staff of the same type (Doctor or Pharmacyst) who are not the current staff member
-            // and are not already scheduled during the shift's time.
             return allStaff.Where(s =>
                 s.GetType() == currentStaff.GetType() &&
                 s.StaffID != currentStaff.StaffID &&
                 ValidateNoOverlap(s.StaffID, shift.StartTime, shift.EndTime)
             ).ToList();
         }
+
+        private static string N(string? s) => (s ?? string.Empty).Trim().ToLowerInvariant();
 
         // ========================= SHIFT SWAP - REQUEST =========================
         public List<IStaff> GetEligibleSwapColleaguesForShift(int requesterId, int shiftId, out string error)
@@ -127,66 +127,66 @@ namespace DevCoreHospital.Services
                 return new List<IStaff>();
             }
 
-            var requester = _staffRepo.GetStaffById(requesterId);
+            // Use fresh full staff list
+            var all = _staffRepo.LoadAllStaff();
+            var requester = all.FirstOrDefault(s => s.StaffID == requesterId);
             if (requester == null)
             {
                 error = "Requester not found.";
                 return new List<IStaff>();
             }
 
-            // Get colleagues with the same role/specialization who are marked as Available
-            var potentialColleagues = _staffRepo.GetPotentialSwapColleagues(requester);
+            List<IStaff> sameProfile = new();
 
-            // Filter out colleagues who are ALREADY working during this shift's time interval
-            var availableColleagues = potentialColleagues
+            if (requester is Doctor reqDoc)
+            {
+                var reqSpec = N(reqDoc.Specialization);
+                sameProfile = all
+                    .OfType<Doctor>()
+                    .Where(d => d.StaffID != requesterId && N(d.Specialization) == reqSpec)
+                    .Cast<IStaff>()
+                    .ToList();
+            }
+            else if (requester is Pharmacyst reqPh)
+            {
+                var reqCert = N(reqPh.Certification);
+                sameProfile = all
+                    .OfType<Pharmacyst>()
+                    .Where(p => p.StaffID != requesterId && N(p.Certification) == reqCert)
+                    .Cast<IStaff>()
+                    .ToList();
+            }
+
+            // Must be FREE during requester shift
+            var freeColleagues = sameProfile
                 .Where(c => !_shiftRepo.IsStaffWorkingDuring(c.StaffID, shift.StartTime, shift.EndTime))
                 .ToList();
 
-            return availableColleagues;
+            return freeColleagues;
         }
 
         public bool RequestShiftSwap(int requesterId, int shiftId, int colleagueId, out string message)
         {
             message = string.Empty;
 
-            var shift = _shiftRepo.GetShiftById(shiftId);
-            if (shift == null)
+            var eligible = GetEligibleSwapColleaguesForShift(requesterId, shiftId, out var err);
+            if (!string.IsNullOrWhiteSpace(err))
             {
-                message = "Shift not found.";
+                message = err;
                 return false;
             }
 
-            if (shift.AppointedStaff.StaffID != requesterId)
+            if (!eligible.Any(c => c.StaffID == colleagueId))
             {
-                message = "You can only request swap for your own shift.";
+                message = "Selected colleague is not eligible (must be same profile and free in interval).";
                 return false;
             }
 
-            if (shift.StartTime <= DateTime.Now)
-            {
-                message = "Only future shifts can be swapped.";
-                return false;
-            }
-
+            var shift = _shiftRepo.GetShiftById(shiftId)!;
             var requester = _staffRepo.GetStaffById(requesterId);
-            var colleague = _staffRepo.GetStaffById(colleagueId);
-            if (requester == null || colleague == null)
+            if (requester == null)
             {
-                message = "Requester or colleague not found.";
-                return false;
-            }
-
-            var eligible = _staffRepo.GetPotentialSwapColleagues(requester).Any(c => c.StaffID == colleagueId);
-            if (!eligible)
-            {
-                message = "Selected colleague is not from the same role/profile or is not currently available.";
-                return false;
-            }
-
-            var isWorking = _shiftRepo.IsStaffWorkingDuring(colleagueId, shift.StartTime, shift.EndTime);
-            if (isWorking)
-            {
-                message = "Selected colleague is already working during that time interval.";
+                message = "Requester not found.";
                 return false;
             }
 
@@ -215,7 +215,6 @@ namespace DevCoreHospital.Services
             return true;
         }
 
-        // ========================= SHIFT SWAP - ACCEPT/REJECT =========================
         public List<ShiftSwapRequest> GetIncomingSwapRequests(int colleagueId)
         {
             return _dbManager.GetPendingSwapRequestsForColleague(colleagueId);
@@ -226,31 +225,14 @@ namespace DevCoreHospital.Services
             message = string.Empty;
 
             var req = _dbManager.GetShiftSwapRequestById(swapId);
-            if (req == null)
-            {
-                message = "Swap request not found.";
-                return false;
-            }
-
-            if (req.ColleagueId != colleagueId)
-            {
-                message = "You cannot accept this request.";
-                return false;
-            }
-
-            if (req.Status != ShiftSwapRequestStatus.PENDING)
-            {
-                message = "This request is no longer pending.";
-                return false;
-            }
+            if (req == null) { message = "Swap request not found."; return false; }
+            if (req.ColleagueId != colleagueId) { message = "You cannot accept this request."; return false; }
+            if (req.Status != ShiftSwapRequestStatus.PENDING) { message = "This request is no longer pending."; return false; }
 
             var shift = _shiftRepo.GetShiftById(req.ShiftId);
-            if (shift == null)
-            {
-                message = "Shift not found.";
-                return false;
-            }
+            if (shift == null) { message = "Shift not found."; return false; }
 
+            // must still be free
             if (_shiftRepo.IsStaffWorkingDuring(colleagueId, shift.StartTime, shift.EndTime))
             {
                 message = "You are already scheduled to work in that interval.";
@@ -265,8 +247,8 @@ namespace DevCoreHospital.Services
 
             _dbManager.UpdateShiftSwapRequestStatus(swapId, "ACCEPTED");
             _dbManager.AddNotification(req.RequesterId, "Shift Swap Accepted", $"Your swap request #{swapId} was accepted.");
-
             _shiftRepo.Refresh();
+
             message = "Swap accepted.";
             return true;
         }
@@ -276,23 +258,9 @@ namespace DevCoreHospital.Services
             message = string.Empty;
 
             var req = _dbManager.GetShiftSwapRequestById(swapId);
-            if (req == null)
-            {
-                message = "Swap request not found.";
-                return false;
-            }
-
-            if (req.ColleagueId != colleagueId)
-            {
-                message = "You cannot reject this request.";
-                return false;
-            }
-
-            if (req.Status != ShiftSwapRequestStatus.PENDING)
-            {
-                message = "This request is no longer pending.";
-                return false;
-            }
+            if (req == null) { message = "Swap request not found."; return false; }
+            if (req.ColleagueId != colleagueId) { message = "You cannot reject this request."; return false; }
+            if (req.Status != ShiftSwapRequestStatus.PENDING) { message = "This request is no longer pending."; return false; }
 
             _dbManager.UpdateShiftSwapRequestStatus(swapId, "REJECTED");
             _dbManager.AddNotification(req.RequesterId, "Shift Swap Rejected", $"Your swap request #{swapId} was rejected.");
@@ -300,8 +268,6 @@ namespace DevCoreHospital.Services
             return true;
         }
 
-
-        // ======= Specialization and Certification Filtering for Location =======
         public List<string> GetSpecializationsAndCertificationsForLocation(string location)
         {
             List<string> result = new List<string>();
@@ -323,6 +289,5 @@ namespace DevCoreHospital.Services
             result = result.Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(s => s).ToList();
             return result;
         }
-
     }
 }

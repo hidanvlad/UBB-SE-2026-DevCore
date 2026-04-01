@@ -36,7 +36,8 @@ namespace DevCoreHospital.Repositories
 
         public IStaff? GetStaffById(int staffId)
         {
-            return _staffList.FirstOrDefault(s => s.StaffID == staffId);
+            // Fresh read avoids stale cache surprises
+            return _dbManager.GetStaff().FirstOrDefault(s => s.StaffID == staffId);
         }
 
         public List<Doctor> GetAvailableDoctors()
@@ -54,31 +55,42 @@ namespace DevCoreHospital.Repositories
             return _dbManager.GetStaff().OfType<Pharmacyst>().ToList();
         }
 
+        private static string Normalize(string? value)
+            => (value ?? string.Empty).Trim().ToLowerInvariant();
+
         public List<IStaff> GetPotentialSwapColleagues(IStaff requester)
         {
-            // Refresh list so it includes latest DB data
-            LoadStaff();
+            // Always fresh from DB
+            var all = _dbManager.GetStaff();
+            var req = all.FirstOrDefault(s => s.StaffID == requester.StaffID);
+            if (req == null) return new List<IStaff>();
 
-            if (requester is Doctor requesterDoctor)
+            if (req is Doctor reqDoctor)
             {
-                return _staffList
+                var reqSpec = Normalize(reqDoctor.Specialization);
+
+                // IMPORTANT: removed Available==true filter for swap candidates
+                return all
                     .OfType<Doctor>()
                     .Where(d =>
-                        d.StaffID != requester.StaffID &&
-                        d.Available == true &&
-                        d.Specialization.Equals(requesterDoctor.Specialization, StringComparison.OrdinalIgnoreCase))
+                        d.StaffID != reqDoctor.StaffID &&
+                        !string.IsNullOrWhiteSpace(d.Specialization) &&
+                        Normalize(d.Specialization) == reqSpec)
                     .Cast<IStaff>()
                     .ToList();
             }
 
-            if (requester is Pharmacyst requesterPharmacyst)
+            if (req is Pharmacyst reqPharmacyst)
             {
-                return _staffList
+                var reqCert = Normalize(reqPharmacyst.Certification);
+
+                // IMPORTANT: removed Available==true filter for swap candidates
+                return all
                     .OfType<Pharmacyst>()
                     .Where(p =>
-                        p.StaffID != requester.StaffID &&
-                        p.Available == true &&
-                        p.Certification.Equals(requesterPharmacyst.Certification, StringComparison.OrdinalIgnoreCase))
+                        p.StaffID != reqPharmacyst.StaffID &&
+                        !string.IsNullOrWhiteSpace(p.Certification) &&
+                        Normalize(p.Certification) == reqCert)
                     .Cast<IStaff>()
                     .ToList();
             }

@@ -92,8 +92,9 @@ namespace DevCoreHospital.ViewModels.Doctor
         {
             Doctors.Clear();
 
+            // IMPORTANT: load ALL doctors, not only available ones
             var doctors = _staffRepository
-                .GetAvailableStaff(string.Empty, string.Empty)
+                .LoadAllStaff()
                 .OfType<DoctorModel>()
                 .OrderBy(d => d.FirstName)
                 .ThenBy(d => d.LastName)

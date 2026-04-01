@@ -28,42 +28,57 @@ namespace DevCoreHospital.Data
 
                 using var cmd = connection.CreateCommand();
                 cmd.CommandText = @"
-                        SELECT staff_id, role, first_name, last_name, contact_info, 
-                        is_available, license_number, specialization, status, certification, years_of_experience 
-                        FROM Staff";
+                    SELECT staff_id, role, first_name, last_name, contact_info, 
+                           is_available, license_number, specialization, status, certification, years_of_experience
+                    FROM Staff";
 
                 using var reader = cmd.ExecuteReader();
                 while (reader.Read())
                 {
                     int id = reader.GetInt32(0);
-                    string role = reader.GetString(1);
-                    string firstName = reader.GetString(2);
-                    string lastName = reader.GetString(3);
+                    string role = reader.IsDBNull(1) ? "" : reader.GetString(1);
+                    string firstName = reader.IsDBNull(2) ? "" : reader.GetString(2);
+                    string lastName = reader.IsDBNull(3) ? "" : reader.GetString(3);
                     string contactInfo = reader.IsDBNull(4) ? "" : reader.GetString(4);
-                    bool isAvailable = reader.GetBoolean(5);
+                    bool isAvailable = !reader.IsDBNull(5) && reader.GetBoolean(5);
                     string license = reader.IsDBNull(6) ? "" : reader.GetString(6);
                     string special = reader.IsDBNull(7) ? "" : reader.GetString(7);
-                    string statusStr = reader.IsDBNull(8) ? "Available" : reader.GetString(8);
+                    string statusStr = reader.IsDBNull(8) ? "OFF_DUTY" : reader.GetString(8);
                     string cert = reader.IsDBNull(9) ? "" : reader.GetString(9);
-                    int yearsExp = reader.IsDBNull(10) ? 0 : reader.GetInt32(10); 
+                    int yearsExp = reader.IsDBNull(10) ? 0 : reader.GetInt32(10);
 
                     Enum.TryParse<DoctorStatus>(statusStr, true, out DoctorStatus docStatus);
 
-                    if (role == "Doctor")
+                    if (role.Equals("Doctor", StringComparison.OrdinalIgnoreCase))
                     {
+<<<<<<< Updated upstream
                         var doc = new Doctor(id, firstName, lastName, contactInfo, "", isAvailable, special, license, docStatus, yearsExp);
+=======
+                        // IMPORTANT: create doctor via property init to avoid constructor signature mismatch
+                        var doc = new Doctor
+                        {
+                            StaffID = id,
+                            FirstName = firstName,
+                            LastName = lastName,
+                            ContactInfo = contactInfo,
+                            Available = isAvailable,
+                            Specialization = special,
+                            LicenseNumber = license,
+                            DoctorStatus = docStatus,
+                            YearsOfExperience = yearsExp
+                        };
+>>>>>>> Stashed changes
                         staffList.Add(doc);
                     }
-                    else if (role == "Pharmacist")
+                    else if (role.Equals("Pharmacist", StringComparison.OrdinalIgnoreCase))
                     {
-                       
-                        var pharm = new Pharmacyst(id, firstName, lastName, contactInfo, isAvailable, cert,yearsExp);
-                        
+                        var pharm = new Pharmacyst(id, firstName, lastName, contactInfo, isAvailable, cert, yearsExp);
                         staffList.Add(pharm);
                     }
                 }
             }
             catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"Eroare GetStaff: {ex.Message}"); }
+
             return staffList;
         }
 
@@ -85,7 +100,8 @@ namespace DevCoreHospital.Data
                             license_number = @License, 
                             specialization = @Specialization, 
                             status = @Status, 
-                            certification = @Certification
+                            certification = @Certification,
+                            years_of_experience = @YearsExp
                         WHERE staff_id = @Id";
                     AddParameter(cmd, "@FirstName", staff.FirstName);
                     AddParameter(cmd, "@LastName", staff.LastName);
@@ -95,6 +111,7 @@ namespace DevCoreHospital.Data
                     AddParameter(cmd, "@Specialization", staff is Doctor doc2 ? doc2.Specialization : DBNull.Value);
                     AddParameter(cmd, "@Status", staff is Doctor doc3 ? doc3.DoctorStatus.ToString() : DBNull.Value);
                     AddParameter(cmd, "@Certification", staff is Pharmacyst ph ? ph.Certification : DBNull.Value);
+                    AddParameter(cmd, "@YearsExp", staff is Doctor d ? d.YearsOfExperience : staff is Pharmacyst p ? p.YearsOfExperience : 0);
                     AddParameter(cmd, "@Id", staff.StaffID);
                     cmd.ExecuteNonQuery();
                 }
@@ -118,7 +135,8 @@ namespace DevCoreHospital.Data
                         license_number = @License, 
                         specialization = @Specialization, 
                         status = @Status, 
-                        certification = @Certification
+                        certification = @Certification,
+                        years_of_experience = @YearsExp
                     WHERE staff_id = @Id";
                 AddParameter(cmd, "@FirstName", staff.FirstName);
                 AddParameter(cmd, "@LastName", staff.LastName);
@@ -128,6 +146,7 @@ namespace DevCoreHospital.Data
                 AddParameter(cmd, "@Specialization", staff is Doctor doc2 ? doc2.Specialization : DBNull.Value);
                 AddParameter(cmd, "@Status", staff is Doctor doc3 ? doc3.DoctorStatus.ToString() : DBNull.Value);
                 AddParameter(cmd, "@Certification", staff is Pharmacyst ph ? ph.Certification : DBNull.Value);
+                AddParameter(cmd, "@YearsExp", staff is Doctor d ? d.YearsOfExperience : staff is Pharmacyst p ? p.YearsOfExperience : 0);
                 AddParameter(cmd, "@Id", staff.StaffID);
                 cmd.ExecuteNonQuery();
             }
@@ -203,8 +222,8 @@ namespace DevCoreHospital.Data
 
                 using var cmd = connection.CreateCommand();
                 cmd.CommandText = @"
-            INSERT INTO Shifts (staff_id, location, start_time, end_time, status, is_active) 
-            VALUES (@StaffId, @Location, @StartTime, @EndTime, @Status, @IsActive)";
+                    INSERT INTO Shifts (staff_id, location, start_time, end_time, status, is_active) 
+                    VALUES (@StaffId, @Location, @StartTime, @EndTime, @Status, @IsActive)";
 
                 AddParameter(cmd, "@StaffId", newShift.AppointedStaff.StaffID);
                 AddParameter(cmd, "@Location", newShift.Location);
@@ -358,8 +377,7 @@ namespace DevCoreHospital.Data
             }
         }
 
-
-        // ========================= SWAP REQUESTS (NEW) =========================
+        // ========================= SWAP REQUESTS =========================
         public int CreateShiftSwapRequest(ShiftSwapRequest request)
         {
             try
@@ -475,8 +493,7 @@ namespace DevCoreHospital.Data
             }
         }
 
-
-        // ========================= NOTIFICATIONS (NEW) =========================
+        // ========================= NOTIFICATIONS =========================
         public void AddNotification(int recipientStaffId, string title, string message)
         {
             try
@@ -500,7 +517,6 @@ namespace DevCoreHospital.Data
             }
         }
 
-
         // ========================= MEDICINES =========================
         public int GetMedicinesSold(int pharmacistStaffId, int month, int year)
         {
@@ -522,7 +538,6 @@ namespace DevCoreHospital.Data
             }
             catch { return 150; }
         }
-
 
         // ========================= APPOINTMENTS CRUD =========================
         public async Task<List<Appointment>> GetUpcomingAppointmentsAsync(int doctorId, DateTime fromDate, DateTime toDate, int skip, int take)
@@ -616,7 +631,6 @@ namespace DevCoreHospital.Data
             return Convert.ToInt32(await cmd.ExecuteScalarAsync());
         }
 
-
         // ========================= DOCTOR =========================
         public async Task UpdateDoctorStatusAsync(int doctorId, string status)
         {
@@ -647,7 +661,6 @@ namespace DevCoreHospital.Data
 
             return items;
         }
-
 
         // ========================= UTILS =========================
         internal DbConnection GetConnection()
@@ -690,18 +703,17 @@ namespace DevCoreHospital.Data
                 Location = ""
             };
         }
-        // ==========================================
-        // HANGOUTS CRUD
-        // ==========================================
+
+        // ========================= HANGOUTS CRUD =========================
         public int InsertHangout(string title, string description, DateTime date, int maxParticipants)
         {
             using var conn = GetConnection();
             conn.Open();
             using var cmd = conn.CreateCommand();
             cmd.CommandText = @"
-        INSERT INTO Hangouts (title, description, date_time, max_staff)
-        OUTPUT INSERTED.hangout_id
-        VALUES (@Title, @Description, @Date, @MaxStaff);";
+                INSERT INTO Hangouts (title, description, date_time, max_staff)
+                OUTPUT INSERTED.hangout_id
+                VALUES (@Title, @Description, @Date, @MaxStaff);";
 
             AddParameter(cmd, "@Title", title);
             AddParameter(cmd, "@Description", string.IsNullOrEmpty(description) ? DBNull.Value : description);
@@ -771,10 +783,10 @@ namespace DevCoreHospital.Data
             conn.Open();
             using var cmd = conn.CreateCommand();
             cmd.CommandText = @"
-        SELECT s.staff_id, s.first_name, s.last_name 
-        FROM Hangout_Participants hp
-        JOIN Staff s ON hp.staff_id = s.staff_id
-        WHERE hp.hangout_id = @HId";
+                SELECT s.staff_id, s.first_name, s.last_name 
+                FROM Hangout_Participants hp
+                JOIN Staff s ON hp.staff_id = s.staff_id
+                WHERE hp.hangout_id = @HId";
             AddParameter(cmd, "@HId", hangoutId);
             using var reader = cmd.ExecuteReader();
             while (reader.Read())
@@ -798,12 +810,11 @@ namespace DevCoreHospital.Data
                 connection.Open();
 
                 using var cmd = connection.CreateCommand();
-                // Just retrieving the data, NO business logic inside the SQL!
                 cmd.CommandText = @"
-            SELECT status 
-            FROM Appointments 
-            WHERE doctor_id = @StaffId 
-              AND CAST(start_time AS DATE) = CAST(@Date AS DATE)";
+                    SELECT status 
+                    FROM Appointments 
+                    WHERE doctor_id = @StaffId 
+                      AND CAST(start_time AS DATE) = CAST(@Date AS DATE)";
 
                 AddParameter(cmd, "@StaffId", staffId);
                 AddParameter(cmd, "@Date", date.Date);
@@ -820,7 +831,7 @@ namespace DevCoreHospital.Data
             }
             return statuses;
         }
-        //for salary bonus
+
         public bool DidStaffParticipateInHangout(int staffId, int month, int year)
         {
             try
@@ -828,21 +839,20 @@ namespace DevCoreHospital.Data
                 using var conn = GetConnection();
                 conn.Open();
                 using var cmd = conn.CreateCommand();
-                // Check if there's at least one hangout the staff joined in the given month/year
                 cmd.CommandText = @"
-            SELECT COUNT(*) 
-            FROM Hangout_Participants hp
-            JOIN Hangouts h ON hp.hangout_id = h.hangout_id
-            WHERE hp.staff_id = @StaffId 
-              AND MONTH(h.date_time) = @Month 
-              AND YEAR(h.date_time) = @Year";
+                    SELECT COUNT(*) 
+                    FROM Hangout_Participants hp
+                    JOIN Hangouts h ON hp.hangout_id = h.hangout_id
+                    WHERE hp.staff_id = @StaffId 
+                      AND MONTH(h.date_time) = @Month 
+                      AND YEAR(h.date_time) = @Year";
 
                 AddParameter(cmd, "@StaffId", staffId);
                 AddParameter(cmd, "@Month", month);
                 AddParameter(cmd, "@Year", year);
 
                 int count = Convert.ToInt32(cmd.ExecuteScalar());
-                return count > 0; // True if they joined 1 or more hangouts
+                return count > 0;
             }
             catch (Exception ex)
             {
