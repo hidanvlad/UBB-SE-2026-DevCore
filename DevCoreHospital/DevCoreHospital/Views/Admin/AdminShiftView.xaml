@@ -103,17 +103,48 @@
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
 
-            <TextBlock Grid.Row="0" Text="Shifts Management (Dashboard)" Foreground="{StaticResource TextBrush}" 
-                       FontSize="24" FontWeight="SemiBold" Margin="0,0,0,20"/>
+            <StackPanel Grid.Row="0" Orientation="Vertical" Spacing="20" Margin="0,0,0,20" VerticalAlignment="Center">
+                <TextBlock Text="Today's Shifts and Calendar" Foreground="{StaticResource TextBrush}" FontSize="24" FontWeight="SemiBold"/>
 
-            <Button Grid.Row="1"
-                    Content="View Shifts Schedule"
-                    Click="OpenSchedule_Click"
-                    Background="#0277BD" 
-                    Foreground="White" 
-                    Padding="15,5"/>
+                <Button Content="View Shifts Calendar" 
+                        Click="OpenSchedule_Click" 
+                        Background="#0277BD" 
+                        Foreground="White" 
+                        Padding="15,5"/>
+            </StackPanel>
 
-            
+            <ListView Grid.Row="1" ItemsSource="{x:Bind ViewModel.Shifts, Mode=OneWay}" SelectionMode="None">
+                <ListView.ItemTemplate>
+                    <DataTemplate x:DataType="models:Shift">
+                        <Grid Padding="15" Margin="0,0,0,10" Background="#1A241C" CornerRadius="8">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+
+                            <StackPanel Grid.Row="0" Spacing="5">
+                                <StackPanel Orientation="Horizontal" Spacing="5">
+                                    <TextBlock Text="{x:Bind AppointedStaff.FirstName}" Foreground="{StaticResource TextBrush}" FontWeight="Bold" FontSize="16"/>
+                                    <TextBlock Text="{x:Bind AppointedStaff.LastName}" Foreground="{StaticResource TextBrush}" FontWeight="Bold" FontSize="16"/>
+                                </StackPanel>
+                                <TextBlock Text="{x:Bind Location}" Foreground="{StaticResource MutedBrush}"/>
+                                <StackPanel Orientation="Horizontal" Spacing="5">
+                                    <TextBlock Text="{x:Bind StartTime}" Foreground="{StaticResource TextBrush}"/>
+                                    <TextBlock Text="-" Foreground="{StaticResource TextBrush}"/>
+                                    <TextBlock Text="{x:Bind EndTime}" Foreground="{StaticResource TextBrush}"/>
+                                </StackPanel>
+                                <TextBlock Text="{x:Bind Status}" Foreground="#4CAF50" FontWeight="SemiBold"/>
+                            </StackPanel>
+
+                            <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                                <Button Content="Set Active" Click="SetActive_Click" Tag="{x:Bind Id}" Background="#2E7D32" Foreground="White"/>
+                                <Button Content="Cancel" Click="CancelShift_Click" Tag="{x:Bind Id}" Background="#C62828" Foreground="White"/>
+                                <Button Content="Auto-Reassign" Click="AutoReassign_Click" Tag="{x:Bind}" Background="#0277BD" Foreground="White"/>
+                            </StackPanel>
+                        </Grid>
+                    </DataTemplate>
+                </ListView.ItemTemplate>
+            </ListView>
         </Grid>
     </Grid>
 </Page>
