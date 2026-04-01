@@ -70,7 +70,7 @@ namespace DevCoreHospital.Data
                                 ScheduleStart = null,
                                 ScheduleEnd = null
                             });
-                        }
+                        } 
                     }
                 }
             }
