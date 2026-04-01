@@ -95,7 +95,7 @@
                                   x:Name="OverrideDoctorCombo"
                                   ItemsSource="{Binding OverrideCandidates}"
                                   DisplayMemberPath="DisplayLabel"
-                                  PlaceholderText="Select near-end IN_EXAMINATION or not-working doctor"/>
+                                  PlaceholderText="Select near-end IN_EXAMINATION doctor"/>
 
                         <Button Grid.Column="2"
                                 Content="Apply Override"
