@@ -57,8 +57,9 @@ CREATE TABLE Medical_Evaluations (
     evaluation_id INT PRIMARY KEY IDENTITY(1,1),
     doctor_id INT NOT NULL,
     patient_id INT NOT NULL,
-    diagnosis TEXT,
-    doctor_notes TEXT,
+    diagnosis TEXT,           
+    doctor_notes TEXT,       
+    medications TEXT,        
     source VARCHAR(255),
     assumed_risk BIT,
     CONSTRAINT FK_Evaluations_Doctor FOREIGN KEY (doctor_id) REFERENCES Staff(staff_id)
@@ -182,29 +183,36 @@ INSERT INTO Appointments (patient_id, doctor_id, start_time, end_time, status)
 VALUES (502, 1, '2026-04-10 14:00:00', '2026-04-10 15:00:00', 'Scheduled');
 INSERT INTO Appointments (patient_id, doctor_id, start_time, end_time, status)
 VALUES (503, 2, '2026-04-15 10:00:00', '2026-04-15 11:00:00', 'Scheduled');
+INSERT INTO Appointments (patient_id, doctor_id, start_time, [status])
+VALUES 
+(7759376, 1, GETDATE(), 'Confirmed'), 
+(503, 2, GETDATE(), 'Confirmed'),     
+(500, 3, GETDATE(), 'Confirmed');     
 
 -- Insert Historical Shifts (Mix of completed and scheduled)
 INSERT INTO Shifts (staff_id, location, start_time, end_time, status, is_active)
 VALUES 
-(1, 'Cardiology Wing', '2026-04-01 08:00:00', '2026-04-01 16:00:00', 'Completed', 1),
-(2, 'Ward A', '2026-04-01 08:00:00', '2026-04-01 16:00:00', 'Completed', 1),
-(2, 'ER', '2026-04-02 14:00:00', '2026-04-02 22:00:00', 'Scheduled', 1),
-(3, 'Clinic', '2026-04-02 09:00:00', '2026-04-02 17:00:00', 'Scheduled', 1),
+(1, 'Cardiology Wing', '2026-03-25 08:00:00', '2026-03-25 16:00:00', 'Completed', 0),
+(2, 'Ward A', '2026-04-01 08:00:00', '2026-04-01 15:00:00', 'Completed', 1),
+(3, 'ER', '2026-04-02 09:00:00', '2026-04-02 22:00:00', 'Scheduled', 1),
+(3, 'Clinic', '2026-04-02 09:00:00', '2026-04-02 23:00:00', 'Scheduled', 1),
 (3, 'ICU', '2026-04-03 08:00:00', '2026-04-03 20:00:00', 'Scheduled', 1),
 (4, 'Oncology Wing', '2026-04-01 09:00:00', '2026-04-01 17:00:00', 'Completed', 1),
-(1, 'Cardiology Wing', '2026-04-10 08:00:00', '2026-04-10 16:00:00', 'Scheduled', 1),
-(2, 'ER', '2026-04-15 08:00:00', '2026-04-15 16:00:00', 'Scheduled', 1),
-(3, 'Clinic', '2026-04-10 09:00:00', '2026-04-10 17:00:00', 'Scheduled', 1),
+(5, 'Cardiology Wing', '2026-04-10 08:00:00', '2026-04-10 16:00:00', 'Scheduled', 1),
+(6, 'ER', '2026-04-15 08:00:00', '2026-04-15 16:00:00', 'Scheduled', 1),
+(7, 'Clinic', '2026-04-10 09:00:00', '2026-04-10 17:00:00', 'Scheduled', 1),
 (8, 'Main Pharmacy', '2026-04-01 08:00:00', '2026-04-01 16:00:00', 'Completed', 1),
 (9, 'ER Pharmacy', '2026-04-02 16:00:00', '2026-04-03 00:00:00', 'Scheduled', 1),
 (9, 'Main Pharmacy', '2026-04-03 08:00:00', '2026-04-03 16:00:00', 'Scheduled', 1),
 (10, 'Main Pharmacy', '2026-04-01 16:00:00', '2026-04-02 00:00:00', 'Completed', 1);
 
--- Insert Medical Evaluations
-INSERT INTO Medical_Evaluations (doctor_id, patient_id, diagnosis, doctor_notes, source, assumed_risk)
+
+-- Insert Medical Evaluations 
+INSERT INTO Medical_Evaluations (doctor_id, patient_id, diagnosis, doctor_notes, medications, source, assumed_risk)
 VALUES 
-(1, 500, 'Mild Hypertension', 'Patient advised to reduce salt intake.', 'Physical Exam', 0),
-(3, 501, 'Lupus Suspected', 'Ordering ANA panel and keeping patient under observation.', 'Lab Results', 1);
+
+(1, 7759376, 'Severe Penicillin Allergy', 'Hives reported.', 'Penicillin', 'Historical', 0),
+(2, 503, 'Previous Adverse Reactions', 'Nausea with Aspirin.', 'Aspirin', 'Historical', 0);
 
 -- Insert Hangouts
 INSERT INTO Hangouts (title, description, date_time, max_staff)
