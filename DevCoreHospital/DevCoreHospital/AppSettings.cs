@@ -5,7 +5,7 @@ namespace DevCoreHospital.Configuration;
 public static class AppSettings
 {
     public const string ConnectionString =
-        @"Data Source=LAPTOP-UV77CFP3\SQLEXPRESS;Initial Catalog=HospitalDatabase;Integrated Security=True;Encrypt=True;Trust Server Certificate=True";
+        @"Data Source=PATRICKPC\SQLEXPRESS;Initial Catalog=HospitalDatabase;Integrated Security=True;Encrypt=True;Trust Server Certificate=True";
 
     public static int DefaultDoctorId { get; set; } = 1;
 }

@@ -51,7 +51,7 @@ namespace DevCoreHospital.Data
 
                     if (role == "Doctor")
                     {
-                        var doc = new Doctor(id, firstName, lastName, contactInfo, special, isAvailable, license, statusStr, docStatus, yearsExp);
+                        var doc = new Doctor(id, firstName, lastName, contactInfo, "", isAvailable, special, license, docStatus, yearsExp);
                         staffList.Add(doc);
                     }
                     else if (role == "Pharmacist")
