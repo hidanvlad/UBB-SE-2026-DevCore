@@ -134,7 +134,7 @@ namespace DevCoreHospital.Data
             catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"Eroare la actualizarea personalului: {ex.Message}"); }
         }
 
-        // ========================= SHIFTS CRUD =========================
+        
         public List<Shift> GetShifts()
         {
             List<Shift> shiftList = new List<Shift>();
@@ -358,8 +358,7 @@ namespace DevCoreHospital.Data
             }
         }
 
-
-        // ========================= SWAP REQUESTS (NEW) =========================
+        
         public int CreateShiftSwapRequest(ShiftSwapRequest request)
         {
             try
