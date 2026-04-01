@@ -32,10 +32,24 @@ namespace DevCoreHospital.Views.Admin
 
             if (LocationComboBox.SelectedItem is string selectedLocation)
             {
-                ViewModel.FilterStaffForShift(selectedLocation);
+                ViewModel.FilterSpecializationsAndCertificationsForLocation(selectedLocation);
+            }
+        }
+
+        private void SpecializationCertificationComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (ViewModel == null) return;
+
+            var selectedLocation = LocationComboBox.SelectedItem as string;
+            var selectedSpecializationOrCertification = SpecializationCertificationComboBox.SelectedItem as string;
+
+            if (!string.IsNullOrEmpty(selectedSpecializationOrCertification) && !string.IsNullOrEmpty(selectedLocation))
+            {
+                ViewModel.FilterStaffForShift(selectedLocation, selectedSpecializationOrCertification);
                 StaffComboBox.SelectedIndex = -1;
             }
         }
+
 
         private void CreateShift_Click(object sender, RoutedEventArgs e)
         {
