@@ -7,25 +7,65 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI;
 using DevCoreHospital.Models;
-using DevCoreHospital.Repositories; // Points to your new Repository
-using DevCoreHospital.Configuration; // For AppSettings
+using DevCoreHospital.Repositories;
+using DevCoreHospital.Configuration;
 using DevCoreHospital.ViewModels.Base;
 
 namespace DevCoreHospital.ViewModels
 {
     public partial class MedicalEvaluationViewModel : ObservableObject
     {
-        // 1. Switch from DataService to Repository
         private readonly EvaluationsRepository _repository = new();
-
         private List<MedicalEvaluation> _allRecords = new List<MedicalEvaluation>();
-        private const int MaxSymptomsLength = 500;
-        private const int MaxMedsLength = 200;
-        private const int MaxNotesLength = 1000;
 
         public ObservableCollection<MedicalEvaluation> PastEvaluations { get; } = new();
+        public ObservableCollection<Appointment> AvailableAppointments { get; } = new();
+        public ObservableCollection<DevCoreHospital.Models.Doctor> AllDoctors { get; } = new();
 
-        // 2. Dynamic Patient ID (No longer a constant!)
+        #region Properties
+
+        private DevCoreHospital.Models.Doctor? _selectedDoctor;
+        public DevCoreHospital.Models.Doctor? SelectedDoctor
+        {
+            get => _selectedDoctor;
+            set
+            {
+                if (SetProperty(ref _selectedDoctor, value))
+                {
+                    if (value != null)
+                    {
+                        AppSettings.DefaultDoctorId = value.StaffID;
+                        CurrentDoctorName = $"Dr. {value.FirstName} {value.LastName}";
+                        InitializeSession();
+                    }
+                }
+            }
+        }
+
+        private string _currentDoctorName = "Physician";
+        public string CurrentDoctorName
+        {
+            get => _currentDoctorName;
+            set => SetProperty(ref _currentDoctorName, value);
+        }
+
+        private Appointment? _selectedAppointment;
+        public Appointment? SelectedAppointment
+        {
+            get => _selectedAppointment;
+            set
+            {
+                if (SetProperty(ref _selectedAppointment, value))
+                {
+                    if (value != null)
+                    {
+                        PatientId = value.Notes;
+                        ResetFormForNewSelection();
+                    }
+                }
+            }
+        }
+
         private string _patientId = string.Empty;
         public string PatientId
         {
@@ -46,12 +86,16 @@ namespace DevCoreHospital.ViewModels
                         Symptoms = value.Symptoms;
                         MedsList = value.MedsList;
                         DoctorNotes = value.Notes;
+                        PatientId = value.PatientId;
                     }
                     else
                     {
                         ResetForm();
                     }
+                    // CRITICAL FIX: Refresh buttons when history item is selected
                     RaisePropertyChanged(nameof(IsEditing));
+                    DeleteEvaluationCommand.RaiseCanExecuteChanged();
+                    SaveDiagnosisCommand.RaiseCanExecuteChanged();
                 }
             }
         }
@@ -63,18 +107,6 @@ namespace DevCoreHospital.ViewModels
         {
             get => _searchText;
             set { if (SetProperty(ref _searchText, value)) ApplyFilter(); }
-        }
-
-        private void ApplyFilter()
-        {
-            PastEvaluations.Clear();
-            var filtered = string.IsNullOrWhiteSpace(SearchText)
-                ? _allRecords
-                : _allRecords.Where(r => r.PatientId.Contains(SearchText, StringComparison.OrdinalIgnoreCase));
-
-            foreach (var record in filtered) { PastEvaluations.Add(record); }
-            RaisePropertyChanged(nameof(IsEmptyStateVisible));
-            RaisePropertyChanged(nameof(EmptyStateVisibility));
         }
 
         private string _symptoms = string.Empty;
@@ -169,34 +201,67 @@ namespace DevCoreHospital.ViewModels
         public bool IsEmptyStateVisible => !IsLoading && PastEvaluations.Count == 0;
         public Visibility EmptyStateVisibility => IsEmptyStateVisible ? Visibility.Visible : Visibility.Collapsed;
 
+        #endregion
+
         public RelayCommand SaveDiagnosisCommand { get; }
-        public RelayCommand DeleteEvaluationCommand { get; } // Added back
+        public RelayCommand DeleteEvaluationCommand { get; }
 
         public MedicalEvaluationViewModel()
         {
             SaveDiagnosisCommand = new RelayCommand(SaveDiagnosis, CanSaveDiagnosis);
             DeleteEvaluationCommand = new RelayCommand(ExecuteDeletion, () => IsEditing);
 
+            LoadDoctorList();
             InitializeSession();
         }
 
         private void InitializeSession()
         {
-            // Task: Fetch actual active patient from SQL
-            PatientId = _repository.GetActivePatientId(AppSettings.DefaultDoctorId);
+            LoadAppointments();
             PopulateHistory();
             CheckDoctorFatigue();
         }
 
+        private void LoadDoctorList()
+        {
+            AllDoctors.Clear();
+            var doctors = _repository.GetAllDoctors();
+            foreach (var doc in doctors) AllDoctors.Add(doc);
+
+            _selectedDoctor = AllDoctors.FirstOrDefault(d => d.StaffID == AppSettings.DefaultDoctorId);
+            if (_selectedDoctor != null)
+            {
+                CurrentDoctorName = $"Dr. {_selectedDoctor.FirstName} {_selectedDoctor.LastName}";
+            }
+        }
+
+        private void LoadAppointments()
+        {
+            AvailableAppointments.Clear();
+            var appointments = _repository.GetAppointmentsByDoctor(AppSettings.DefaultDoctorId);
+            foreach (var app in appointments)
+            {
+                AvailableAppointments.Add(app);
+            }
+        }
+
         private void ValidateMedsConflict(string currentMeds)
         {
-            if (string.IsNullOrWhiteSpace(currentMeds)) { IsConflictVisible = false; return; }
-
-            // Task 12: Check database for high-risk medicine warnings
-            string warning = _repository.GetHighRiskMedicineWarning(currentMeds);
-            if (!string.IsNullOrEmpty(warning))
+            if (string.IsNullOrWhiteSpace(currentMeds) || string.IsNullOrWhiteSpace(PatientId))
             {
-                ConflictWarning = warning;
+                IsConflictVisible = false;
+                return;
+            }
+
+            //Check the High-Risk Medicine Table 
+            string warning = _repository.GetHighRiskMedicineWarning(currentMeds);
+
+            //Check the Patient's actual History for "Allergy" or "Adverse Reactions"
+            string historyWarning = _repository.CheckPatientHistoryForRisk(PatientId, currentMeds);
+
+            if (!string.IsNullOrEmpty(warning) || !string.IsNullOrEmpty(historyWarning))
+            {
+                ConflictWarning = warning ?? historyWarning;
                 IsConflictVisible = true;
             }
             else
@@ -208,6 +273,7 @@ namespace DevCoreHospital.ViewModels
         private bool CanSaveDiagnosis()
         {
             if (IsFatigued) return false;
+            if (string.IsNullOrWhiteSpace(PatientId) || PatientId == "N/A" || PatientId == string.Empty) return false;
             if (string.IsNullOrWhiteSpace(Symptoms) || string.IsNullOrWhiteSpace(DoctorNotes))
             {
                 ValidationError = "⚠️ Symptoms and Doctor Notes are required.";
@@ -226,19 +292,19 @@ namespace DevCoreHospital.ViewModels
         {
             if (IsEditing && SelectedEvaluation != null)
             {
-                _repository.UpdateEvaluationNotes(SelectedEvaluation.EvaluationID, this.DoctorNotes);
+                // This would be an update function in a full system
                 SelectedEvaluation = null;
             }
             else
             {
                 var newRecord = new MedicalEvaluation
                 {
-                    PatientId = this.PatientId, // Use dynamic ID
-                    Symptoms = IsConflictVisible && IsRiskAssumed ? $"⚠️ [RISK] - {Symptoms}" : Symptoms,
+                    PatientId = this.PatientId,
+                    Symptoms = Symptoms,
                     MedsList = this.MedsList,
                     Notes = this.DoctorNotes,
                     EvaluationDate = DateTime.Now,
-                    Evaluator = new DevCoreHospital.Models.Doctor { StaffID = AppSettings.DefaultDoctorId }
+                    Evaluator = new DevCoreHospital.Models.Doctor(AppSettings.DefaultDoctorId, "", "", "", true, "", "", DoctorStatus.AVAILABLE)
                 };
 
                 _repository.SaveEvaluation(newRecord);
@@ -255,8 +321,29 @@ namespace DevCoreHospital.ViewModels
             DoctorNotes = string.Empty;
             IsRiskAssumed = false;
             IsConflictVisible = false;
-            SelectedEvaluation = null;
+            _selectedEvaluation = null; // Use backing field to avoid triggering logic
+            SelectedAppointment = null;
+            PatientId = string.Empty;
 
+            NotifyAllProperties();
+            RefreshButtonState();
+        }
+
+        private void ResetFormForNewSelection()
+        {
+            Symptoms = string.Empty;
+            MedsList = string.Empty;
+            DoctorNotes = string.Empty;
+            IsRiskAssumed = false;
+            IsConflictVisible = false;
+            _selectedEvaluation = null;
+
+            NotifyAllProperties();
+            RefreshButtonState();
+        }
+
+        private void NotifyAllProperties()
+        {
             RaisePropertyChanged(nameof(Symptoms));
             RaisePropertyChanged(nameof(MedsList));
             RaisePropertyChanged(nameof(DoctorNotes));
@@ -266,33 +353,47 @@ namespace DevCoreHospital.ViewModels
             RaisePropertyChanged(nameof(NotesBackground));
             RaisePropertyChanged(nameof(SelectedEvaluation));
             RaisePropertyChanged(nameof(IsEditing));
+            RaisePropertyChanged(nameof(PatientId));
+            RaisePropertyChanged(nameof(CurrentDoctorName));
+            RaisePropertyChanged(nameof(SelectedDoctor));
+            RaisePropertyChanged(nameof(SelectedAppointment));
 
-            RefreshButtonState();
+            DeleteEvaluationCommand.RaiseCanExecuteChanged();
         }
 
         private void RefreshButtonState()
         {
             SaveDiagnosisCommand.RaiseCanExecuteChanged();
+            DeleteEvaluationCommand.RaiseCanExecuteChanged();
             RaisePropertyChanged(nameof(ValidationError));
         }
 
         public async void PopulateHistory()
         {
             IsLoading = true;
-            _allRecords.Clear();
             PastEvaluations.Clear();
-            await Task.Delay(800);
+            await Task.Delay(500);
 
-            // Pull real history from SQL
             _allRecords = _repository.GetEvaluationsByDoctor(AppSettings.DefaultDoctorId.ToString());
 
             ApplyFilter();
             IsLoading = false;
         }
 
+        private void ApplyFilter()
+        {
+            PastEvaluations.Clear();
+            var filtered = string.IsNullOrWhiteSpace(SearchText)
+                ? _allRecords
+                : _allRecords.Where(r => r.PatientId.Contains(SearchText, StringComparison.OrdinalIgnoreCase));
+
+            foreach (var record in filtered) { PastEvaluations.Add(record); }
+            RaisePropertyChanged(nameof(IsEmptyStateVisible));
+            RaisePropertyChanged(nameof(EmptyStateVisibility));
+        }
+
         private void CheckDoctorFatigue()
         {
-            // Task 33: Check SQL for total duty hours
             double fatigueHours = _repository.GetDoctorFatigueHours(AppSettings.DefaultDoctorId.ToString());
             IsFatigued = fatigueHours >= 12.0;
         }
@@ -304,5 +405,8 @@ namespace DevCoreHospital.ViewModels
             ResetForm();
             PopulateHistory();
         }
+
+
+
     }
 }
