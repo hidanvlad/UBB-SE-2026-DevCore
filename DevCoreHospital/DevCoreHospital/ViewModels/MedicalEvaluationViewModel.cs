@@ -34,7 +34,6 @@ namespace DevCoreHospital.ViewModels
                 {
                     if (value != null)
                     {
-                        AppSettings.DefaultDoctorId = value.StaffID;
                         CurrentDoctorName = $"Dr. {value.FirstName} {value.LastName}";
                         InitializeSession();
                     }
@@ -254,14 +253,14 @@ namespace DevCoreHospital.ViewModels
             }
 
             //Check the High-Risk Medicine Table 
-            string warning = _repository.GetHighRiskMedicineWarning(currentMeds);
+            string? warning = _repository.GetHighRiskMedicineWarning(currentMeds);
 
             //Check the Patient's actual History for "Allergy" or "Adverse Reactions"
-            string historyWarning = _repository.CheckPatientHistoryForRisk(PatientId, currentMeds);
+            string? historyWarning = _repository.CheckPatientHistoryForRisk(PatientId, currentMeds);
 
             if (!string.IsNullOrEmpty(warning) || !string.IsNullOrEmpty(historyWarning))
             {
-                ConflictWarning = warning ?? historyWarning;
+                ConflictWarning = warning ?? historyWarning ?? string.Empty;
                 IsConflictVisible = true;
             }
             else

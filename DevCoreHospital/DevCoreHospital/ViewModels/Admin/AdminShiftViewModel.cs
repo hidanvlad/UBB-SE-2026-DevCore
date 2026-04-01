@@ -87,17 +87,18 @@ namespace DevCoreHospital.ViewModels.Admin
         {
             var rawShifts = _StaffAndShiftService.GetWeeklyShifts(SelectedDate);
             IEnumerable<Shift> filtered = rawShifts;
+            var englishCulture = System.Globalization.CultureInfo.GetCultureInfo("en-US");
 
             if (IsWeeklyView)
             {
                 int diff = (7 + (SelectedDate.DayOfWeek - DayOfWeek.Monday)) % 7;
                 DateTime startOfWeek = SelectedDate.Date.AddDays(-1 * diff);
-                ScheduleTitle = $"Weekly Roster (Week of {startOfWeek:dd MMM yyyy})";
+                ScheduleTitle = $"Weekly Roster (Week of {startOfWeek.ToString("dd MMM yyyy", englishCulture)})";
             }
             else
             {
                 filtered = filtered.Where(s => s.StartTime.Date == SelectedDate.Date);
-                ScheduleTitle = $"Daily Roster ({SelectedDate:dddd, dd MMM yyyy})";
+                ScheduleTitle = $"Daily Roster ({SelectedDate.ToString("dddd, dd MMM yyyy", englishCulture)})";
             }
 
             if (!string.IsNullOrEmpty(SelectedDepartment) && SelectedDepartment != "All Departments")

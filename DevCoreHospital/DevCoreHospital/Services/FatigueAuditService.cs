@@ -125,15 +125,30 @@ namespace DevCoreHospital.Services
                     continue;
 
                 var violatingShiftInPlan = effectiveShifts.FirstOrDefault(s => s.Id == violatingShift.Id) ?? violatingShift;
-                var candidates = staffProfiles
+                var strictCandidates = staffProfiles
                     .Where(s => s.StaffId != violatingShiftInPlan.StaffId)
                     .Where(s => string.Equals(s.Role, violatingShiftInPlan.Role, StringComparison.OrdinalIgnoreCase))
                     .Where(s => string.Equals(s.Specialization, violatingShiftInPlan.Specialization, StringComparison.OrdinalIgnoreCase))
-                    .Where(s => s.IsAvailable == true)
+                    .Where(IsAvailableForReassignment)
                     .Where(s => CanTakeShift(s.StaffId, violatingShiftInPlan, effectiveShifts, weekStart))
                     .OrderBy(s => GetMonthlyWorkedHoursFromShifts(s.StaffId, violatingShiftInPlan.Start.Year, violatingShiftInPlan.Start.Month, effectiveShifts))
                     .ThenBy(s => s.FullName)
                     .ToList();
+
+                var usedRoleOnlyFallback = false;
+                var candidates = strictCandidates;
+                if (candidates.Count == 0)
+                {
+                    usedRoleOnlyFallback = true;
+                    candidates = staffProfiles
+                        .Where(s => s.StaffId != violatingShiftInPlan.StaffId)
+                        .Where(s => string.Equals(s.Role, violatingShiftInPlan.Role, StringComparison.OrdinalIgnoreCase))
+                        .Where(IsAvailableForReassignment)
+                        .Where(s => CanTakeShift(s.StaffId, violatingShiftInPlan, effectiveShifts, weekStart))
+                        .OrderBy(s => GetMonthlyWorkedHoursFromShifts(s.StaffId, violatingShiftInPlan.Start.Year, violatingShiftInPlan.Start.Month, effectiveShifts))
+                        .ThenBy(s => s.FullName)
+                        .ToList();
+                }
 
                 var candidate = candidates.FirstOrDefault();
                 if (candidate is null)
@@ -145,7 +160,7 @@ namespace DevCoreHospital.Services
                         OriginalStaffName = violatingShift.StaffName,
                         SuggestedStaffId = null,
                         SuggestedStaffName = string.Empty,
-                        Reason = "No valid replacement found for same role/specialization without overlap."
+                        Reason = "No valid replacement found for this role under overlap/rest/hour limits."
                     });
                     continue;
                 }
@@ -158,7 +173,9 @@ namespace DevCoreHospital.Services
                     OriginalStaffName = violatingShiftInPlan.StaffName,
                     SuggestedStaffId = candidate.StaffId,
                     SuggestedStaffName = candidate.FullName,
-                    Reason = $"Lowest monthly load in matching pool ({monthlyHours:F1}h)."
+                    Reason = usedRoleOnlyFallback
+                        ? $"Fallback to same role; lowest monthly load in eligible pool ({monthlyHours:F1}h)."
+                        : $"Lowest monthly load in matching specialization pool ({monthlyHours:F1}h)."
                 });
 
                 ApplyTentativeReassignment(effectiveShifts, violatingShiftInPlan.Id, candidate.StaffId, candidate.FullName);
@@ -224,7 +241,12 @@ namespace DevCoreHospital.Services
         private static bool IsEligibleStaff(StaffProfile staff)
         {
             var isInactiveByStatus = string.Equals(staff.Status, "INACTIVE", StringComparison.OrdinalIgnoreCase);
-            return staff.IsActive == true && !isInactiveByStatus;
+            return staff.IsActive != false && !isInactiveByStatus;
+        }
+
+        private static bool IsAvailableForReassignment(StaffProfile staff)
+        {
+            return staff.IsAvailable != false;
         }
 
         private static bool OverlapsWindow(RosterShift shift, DateTime windowStart, DateTime windowEnd)

@@ -1,8 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Globalization;
 
 namespace DevCoreHospital.Models
 {
@@ -26,9 +23,10 @@ namespace DevCoreHospital.Models
             this.Status = status;
         }
 
+        private static readonly CultureInfo EnglishCulture = CultureInfo.GetCultureInfo("en-US");
 
-        public string DisplayDayMonth => StartTime.ToString("dd MMM");
-        public string DisplayDayName => StartTime.ToString("dddd");
+        public string DisplayDayMonth => StartTime.ToString("dd MMM", EnglishCulture);
+        public string DisplayDayName => StartTime.ToString("dddd", EnglishCulture);
         public string DisplayStartTime => StartTime.ToString("HH:mm");
         public string DisplayEndTime => EndTime.ToString("HH:mm");
     }

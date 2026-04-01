@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using DevCoreHospital.Models;
 
 namespace DevCoreHospital.ViewModels.Pharmacy;
@@ -13,13 +14,15 @@ public sealed class PharmacyShiftItemViewModel
         Status = shift.Status;
     }
 
+    private static readonly CultureInfo EnglishCulture = CultureInfo.GetCultureInfo("en-US");
+
     public string RotationAssignment { get; }
     public DateTime ShiftStartTime { get; }
     public DateTime? ShiftEndTime { get; }
 
     public string ShiftStartTimeText => ShiftStartTime.ToString("HH:mm");
     public string ShiftEndTimeText => ShiftEndTime.HasValue ? ShiftEndTime.Value.ToString("HH:mm") : "—";
-    public string DayLabel => ShiftStartTime.ToString("ddd, dd MMM yyyy");
+    public string DayLabel => ShiftStartTime.ToString("ddd, dd MMM yyyy", EnglishCulture);
 
     public string TimeRangeDetail =>
         $"Shift start: {ShiftStartTimeText}  ·  Shift end: {ShiftEndTimeText}  ·  Duration: {DurationText}";

@@ -4,6 +4,7 @@ using DevCoreHospital.Services;
 using DevCoreHospital.ViewModels.Base;
 using System;
 using System.Collections.ObjectModel;
+using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -96,10 +97,16 @@ namespace DevCoreHospital.ViewModels.Doctor
             }
         }
 
-        public string SelectedDateText =>
-            IsDaily
-                ? SelectedDate.ToString("dddd, dd MMM yyyy")
-                : $"Week of {StartOfWeek(SelectedDate):dd MMM yyyy}";
+        public string SelectedDateText
+        {
+            get
+            {
+                var englishCulture = CultureInfo.GetCultureInfo("en-US");
+                return IsDaily
+                    ? SelectedDate.ToString("dddd, dd MMM yyyy", englishCulture)
+                    : $"Week of {StartOfWeek(SelectedDate).ToString("dd MMM yyyy", englishCulture)}";
+            }
+        }
 
         public bool IsDoctor => string.Equals(_currentUser.Role, "Doctor", StringComparison.OrdinalIgnoreCase) ||
                                 string.Equals(_currentUser.Role, "Admin", StringComparison.OrdinalIgnoreCase);

@@ -4,6 +4,7 @@ using Microsoft.UI;
 using Microsoft.UI.Xaml.Media;
 using System;
 using System.Collections.ObjectModel;
+using System.Globalization;
 using System.Linq;
 
 namespace DevCoreHospital.ViewModels
@@ -30,7 +31,14 @@ namespace DevCoreHospital.ViewModels
             }
         }
 
-        public string WeekLabel => $"Week of {SelectedWeekStart:dd MMM yyyy}";
+        public string WeekLabel
+        {
+            get
+            {
+                var englishCulture = CultureInfo.GetCultureInfo("en-US");
+                return $"Week of {SelectedWeekStart.ToString("dd MMM yyyy", englishCulture)}";
+            }
+        }
 
         private string _statusMessage = "Run Auto-Audit to validate this roster.";
         public string StatusMessage
@@ -77,6 +85,7 @@ namespace DevCoreHospital.ViewModels
         public void RunAutoAudit()
         {
             var result = _auditService.RunAutoAudit(SelectedWeekStart.Date);
+            var englishCulture = CultureInfo.GetCultureInfo("en-US");
 
             Violations.Clear();
             foreach (var v in result.Violations.OrderBy(x => x.ShiftStart))
@@ -85,7 +94,7 @@ namespace DevCoreHospital.ViewModels
                 {
                     ShiftId = v.ShiftId,
                     Staff = v.StaffName,
-                    Window = $"{v.ShiftStart:ddd HH:mm} - {v.ShiftEnd:ddd HH:mm}",
+                    Window = $"{v.ShiftStart.ToString("ddd HH:mm", englishCulture)} - {v.ShiftEnd.ToString("ddd HH:mm", englishCulture)}",
                     Rule = v.Rule,
                     Message = v.Message
                 });
