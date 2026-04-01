@@ -75,7 +75,7 @@ namespace DevCoreHospital.Views.Admin
 
             ViewModel.CreateNewShift(selectedStaff, start, end, location);
 
-            //ShowMessage("The shift was scheduled successfuly!", InfoBarSeverity.Success);
+            ShowMessage("The shift was scheduled successfuly!", InfoBarSeverity.Success);
 
             StaffComboBox.SelectedIndex = -1;
             LocationComboBox.SelectedIndex = -1;

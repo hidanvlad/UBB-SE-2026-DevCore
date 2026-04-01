@@ -79,40 +79,33 @@ namespace DevCoreHospital.ViewModels.Admin
         public AdminShiftViewModel(StaffAndShiftService service)
         {
             _StaffAndShiftService = service;
-            LoadAndFilterShifts(); // Apelăm noua metodă care și încarcă, și filtrează
+            LoadAndFilterShifts();
         }
+        
 
-        // ==========================================
-        // NOUA METODĂ DE ÎNCĂRCARE ȘI FILTRARE
-        // ==========================================
         public void LoadAndFilterShifts()
         {
-            // 1. Luăm turele folosind metoda ta existentă, dar bazată pe data selectată!
             var rawShifts = _StaffAndShiftService.GetWeeklyShifts(SelectedDate);
             IEnumerable<Shift> filtered = rawShifts;
 
-            // 2. Filtrare Daily vs Weekly
             if (IsWeeklyView)
             {
                 int diff = (7 + (SelectedDate.DayOfWeek - DayOfWeek.Monday)) % 7;
                 DateTime startOfWeek = SelectedDate.Date.AddDays(-1 * diff);
                 ScheduleTitle = $"Weekly Roster (Week of {startOfWeek:dd MMM yyyy})";
-                // Presupunem că GetWeeklyShifts deja aduce o săptămână întreagă
             }
             else
             {
-                // Păstrăm DOAR turele din ziua selectată
                 filtered = filtered.Where(s => s.StartTime.Date == SelectedDate.Date);
                 ScheduleTitle = $"Daily Roster ({SelectedDate:dddd, dd MMM yyyy})";
             }
 
-            // 3. Filtrare după Departament (Location)
             if (!string.IsNullOrEmpty(SelectedDepartment) && SelectedDepartment != "All Departments")
             {
                 filtered = filtered.Where(s => s.Location == SelectedDepartment);
             }
 
-            // 4. Update UI
+
             Shifts.Clear();
             var finalResult = filtered.OrderBy(s => s.StartTime).ToList();
             foreach (var s in finalResult) Shifts.Add(s);
