@@ -689,9 +689,7 @@ namespace DevCoreHospital.Data
                 Location = ""
             };
         }
-        // ==========================================
         // HANGOUTS CRUD
-        // ==========================================
         public int InsertHangout(string title, string description, DateTime date, int maxParticipants)
         {
             using var conn = GetConnection();
