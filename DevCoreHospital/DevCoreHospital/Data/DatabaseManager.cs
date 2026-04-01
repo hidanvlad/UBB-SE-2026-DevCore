@@ -51,9 +51,6 @@ namespace DevCoreHospital.Data
 
                     if (role.Equals("Doctor", StringComparison.OrdinalIgnoreCase))
                     {
-<<<<<<< Updated upstream
-                        var doc = new Doctor(id, firstName, lastName, contactInfo, "", isAvailable, special, license, docStatus, yearsExp);
-=======
                         // IMPORTANT: create doctor via property init to avoid constructor signature mismatch
                         var doc = new Doctor
                         {
@@ -67,7 +64,6 @@ namespace DevCoreHospital.Data
                             DoctorStatus = docStatus,
                             YearsOfExperience = yearsExp
                         };
->>>>>>> Stashed changes
                         staffList.Add(doc);
                     }
                     else if (role.Equals("Pharmacist", StringComparison.OrdinalIgnoreCase))
