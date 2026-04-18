@@ -14,7 +14,7 @@ namespace DevCoreHospital.ViewModels.Doctor
 {
     public sealed class MyScheduleViewModel : INotifyPropertyChanged
     {
-        private readonly StaffAndShiftService _staffAndShiftService;
+        private readonly IStaffAndShiftService _staffAndShiftService;
         private readonly ShiftRepository _shiftRepository;
         private readonly StaffRepository _staffRepository;
 
@@ -75,7 +75,7 @@ namespace DevCoreHospital.ViewModels.Doctor
         public ICommand RequestSwapCommand { get; }
 
         public MyScheduleViewModel(
-            StaffAndShiftService staffAndShiftService,
+            IStaffAndShiftService staffAndShiftService,
             ShiftRepository shiftRepository,
             StaffRepository staffRepository)
         {

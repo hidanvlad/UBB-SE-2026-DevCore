@@ -12,7 +12,7 @@ namespace DevCoreHospital.ViewModels
 {
     public class SalaryComputationViewModel : ObservableObject
     {
-        private readonly SalaryComputationService _salaryService;
+        private readonly ISalaryComputationService _salaryService;
         private readonly DatabaseManager _dbManager;
 
         public ObservableCollection<IStaff> StaffList { get; } = new ObservableCollection<IStaff>();

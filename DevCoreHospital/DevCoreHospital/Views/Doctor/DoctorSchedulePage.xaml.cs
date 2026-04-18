@@ -63,22 +63,8 @@ namespace DevCoreHospital.Views.Doctor
         {
             if ((sender as FrameworkElement)?.DataContext is AppointmentItemViewModel item)
             {
-                var appt = new DevCoreHospital.Models.Appointment
-                {
-                    Id = item.Id,
-                    PatientName = item.PatientName,
-                    DoctorId = item.DoctorId,
-                    DoctorName = item.DoctorName,
-                    Date = item.Date,
-                    StartTime = item.StartTime,
-                    EndTime = item.EndTime,
-                    Status = item.Status,
-                    Type = item.Type,
-                    Location = item.Location,
-                    Notes = item.Notes
-                };
-
-                Frame?.Navigate(typeof(AppointmentDetailsPage), appt);
+                // Mapping to the Appointment model belongs in the VM, not the view.
+                Frame?.Navigate(typeof(AppointmentDetailsPage), item.ToAppointment());
             }
         }
     }

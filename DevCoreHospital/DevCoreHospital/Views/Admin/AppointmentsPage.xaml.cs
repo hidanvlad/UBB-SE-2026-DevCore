@@ -96,17 +96,19 @@ namespace DevCoreHospital.Views
         {
             if (sender is Button btn && btn.Tag is Appointment appt)
             {
-                if (appt.Status == "Finished")
+                try
                 {
-                    ShowMessage("Cannot cancel an appointment that is already Finished!", InfoBarSeverity.Error);
-                    return;
+                    // Business rule enforcement lives in the service layer.
+                    await ViewModel.CancelAppointmentAsync(appt);
+                    ShowMessage("Appointment successfully canceled.", InfoBarSeverity.Informational);
+
+                    if (FilterDoctorComboBox.SelectedValue is int doctorId)
+                        await ViewModel.LoadAppointmentsForDoctorAsync(doctorId);
                 }
-
-                await ViewModel.CancelAppointmentAsync(appt);
-                ShowMessage("Appointment successfully canceled.", InfoBarSeverity.Informational);
-
-                if (FilterDoctorComboBox.SelectedValue is int doctorId)
-                    await ViewModel.LoadAppointmentsForDoctorAsync(doctorId);
+                catch (InvalidOperationException ex)
+                {
+                    ShowMessage(ex.Message, InfoBarSeverity.Error);
+                }
             }
         }
 

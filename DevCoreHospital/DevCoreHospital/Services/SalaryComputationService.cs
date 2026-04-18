@@ -5,7 +5,7 @@ using DevCoreHospital.Data;
 
 namespace DevCoreHospital.Services
 {
-    public class SalaryComputationService
+    public class SalaryComputationService : ISalaryComputationService
     {
         private readonly DatabaseManager _dbManager;
 

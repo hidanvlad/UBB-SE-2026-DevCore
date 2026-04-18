@@ -18,6 +18,11 @@ namespace DevCoreHospital.Services
             _repository = repository ?? throw new ArgumentNullException(nameof(repository));
         }
 
+        public bool ReassignShift(int shiftId, int newStaffId)
+        {
+            return _repository.ReassignShift(shiftId, newStaffId);
+        }
+
         public AutoAuditResult RunAutoAudit(DateTime weekStart)
         {
             var normalizedWeekStart = StartOfWeek(weekStart);

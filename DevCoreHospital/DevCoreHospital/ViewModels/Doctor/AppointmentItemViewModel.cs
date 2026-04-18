@@ -38,5 +38,24 @@ namespace DevCoreHospital.ViewModels.Doctor
             StartTime = item.StartTime;
             EndTime = item.EndTime;
         }
+
+        /// <summary>
+        /// Rebuilds the underlying <see cref="Appointment"/> model from this VM.
+        /// Kept here so views can stay free of mapping logic.
+        /// </summary>
+        public Appointment ToAppointment() => new()
+        {
+            Id = Id,
+            PatientName = PatientName,
+            DoctorId = DoctorId,
+            DoctorName = DoctorName,
+            Date = Date,
+            StartTime = StartTime,
+            EndTime = EndTime,
+            Status = Status,
+            Type = Type,
+            Location = Location,
+            Notes = Notes
+        };
     }
 }

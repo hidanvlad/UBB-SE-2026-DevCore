@@ -6,9 +6,9 @@ using DevCoreHospital.Repositories;
 
 namespace DevCoreHospital.Services
 {
-    public class HangoutService
+    public class HangoutService : IHangoutService
     {
-        public HangoutRepository hangoutRepository { get; }
+        private readonly HangoutRepository hangoutRepository;
 
         public HangoutService(HangoutRepository hangoutRepository)
         {

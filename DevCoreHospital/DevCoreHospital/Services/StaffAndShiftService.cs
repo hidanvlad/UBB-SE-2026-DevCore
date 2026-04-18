@@ -8,7 +8,7 @@ using Microsoft.IdentityModel.Tokens;
 
 namespace DevCoreHospital.Services
 {
-    public class StaffAndShiftService
+    public class StaffAndShiftService : IStaffAndShiftService
     {
         private readonly StaffRepository _staffRepo;
         private readonly ShiftRepository _shiftRepo;
