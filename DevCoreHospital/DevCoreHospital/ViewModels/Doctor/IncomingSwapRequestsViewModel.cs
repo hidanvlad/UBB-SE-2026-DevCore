@@ -11,7 +11,7 @@ namespace DevCoreHospital.ViewModels.Doctor
 {
     public sealed class IncomingSwapRequestsViewModel : INotifyPropertyChanged
     {
-        private readonly IStaffAndShiftService service;
+        private readonly IShiftSwapService service;
 
         public ObservableCollection<IncomingSwapRequestItemViewModel> Requests { get; } = new ObservableCollection<IncomingSwapRequestItemViewModel>();
 
@@ -41,7 +41,7 @@ namespace DevCoreHospital.ViewModels.Doctor
         public ICommand AcceptCommand { get; }
         public ICommand RejectCommand { get; }
 
-        public IncomingSwapRequestsViewModel(IStaffAndShiftService service, System.Collections.Generic.IEnumerable<DoctorOptionViewModel> doctors)
+        public IncomingSwapRequestsViewModel(IShiftSwapService service, System.Collections.Generic.IEnumerable<DoctorOptionViewModel> doctors)
         {
             this.service = service;
 

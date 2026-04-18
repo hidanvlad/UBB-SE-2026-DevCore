@@ -17,11 +17,9 @@ namespace DevCoreHospital.Views.Admin
         {
             this.InitializeComponent();
 
-            var dbManager = new DevCoreHospital.Data.DatabaseManager(AppSettings.ConnectionString);
-
-            var staffRepo = new StaffRepository(dbManager);
-            var shiftRepo = new ShiftRepository(dbManager);
-            var service = new StaffAndShiftService(staffRepo, shiftRepo, dbManager);
+            var staffRepo = new StaffRepository(AppSettings.ConnectionString);
+            var shiftRepo = new ShiftRepository(AppSettings.ConnectionString, staffRepo);
+            var service = new ShiftManagementService(staffRepo, shiftRepo);
 
             ViewModel = new AdminShiftViewModel(service);
         }

@@ -1,5 +1,4 @@
-﻿using DevCoreHospital.Configuration;
-using DevCoreHospital.Data;
+using DevCoreHospital.Configuration;
 using DevCoreHospital.Repositories;
 using DevCoreHospital.Services;
 using DevCoreHospital.ViewModels.Doctor;
@@ -15,12 +14,12 @@ namespace DevCoreHospital.Views
         {
             InitializeComponent();
 
-            var dbManager = new DatabaseManager(AppSettings.ConnectionString);
-            var staffRepo = new StaffRepository(dbManager);
-            var shiftRepo = new ShiftRepository(dbManager);
-            var staffAndShiftService = new StaffAndShiftService(staffRepo, shiftRepo, dbManager);
+            var staffRepo = new StaffRepository(AppSettings.ConnectionString);
+            var shiftRepo = new ShiftRepository(AppSettings.ConnectionString, staffRepo);
+            var shiftSwapRepository = new ShiftSwapRepository(AppSettings.ConnectionString);
+            var shiftSwapService = new ShiftSwapService(staffRepo, shiftRepo, shiftSwapRepository);
 
-            ViewModel = new MyScheduleViewModel(staffAndShiftService, shiftRepo, staffRepo);
+            ViewModel = new MyScheduleViewModel(shiftSwapService, shiftRepo, staffRepo);
             DataContext = ViewModel;
         }
     }

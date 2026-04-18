@@ -8,7 +8,6 @@ namespace DevCoreHospital.Services
     {
         public Task<List<DoctorItem>> GetDoctorsAsync()
         {
-            // Replace later with DB call when your data layer is ready
             var data = new List<DoctorItem>
             {
                 new DoctorItem { Id = 1, FullName = "Dr. Andrei Popescu" },

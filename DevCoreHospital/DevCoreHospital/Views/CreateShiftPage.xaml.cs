@@ -15,18 +15,16 @@ namespace DevCoreHospital.Views
 
         private void LoadStaffData()
         {
-            // Exemplu de date (Mockup) pâna legam de baza de date
             var staff = new List<string> { "Dr. Andrei Ionescu", "Dr. Elena Radu", "Farm. Mihai Pop" };
             EmployeeComboBox.ItemsSource = staff;
         }
 
         private void SaveShift_Click(object sender, RoutedEventArgs e)
         {
-            // Validare de baza
             if (EmployeeComboBox.SelectedItem == null || ShiftDatePicker.Date == null ||
                 StartTimePicker.SelectedTime == null || EndTimePicker.SelectedTime == null)
             {
-                ShowMessage("Eroare: Te rugam sa completezi toate câmpurile.", InfoBarSeverity.Error);
+                ShowMessage("Eroare: Te rugam sa completezi toate cï¿½mpurile.", InfoBarSeverity.Error);
                 return;
             }
 
@@ -35,15 +33,12 @@ namespace DevCoreHospital.Views
 
             if (end <= start)
             {
-                ShowMessage("Aten?ie: Ora de final trebuie sa fie dupa ora de început.", InfoBarSeverity.Warning);
+                ShowMessage("Aten?ie: Ora de final trebuie sa fie dupa ora de ï¿½nceput.", InfoBarSeverity.Warning);
                 return;
             }
 
-            // TODO: Aici va veni codul care apeleaza ViewModel-ul pentru salvarea în baza de date
-            // ex: ViewModel.SaveShiftAsync(...);
             ShowMessage("Tura a fost salvata cu succes!", InfoBarSeverity.Success);
 
-            // Op?ional: Resetam formularul dupa succes
             EmployeeComboBox.SelectedIndex = -1;
         }
 

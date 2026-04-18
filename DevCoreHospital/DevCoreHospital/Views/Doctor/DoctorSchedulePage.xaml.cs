@@ -1,6 +1,5 @@
 using System;
 using DevCoreHospital.Configuration;
-using DevCoreHospital.Data;
 using DevCoreHospital.Repositories;
 using DevCoreHospital.Services;
 using DevCoreHospital.ViewModels.Doctor;
@@ -21,9 +20,9 @@ namespace DevCoreHospital.Views.Doctor
             InitializeComponent();
 
             dialogService = new DialogService();
-            var dbManager = new DatabaseManager(AppSettings.ConnectionString);
-            var appointmentRepository = new AppointmentRepository(dbManager);
-            var shiftRepository = new ShiftRepository(dbManager);
+            var staffRepo = new StaffRepository(AppSettings.ConnectionString);
+            var appointmentRepository = new AppointmentRepository(AppSettings.ConnectionString);
+            var shiftRepository = new ShiftRepository(AppSettings.ConnectionString, staffRepo);
             vm = new DoctorScheduleViewModel(
                 new CurrentUserService(),
                 new DoctorAppointmentService(appointmentRepository),

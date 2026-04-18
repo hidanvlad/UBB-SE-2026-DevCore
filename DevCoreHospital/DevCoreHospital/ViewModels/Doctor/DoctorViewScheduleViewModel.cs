@@ -12,6 +12,8 @@ namespace DevCoreHospital.ViewModels.Doctor
 {
     public class DoctorScheduleViewModel : ObservableObject
     {
+        private const int MaxAppointmentsToLoad = 500;
+
         private readonly ICurrentUserService currentUser;
         private readonly IDoctorAppointmentService appointmentService;
         private readonly IShiftRepository shiftRepository;
@@ -188,12 +190,12 @@ namespace DevCoreHospital.ViewModels.Doctor
             {
                 var allDoctors = await appointmentService.GetAllDoctorsAsync();
 
-                foreach (var d in allDoctors.OrderBy(x => x.DoctorName))
+                foreach (var doctor in allDoctors.OrderBy(doctor => doctor.DoctorName))
                 {
                     Doctors.Add(new DoctorOption
                     {
-                        DoctorId = d.DoctorId,
-                        DoctorName = d.DoctorName,
+                        DoctorId = doctor.DoctorId,
+                        DoctorName = doctor.DoctorName
                     });
                 }
 
@@ -204,7 +206,7 @@ namespace DevCoreHospital.ViewModels.Doctor
                     return;
                 }
 
-                SelectedDoctor = Doctors.FirstOrDefault(d => d.DoctorId == currentUser.UserId) ?? Doctors.First();
+                SelectedDoctor = Doctors.FirstOrDefault(doctor => doctor.DoctorId == currentUser.UserId) ?? Doctors.First();
             }
             catch (Exception ex)
             {
@@ -215,7 +217,7 @@ namespace DevCoreHospital.ViewModels.Doctor
 
         public async Task LoadAsync()
         {
-            int myVersion = ++loadVersion;
+            int capturedLoadVersion = ++loadVersion;
 
             if (!IsDoctor)
             {
@@ -246,20 +248,20 @@ namespace DevCoreHospital.ViewModels.Doctor
                 DateTime from = IsDaily ? SelectedDate.Date : StartOfWeek(SelectedDate);
                 DateTime to = IsDaily ? from.AddDays(1) : from.AddDays(7);
 
-                var rawAppointments = await appointmentService.GetUpcomingAppointmentsAsync(doctorId, from, 0, 500);
+                var rawAppointments = await appointmentService.GetUpcomingAppointmentsAsync(doctorId, from, 0, MaxAppointmentsToLoad);
                 var rawShifts = await Task.Run(() => shiftRepository.GetShiftsForStaffInRange(doctorId, from, to));
 
-                if (myVersion != loadVersion)
+                if (capturedLoadVersion != loadVersion)
                 {
                     return;
                 }
 
                 var filteredAppointments = rawAppointments
-                    .Where(x => x.DoctorId == doctorId)
-                    .Where(x =>
+                    .Where(appointment => appointment.DoctorId == doctorId)
+                    .Where(appointment =>
                     {
-                        var start = x.Date.Date + x.StartTime;
-                        var end = x.Date.Date + x.EndTime;
+                        var start = appointment.Date.Date + appointment.StartTime;
+                        var end = appointment.Date.Date + appointment.EndTime;
                         if (end <= start)
                         {
                             return false;
@@ -267,19 +269,19 @@ namespace DevCoreHospital.ViewModels.Doctor
 
                         return start < to && end > from;
                     })
-                    .OrderBy(x => x.Date)
-                    .ThenBy(x => x.StartTime)
+                    .OrderBy(appointment => appointment.Date)
+                    .ThenBy(appointment => appointment.StartTime)
                     .ToList();
 
                 var filteredShifts = rawShifts
-                    .Where(x => x.Status != ShiftStatus.CANCELLED)
-                    .OrderBy(x => x.StartTime)
+                    .Where(shift => shift.Status != ShiftStatus.CANCELLED)
+                    .OrderBy(shift => shift.StartTime)
                     .ToList();
 
                 Appointments.Clear();
-                foreach (var item in filteredAppointments)
+                foreach (var appointment in filteredAppointments)
                 {
-                    Appointments.Add(new AppointmentItemViewModel(item));
+                    Appointments.Add(new AppointmentItemViewModel(appointment));
                 }
 
                 Shifts.Clear();
@@ -290,14 +292,14 @@ namespace DevCoreHospital.ViewModels.Doctor
             }
             catch (Exception ex)
             {
-                if (myVersion == loadVersion)
+                if (capturedLoadVersion == loadVersion)
                 {
                     ErrorMessage = $"Failed to load schedule: {ex.Message}";
                 }
             }
             finally
             {
-                if (myVersion == loadVersion)
+                if (capturedLoadVersion == loadVersion)
                 {
                     IsLoading = false;
                     RaisePropertyChanged(nameof(IsAccessDenied));
@@ -315,8 +317,8 @@ namespace DevCoreHospital.ViewModels.Doctor
 
             try
             {
-                var d = await appointmentService.GetAppointmentDetailsAsync(item.Id);
-                if (d is null)
+                var appointmentDetails = await appointmentService.GetAppointmentDetailsAsync(item.Id);
+                if (appointmentDetails is null)
                 {
                     await dialogService.ShowMessageAsync("Details", "Appointment not found.");
                     return;
@@ -324,10 +326,10 @@ namespace DevCoreHospital.ViewModels.Doctor
 
                 var text =
                     $"Patient: {(string.IsNullOrWhiteSpace(item.PatientName) ? "Patient hidden/unknown" : item.PatientName)}\n" +
-                    $"Type: {(string.IsNullOrWhiteSpace(d.Type) ? "N/A" : d.Type)}\n" +
-                    $"Location: {(string.IsNullOrWhiteSpace(d.Location) ? "Location TBD" : d.Location)}\n" +
-                    $"Time: {d.Date:yyyy-MM-dd} {d.StartTime:hh\\:mm}-{d.EndTime:hh\\:mm}\n" +
-                    $"Status: {(string.IsNullOrWhiteSpace(d.Status) ? "Unknown" : d.Status)}";
+                    $"Type: {(string.IsNullOrWhiteSpace(appointmentDetails.Type) ? "N/A" : appointmentDetails.Type)}\n" +
+                    $"Location: {(string.IsNullOrWhiteSpace(appointmentDetails.Location) ? "Location TBD" : appointmentDetails.Location)}\n" +
+                    $"Time: {appointmentDetails.Date:yyyy-MM-dd} {appointmentDetails.StartTime:hh\\:mm}-{appointmentDetails.EndTime:hh\\:mm}\n" +
+                    $"Status: {(string.IsNullOrWhiteSpace(appointmentDetails.Status) ? "Unknown" : appointmentDetails.Status)}";
 
                 await dialogService.ShowMessageAsync("Appointment Details", text);
             }
@@ -339,8 +341,9 @@ namespace DevCoreHospital.ViewModels.Doctor
 
         private static DateTime StartOfWeek(DateTime date)
         {
-            var diff = (7 + (date.DayOfWeek - DayOfWeek.Monday)) % 7;
-            return date.Date.AddDays(-1 * diff);
+            const int daysInWeek = 7;
+            var daysFromMonday = (daysInWeek + (date.DayOfWeek - DayOfWeek.Monday)) % daysInWeek;
+            return date.Date.AddDays(-1 * daysFromMonday);
         }
 
         public sealed class DoctorOption
@@ -351,7 +354,7 @@ namespace DevCoreHospital.ViewModels.Doctor
             public string LastName { get; set; } = string.Empty;
 
             public string DisplayName =>
-                string.Join(" ", new[] { FirstName?.Trim(), LastName?.Trim() }.Where(x => !string.IsNullOrWhiteSpace(x)));
+                string.Join(" ", new[] { FirstName?.Trim(), LastName?.Trim() }.Where(namePart => !string.IsNullOrWhiteSpace(namePart)));
 
             public static (string FirstName, string LastName) SplitFirstLast(string? fullName)
             {

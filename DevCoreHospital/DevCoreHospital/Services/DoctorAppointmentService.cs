@@ -35,13 +35,10 @@ namespace DevCoreHospital.Services
 
         public async Task FinishAppointmentAsync(Appointment appointment)
         {
-            // 1. Salvam statusul programarii ca "Finished"
             await dataSource.UpdateAppointmentStatusAsync(appointment.Id, "Finished");
 
-            // 2. REGULA DE BUSINESS: Verificam daca doctorul mai are programari
             int activeAppointments = await dataSource.GetActiveAppointmentsCountForDoctorAsync(appointment.DoctorId);
 
-            // 3. Daca e liber, îl facem AVAILABLE
             if (activeAppointments == 0)
             {
                 await dataSource.UpdateDoctorStatusAsync(appointment.DoctorId, "AVAILABLE");
@@ -50,7 +47,6 @@ namespace DevCoreHospital.Services
 
         public async Task CancelAppointmentAsync(Appointment appointment)
         {
-            // Business rule: an appointment that is already Finished cannot be canceled.
             if (string.Equals(appointment?.Status, "Finished", StringComparison.OrdinalIgnoreCase))
             {
                 throw new InvalidOperationException(

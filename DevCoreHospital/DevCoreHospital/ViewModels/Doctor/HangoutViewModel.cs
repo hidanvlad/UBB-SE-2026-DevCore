@@ -3,7 +3,6 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
 using DevCoreHospital.Configuration;
-using DevCoreHospital.Data;
 using DevCoreHospital.Models;
 using DevCoreHospital.Repositories;
 using DevCoreHospital.Services;
@@ -13,8 +12,13 @@ namespace DevCoreHospital.ViewModels.Doctor
 {
     public class HangoutViewModel : ObservableObject
     {
+        private const int MinHangoutTitleLength = 5;
+        private const int MaxHangoutTitleLength = 25;
+        private const int MaxHangoutDescriptionLength = 100;
+        private const int MinDaysAheadForHangoutCreation = 7;
+
         private readonly IHangoutService hangoutService;
-        private readonly DatabaseManager dbManager;
+        private readonly StaffRepository staffRepository;
 
         public ObservableCollection<Hangout> Hangouts { get; } = new ObservableCollection<Hangout>();
 
@@ -53,7 +57,7 @@ namespace DevCoreHospital.ViewModels.Doctor
             }
         }
 
-        private DateTimeOffset selectedDate = DateTimeOffset.Now.AddDays(7);
+        private DateTimeOffset selectedDate = DateTimeOffset.Now.AddDays(MinDaysAheadForHangoutCreation);
         public DateTimeOffset SelectedDate
         {
             get => selectedDate;
@@ -93,12 +97,12 @@ namespace DevCoreHospital.ViewModels.Doctor
 
         public RelayCommand CreateCommand { get; }
 
-        private static HangoutRepository globalRepo = new HangoutRepository();
+        private static HangoutRepository sharedHangoutRepository = new HangoutRepository();
 
         public HangoutViewModel()
         {
-            hangoutService = new HangoutService(globalRepo);
-            dbManager = new DatabaseManager(AppSettings.ConnectionString);
+            hangoutService = new HangoutService(sharedHangoutRepository);
+            staffRepository = new StaffRepository(AppSettings.ConnectionString);
 
             CreateCommand = new RelayCommand(CreateHangout, CanCreateHangout);
             LoadHangouts();
@@ -110,15 +114,15 @@ namespace DevCoreHospital.ViewModels.Doctor
             Doctors.Clear();
             try
             {
-                var allDoctors = await dbManager.GetAllDoctorsAsync();
-                foreach (var d in allDoctors.OrderBy(x => x.DoctorName))
+                var allDoctors = await staffRepository.GetAllDoctorsAsync();
+                foreach (var doctor in allDoctors.OrderBy(doctor => doctor.DoctorName))
                 {
                     Doctors.Add(new DoctorScheduleViewModel.DoctorOption
                     {
-                        DoctorId = d.DoctorId,
-                        DoctorName = d.DoctorName,
-                        FirstName = DoctorScheduleViewModel.DoctorOption.SplitFirstLast(d.DoctorName).FirstName,
-                        LastName = DoctorScheduleViewModel.DoctorOption.SplitFirstLast(d.DoctorName).LastName,
+                        DoctorId = doctor.DoctorId,
+                        DoctorName = doctor.DoctorName,
+                        FirstName = DoctorScheduleViewModel.DoctorOption.SplitFirstLast(doctor.DoctorName).FirstName,
+                        LastName = DoctorScheduleViewModel.DoctorOption.SplitFirstLast(doctor.DoctorName).LastName
                     });
                 }
 
@@ -136,13 +140,17 @@ namespace DevCoreHospital.ViewModels.Doctor
         private void LoadHangouts()
         {
             Hangouts.Clear();
-            foreach (var h in hangoutService.GetAllHangouts())
+            foreach (var hangout in hangoutService.GetAllHangouts())
             {
-                Hangouts.Add(h);
+                Hangouts.Add(hangout);
             }
         }
 
-        private bool CanCreateHangout() => Title.Length >= 5 && Title.Length <= 25 && Description.Length <= 100 && SelectedDoctor != null;
+        private bool CanCreateHangout() =>
+            Title.Length >= MinHangoutTitleLength &&
+            Title.Length <= MaxHangoutTitleLength &&
+            Description.Length <= MaxHangoutDescriptionLength &&
+            SelectedDoctor != null;
 
         private void CreateHangout()
         {
@@ -170,7 +178,7 @@ namespace DevCoreHospital.ViewModels.Doctor
             }
         }
 
-        public void JoinHangoutById(int id)
+        public void JoinHangoutById(int hangoutId)
         {
             ErrorMessage = string.Empty;
             SuccessMessage = string.Empty;
@@ -190,7 +198,7 @@ namespace DevCoreHospital.ViewModels.Doctor
                     LastName = SelectedDoctor.LastName,
                 };
 
-                hangoutService.JoinHangout(id, currentDoctor);
+                hangoutService.JoinHangout(hangoutId, currentDoctor);
                 SuccessMessage = "Joined hangout successfully!";
                 LoadHangouts();
             }

@@ -11,7 +11,7 @@ namespace DevCoreHospital.ViewModels.Admin
 {
     public class AdminShiftViewModel : INotifyPropertyChanged
     {
-        private readonly IStaffAndShiftService staffAndShiftService;
+        private readonly IShiftManagementService staffAndShiftService;
 
         public ObservableCollection<Shift> Shifts { get; set; } = new ObservableCollection<Shift>();
         public ObservableCollection<IStaff> AvailableStaff { get; set; } = new ObservableCollection<IStaff>();
@@ -76,7 +76,7 @@ namespace DevCoreHospital.ViewModels.Admin
             }
         }
 
-        public AdminShiftViewModel(IStaffAndShiftService service)
+        public AdminShiftViewModel(IShiftManagementService service)
         {
             staffAndShiftService = service;
             LoadAndFilterShifts();

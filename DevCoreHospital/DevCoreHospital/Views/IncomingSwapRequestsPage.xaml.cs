@@ -1,11 +1,10 @@
 using System.Linq;
 using DevCoreHospital.Configuration;
-using DevCoreHospital.Data;
 using DevCoreHospital.Repositories;
 using DevCoreHospital.Services;
 using DevCoreHospital.ViewModels.Doctor;
-using DoctorModel = DevCoreHospital.Models.Doctor;
 using Microsoft.UI.Xaml.Controls;
+using DoctorModel = DevCoreHospital.Models.Doctor;
 
 namespace DevCoreHospital.Views
 {
@@ -17,20 +16,20 @@ namespace DevCoreHospital.Views
         {
             this.InitializeComponent();
 
-            var dbManager = new DatabaseManager(AppSettings.ConnectionString);
-            var staffRepo = new StaffRepository(dbManager);
-            var shiftRepo = new ShiftRepository(dbManager);
-            var service = new StaffAndShiftService(staffRepo, shiftRepo, dbManager);
+            var staffRepo = new StaffRepository(AppSettings.ConnectionString);
+            var shiftRepo = new ShiftRepository(AppSettings.ConnectionString, staffRepo);
+            var shiftSwapRepository = new ShiftSwapRepository(AppSettings.ConnectionString);
+            var service = new ShiftSwapService(staffRepo, shiftRepo, shiftSwapRepository);
 
             var doctors = staffRepo
                 .LoadAllStaff()
                 .OfType<DoctorModel>()
-                .OrderBy(d => d.FirstName)
-                .ThenBy(d => d.LastName)
-                .Select(d => new DoctorOptionViewModel
+                .OrderBy(doctor => doctor.FirstName)
+                .ThenBy(doctor => doctor.LastName)
+                .Select(doctor => new DoctorOptionViewModel
                 {
-                    StaffId = d.StaffID,
-                    DisplayName = $"{d.FirstName} {d.LastName}".Trim()
+                    StaffId = doctor.StaffID,
+                    DisplayName = $"{doctor.FirstName} {doctor.LastName}".Trim()
                 });
 
             ViewModel = new IncomingSwapRequestsViewModel(service, doctors);

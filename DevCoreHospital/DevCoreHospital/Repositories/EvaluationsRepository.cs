@@ -48,7 +48,6 @@ namespace DevCoreHospital.Repositories
 
         public void SaveEvaluation(MedicalEvaluation record)
         {
-            // UPDATED: Saving meds into their own column
             string sql = @"INSERT INTO Medical_Evaluations 
                            (doctor_id, patient_id, diagnosis, doctor_notes, medications, source, assumed_risk)
                            VALUES (@DocId, @PatId, @Diag, @Notes, @Meds, @Source, @Risk)";
@@ -77,7 +76,6 @@ namespace DevCoreHospital.Repositories
         public List<MedicalEvaluation> GetEvaluationsByDoctor(string doctorId)
         {
             var results = new List<MedicalEvaluation>();
-            // UPDATED: Selecting the medications column
             string sql = @"SELECT evaluation_id, patient_id, diagnosis, doctor_notes, medications
                            FROM Medical_Evaluations
                            WHERE doctor_id = @DocId
@@ -113,7 +111,6 @@ namespace DevCoreHospital.Repositories
                 EvaluationID = Convert.ToInt32(reader["evaluation_id"]),
                 PatientId = Convert.ToString(reader["patient_id"]) ?? "0",
                 Symptoms = Convert.ToString(reader["diagnosis"]) ?? string.Empty,
-                // FIXED: Mapping medications and notes separately
                 MedsList = Convert.ToString(reader["medications"]) ?? string.Empty,
                 Notes = Convert.ToString(reader["doctor_notes"]) ?? string.Empty,
                 EvaluationDate = DateTime.Now

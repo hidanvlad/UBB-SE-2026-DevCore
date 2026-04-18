@@ -24,7 +24,7 @@ namespace DevCoreHospital.Repositories
                 .Where(entry => IsOnCurrentShift(entry, now))
                 .Select(NormalizeRosterEntry)
                 .GroupBy(entry => entry.DoctorId)
-                .Select(group => group.OrderBy(e => e.ScheduleEnd ?? DateTime.MaxValue).First())
+                .Select(doctorGroup => doctorGroup.OrderBy(rosterEntry => rosterEntry.ScheduleEnd ?? DateTime.MaxValue).First())
                 .ToList();
         }
 

@@ -11,6 +11,7 @@ namespace DevCoreHospital.ViewModels
     public sealed class ERDispatchViewModel : ObservableObject
     {
         private const int NearEndMinutesThreshold = 30;
+        private const int DefaultSimulatedRequestCount = 3;
         private readonly IERDispatchService dispatchService;
 
         public ObservableCollection<UnmatchedRequestRow> UnmatchedRequests { get; } = new ObservableCollection<UnmatchedRequestRow>();
@@ -40,7 +41,7 @@ namespace DevCoreHospital.ViewModels
             this.dispatchService = dispatchService;
             RunDispatchCommand = new AsyncRelayCommand(RunDispatchAsync);
             RefreshCommand = new RelayCommand(Refresh);
-            SimulateIncomingCommand = new AsyncRelayCommand(() => SimulateIncomingAsync(3));
+            SimulateIncomingCommand = new AsyncRelayCommand(() => SimulateIncomingAsync(DefaultSimulatedRequestCount));
 
             Refresh();
         }
@@ -86,9 +87,9 @@ namespace DevCoreHospital.ViewModels
 
             try
             {
-                var pendingList = await dispatchService.GetPendingRequestIdsAsync();
+                var pendingRequestIds = await dispatchService.GetPendingRequestIdsAsync();
 
-                foreach (var requestId in pendingList)
+                foreach (var requestId in pendingRequestIds)
                 {
                     await HandleRequestByIdAsync(requestId);
                 }
@@ -115,17 +116,17 @@ namespace DevCoreHospital.ViewModels
             OverrideCandidates.Clear();
             var candidates = await dispatchService.GetManualOverrideCandidatesAsync(requestId, NearEndMinutesThreshold);
 
-            foreach (var c in candidates)
+            foreach (var candidate in candidates)
             {
-                var minutesToEnd = c.ScheduleEnd.HasValue
-                    ? Math.Max(0, (int)Math.Round((c.ScheduleEnd.Value - DateTime.Now).TotalMinutes))
+                var minutesToEnd = candidate.ScheduleEnd.HasValue
+                    ? Math.Max(0, (int)Math.Round((candidate.ScheduleEnd.Value - DateTime.Now).TotalMinutes))
                     : -1;
 
                 OverrideCandidates.Add(new OverrideCandidateRow
                 {
-                    DoctorId = c.DoctorId,
-                    FullName = c.FullName,
-                    MinutesToEnd = minutesToEnd,
+                    DoctorId = candidate.DoctorId,
+                    FullName = candidate.FullName,
+                    MinutesToEnd = minutesToEnd
                 });
             }
 
@@ -136,15 +137,15 @@ namespace DevCoreHospital.ViewModels
 
         public async Task<bool> ApplyOverrideAsync(int requestId, int doctorId)
         {
-            var req = UnmatchedRequests.FirstOrDefault(r => r.RequestId == requestId);
-            if (req == null)
+            var unmatchedRequest = UnmatchedRequests.FirstOrDefault(unmatchedRequest => unmatchedRequest.RequestId == requestId);
+            if (unmatchedRequest == null)
             {
                 ManualInterventionHint = "Select an unmatched request first.";
                 return false;
             }
 
-            var candidate = OverrideCandidates.FirstOrDefault(c => c.DoctorId == doctorId);
-            if (candidate == null)
+            var overrideCandidate = OverrideCandidates.FirstOrDefault(overrideCandidate => overrideCandidate.DoctorId == doctorId);
+            if (overrideCandidate == null)
             {
                 ManualInterventionHint = "Select an eligible override doctor first.";
                 return false;
@@ -159,7 +160,7 @@ namespace DevCoreHospital.ViewModels
 
             ManualInterventionHint = result.Message;
 
-            UnmatchedRequests.Remove(req);
+            UnmatchedRequests.Remove(unmatchedRequest);
             SuccessfulMatches.Add(new SuccessfulMatchRow
             {
                 RequestId = result.Request.Id,
@@ -239,4 +240,3 @@ namespace DevCoreHospital.ViewModels
         }
     }
 }
-

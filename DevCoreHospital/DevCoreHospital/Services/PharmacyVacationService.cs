@@ -23,8 +23,8 @@ namespace DevCoreHospital.Services
         {
             return staffRepository
                 .GetPharmacists()
-                .OrderBy(p => p.FirstName)
-                .ThenBy(p => p.LastName)
+                .OrderBy(pharmacist => pharmacist.FirstName)
+                .ThenBy(pharmacist => pharmacist.LastName)
                 .ToList();
         }
 
@@ -40,13 +40,13 @@ namespace DevCoreHospital.Services
 
             var pharmacist = staffRepository
                 .GetPharmacists()
-                .FirstOrDefault(p => p.StaffID == pharmacistStaffId)
+                .FirstOrDefault(existingPharmacist => existingPharmacist.StaffID == pharmacistStaffId)
                 ?? throw new ArgumentException("Pharmacist not found.");
 
             var pharmacistShifts = shiftRepository.GetShiftsByStaffID(pharmacistStaffId);
 
-            var overlappingShift = pharmacistShifts.FirstOrDefault(s =>
-                start < s.EndTime && endExclusive > s.StartTime);
+            var overlappingShift = pharmacistShifts.FirstOrDefault(shift =>
+                start < shift.EndTime && endExclusive > shift.StartTime);
 
             if (overlappingShift is not null)
             {
@@ -61,7 +61,7 @@ namespace DevCoreHospital.Services
             }
 
             var allShifts = shiftRepository.GetShifts();
-            var nextId = allShifts.Count == 0 ? 1 : allShifts.Max(s => s.Id) + 1;
+            var nextId = allShifts.Count == 0 ? 1 : allShifts.Max(shift => shift.Id) + 1;
 
             var vacationShift = new Shift(
                 nextId,
@@ -82,14 +82,14 @@ namespace DevCoreHospital.Services
         {
             var daysByMonth = new Dictionary<(int Year, int Month), HashSet<DateTime>>();
 
-            foreach (var shift in staffShifts.Where(s => s.Status == ShiftStatus.VACATION))
+            foreach (var shift in staffShifts.Where(existingShift => existingShift.Status == ShiftStatus.VACATION))
             {
                 AddShiftDaysToBuckets(daysByMonth, shift.StartTime.Date, shift.EndTime.Date);
             }
 
             AddShiftDaysToBuckets(daysByMonth, newStartInclusive.Date, newEndExclusive.Date);
 
-            return daysByMonth.Values.Any(set => set.Count > maxDaysPerMonth);
+            return daysByMonth.Values.Any(daysInMonth => daysInMonth.Count > maxDaysPerMonth);
         }
 
         private static void AddShiftDaysToBuckets(
@@ -100,13 +100,13 @@ namespace DevCoreHospital.Services
             for (var day = startInclusive.Date; day < endExclusive.Date; day = day.AddDays(1))
             {
                 var key = (day.Year, day.Month);
-                if (!buckets.TryGetValue(key, out var set))
+                if (!buckets.TryGetValue(key, out var daysInMonth))
                 {
-                    set = new HashSet<DateTime>();
-                    buckets[key] = set;
+                    daysInMonth = new HashSet<DateTime>();
+                    buckets[key] = daysInMonth;
                 }
 
-                set.Add(day);
+                daysInMonth.Add(day);
             }
         }
     }

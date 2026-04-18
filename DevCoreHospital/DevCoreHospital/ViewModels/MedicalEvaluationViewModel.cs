@@ -293,10 +293,7 @@ namespace DevCoreHospital.ViewModels
                 return;
             }
 
-            // Check the High-Risk Medicine Table
             string? warning = repository.GetHighRiskMedicineWarning(currentMeds);
-
-            // Check the patient's history for allergies or adverse reactions
             string? historyWarning = repository.CheckPatientHistoryForRisk(PatientId, currentMeds);
 
             if (!string.IsNullOrEmpty(warning) || !string.IsNullOrEmpty(historyWarning))

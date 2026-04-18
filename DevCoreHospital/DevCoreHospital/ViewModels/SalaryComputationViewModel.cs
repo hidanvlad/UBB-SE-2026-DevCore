@@ -3,8 +3,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using System;
 using DevCoreHospital.Configuration;
-using DevCoreHospital.Data;
 using DevCoreHospital.Models;
+using DevCoreHospital.Repositories;
 using DevCoreHospital.Services;
 using DevCoreHospital.ViewModels.Base;
 
@@ -13,7 +13,8 @@ namespace DevCoreHospital.ViewModels
     public class SalaryComputationViewModel : ObservableObject
     {
         private readonly ISalaryComputationService salaryService;
-        private readonly DatabaseManager dbManager;
+        private readonly StaffRepository staffRepository;
+        private readonly ShiftRepository shiftRepository;
 
         public ObservableCollection<IStaff> StaffList { get; } = new ObservableCollection<IStaff>();
         public ObservableCollection<Shift> ShiftList { get; } = new ObservableCollection<Shift>();
@@ -48,8 +49,10 @@ namespace DevCoreHospital.ViewModels
 
         public SalaryComputationViewModel()
         {
-            dbManager = new DatabaseManager(AppSettings.ConnectionString);
-            salaryService = new SalaryComputationService(dbManager);
+            staffRepository = new StaffRepository(AppSettings.ConnectionString);
+            shiftRepository = new ShiftRepository(AppSettings.ConnectionString, staffRepository);
+            var salaryRepository = new SalaryRepository(AppSettings.ConnectionString);
+            salaryService = new SalaryComputationService(salaryRepository);
 
             ComputeSalaryCommand = new AsyncRelayCommand(ComputeSalaryAsync, CanComputeSalary);
 
@@ -60,8 +63,7 @@ namespace DevCoreHospital.ViewModels
         private void LoadStaffList()
         {
             StaffList.Clear();
-            var staffFromDb = dbManager.GetStaff();
-            foreach (var staff in staffFromDb)
+            foreach (var staff in staffRepository.LoadAllStaff())
             {
                 StaffList.Add(staff);
             }
@@ -70,8 +72,7 @@ namespace DevCoreHospital.ViewModels
         private void LoadShiftList()
         {
             ShiftList.Clear();
-            var shiftsFromDb = dbManager.GetShifts();
-            foreach (var shift in shiftsFromDb)
+            foreach (var shift in shiftRepository.GetShifts())
             {
                 ShiftList.Add(shift);
             }
@@ -90,29 +91,26 @@ namespace DevCoreHospital.ViewModels
 
             try
             {
-                // The ViewModel filters the shifts for the specific month/year
-                var staffShifts = ShiftList.Where(s => s.AppointedStaff?.StaffID == SelectedStaff.StaffID
-                                                    && s.StartTime.Month == SelectedMonth
-                                                    && s.StartTime.Year == SelectedYear).ToList();
+                var staffShiftsForPeriod = ShiftList.Where(shift => shift.AppointedStaff?.StaffID == SelectedStaff.StaffID
+                                                    && shift.StartTime.Month == SelectedMonth
+                                                    && shift.StartTime.Year == SelectedYear).ToList();
 
-                double salary = 0;
+                double computedSalary = 0;
 
                 if (SelectedStaff is Models.Doctor doctor)
                 {
-                    // Pass the month and year to the doctor calculation
-                    salary = await salaryService.ComputeSalaryDoctorAsync(doctor, staffShifts, SelectedMonth, SelectedYear);
+                    computedSalary = await salaryService.ComputeSalaryDoctorAsync(doctor, staffShiftsForPeriod, SelectedMonth, SelectedYear);
                 }
-                else if (SelectedStaff is Models.Pharmacyst pharmacyst)
+                else if (SelectedStaff is Models.Pharmacyst pharmacist)
                 {
-                    // Pass the month and year to the pharmacyst calculation
-                    salary = await salaryService.ComputeSalaryPharmacistAsync(pharmacyst, staffShifts, SelectedMonth, SelectedYear);
+                    computedSalary = await salaryService.ComputeSalaryPharmacistAsync(pharmacist, staffShiftsForPeriod, SelectedMonth, SelectedYear);
                 }
                 else
                 {
                     throw new InvalidOperationException("Unsupported staff type for salary computation.");
                 }
 
-                SalaryResult = $"Computed Salary: ${salary:F2}";
+                SalaryResult = $"Computed Salary: ${computedSalary:F2}";
             }
             catch (Exception ex)
             {

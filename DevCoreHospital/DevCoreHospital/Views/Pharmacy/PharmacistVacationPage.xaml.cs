@@ -1,5 +1,4 @@
 using DevCoreHospital.Configuration;
-using DevCoreHospital.Data;
 using DevCoreHospital.Repositories;
 using DevCoreHospital.Services;
 using DevCoreHospital.ViewModels.Pharmacy;
@@ -16,9 +15,8 @@ public sealed partial class PharmacistVacationPage : Page
     {
         InitializeComponent();
 
-        var dbManager = new DatabaseManager(AppSettings.ConnectionString);
-        var staffRepository = new StaffRepository(dbManager);
-        var shiftRepository = new ShiftRepository(dbManager);
+        var staffRepository = new StaffRepository(AppSettings.ConnectionString);
+        var shiftRepository = new ShiftRepository(AppSettings.ConnectionString, staffRepository);
 
         IPharmacyVacationService service = new PharmacyVacationService(staffRepository, shiftRepository);
         ViewModel = new PharmacistVacationViewModel(service);

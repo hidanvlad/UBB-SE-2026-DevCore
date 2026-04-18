@@ -14,7 +14,7 @@ namespace DevCoreHospital.ViewModels.Doctor
 {
     public sealed class MyScheduleViewModel : INotifyPropertyChanged
     {
-        private readonly IStaffAndShiftService staffAndShiftService;
+        private readonly IShiftSwapService staffAndShiftService;
         private readonly ShiftRepository shiftRepository;
         private readonly StaffRepository staffRepository;
 
@@ -75,7 +75,7 @@ namespace DevCoreHospital.ViewModels.Doctor
         public ICommand RequestSwapCommand { get; }
 
         public MyScheduleViewModel(
-            IStaffAndShiftService staffAndShiftService,
+            IShiftSwapService staffAndShiftService,
             ShiftRepository shiftRepository,
             StaffRepository staffRepository)
         {
@@ -95,12 +95,12 @@ namespace DevCoreHospital.ViewModels.Doctor
             var doctors = staffRepository
                 .LoadAllStaff()
                 .OfType<DoctorModel>()
-                .OrderBy(d => d.FirstName)
-                .ThenBy(d => d.LastName)
-                .Select(d => new DoctorOptionViewModel
+                .OrderBy(doctor => doctor.FirstName)
+                .ThenBy(doctor => doctor.LastName)
+                .Select(doctor => new DoctorOptionViewModel
                 {
-                    StaffId = d.StaffID,
-                    DisplayName = $"{d.FirstName} {d.LastName}".Trim(),
+                    StaffId = doctor.StaffID,
+                    DisplayName = $"{doctor.FirstName} {doctor.LastName}".Trim()
                 });
 
             foreach (var doctor in doctors)
@@ -129,13 +129,13 @@ namespace DevCoreHospital.ViewModels.Doctor
                 return;
             }
 
-            var data = shiftRepository
+            var futureShiftItems = shiftRepository
                 .GetShiftsByStaffID(SelectedDoctor.StaffId)
-                .Where(s => s.StartTime > DateTime.Now)
-                .OrderBy(s => s.StartTime)
-                .Select(s => new DoctorShiftItemViewModel(s));
+                .Where(shift => shift.StartTime > DateTime.Now)
+                .OrderBy(shift => shift.StartTime)
+                .Select(shift => new DoctorShiftItemViewModel(shift));
 
-            foreach (var item in data)
+            foreach (var item in futureShiftItems)
             {
                 FutureShifts.Add(item);
             }
@@ -172,12 +172,12 @@ namespace DevCoreHospital.ViewModels.Doctor
                 return;
             }
 
-            foreach (var c in colleagues)
+            foreach (var colleague in colleagues)
             {
                 EligibleColleagues.Add(new StaffOptionViewModel
                 {
-                    StaffId = c.StaffID,
-                    DisplayName = $"{c.FirstName} {c.LastName}".Trim(),
+                    StaffId = colleague.StaffID,
+                    DisplayName = $"{colleague.FirstName} {colleague.LastName}".Trim()
                 });
             }
 

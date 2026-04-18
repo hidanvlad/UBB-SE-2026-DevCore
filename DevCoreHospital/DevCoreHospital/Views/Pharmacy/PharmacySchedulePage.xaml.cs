@@ -1,6 +1,5 @@
 using System;
 using DevCoreHospital.Configuration;
-using DevCoreHospital.Data;
 using DevCoreHospital.Repositories;
 using DevCoreHospital.Services;
 using DevCoreHospital.ViewModels.Pharmacy;
@@ -17,10 +16,8 @@ public sealed partial class PharmacySchedulePage : Page
         InitializeComponent();
 
         ICurrentUserService currentUser = new CurrentUserService();
-        var sqlFactory = new SqlConnectionFactory();
-        var dbManager = new DatabaseManager(AppSettings.ConnectionString);
-        var shiftRepo = new ShiftRepository(dbManager);
-        var staffRepo = new StaffRepository(dbManager);
+        var staffRepo = new StaffRepository(AppSettings.ConnectionString);
+        var shiftRepo = new ShiftRepository(AppSettings.ConnectionString, staffRepo);
         var scheduleService = new PharmacyScheduleService(shiftRepo);
         ViewModel = new PharmacyScheduleViewModel(currentUser, scheduleService, staffRepo);
         DataContext = ViewModel;

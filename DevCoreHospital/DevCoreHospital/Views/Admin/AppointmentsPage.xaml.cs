@@ -1,6 +1,5 @@
 using System;
 using DevCoreHospital.Configuration;
-using DevCoreHospital.Data;
 using DevCoreHospital.Models;
 using DevCoreHospital.Repositories;
 using DevCoreHospital.Services;
@@ -19,8 +18,7 @@ namespace DevCoreHospital.Views
         {
             this.InitializeComponent();
 
-            var dbManager = new DatabaseManager(AppSettings.ConnectionString);
-            var appointmentRepository = new AppointmentRepository(dbManager);
+            var appointmentRepository = new AppointmentRepository(AppSettings.ConnectionString);
             var service = new DoctorAppointmentService(appointmentRepository);
 
             ViewModel = new AdminAppointmentsViewModel(service);
@@ -98,7 +96,6 @@ namespace DevCoreHospital.Views
             {
                 try
                 {
-                    // Business rule enforcement lives in the service layer.
                     await ViewModel.CancelAppointmentAsync(appt);
                     ShowMessage("Appointment successfully canceled.", InfoBarSeverity.Informational);
 

@@ -46,7 +46,6 @@ public sealed class PharmacyShiftItemViewModel
         }
     }
 
-    /// <summary>Scheduled, Active, or Completed for UI.</summary>
     public string StatusDisplay
     {
         get

@@ -1,6 +1,5 @@
 using System;
 using DevCoreHospital.Configuration;
-using DevCoreHospital.Data;
 using DevCoreHospital.Models;
 using DevCoreHospital.Repositories;
 using DevCoreHospital.Services;
@@ -19,8 +18,7 @@ namespace DevCoreHospital.Views
         {
             this.InitializeComponent();
 
-            var dbManager = new DatabaseManager(AppSettings.ConnectionString);
-            var repo = new AppointmentRepository(dbManager);
+            var repo = new AppointmentRepository(AppSettings.ConnectionString);
             service = new DoctorAppointmentService(repo);
         }
 

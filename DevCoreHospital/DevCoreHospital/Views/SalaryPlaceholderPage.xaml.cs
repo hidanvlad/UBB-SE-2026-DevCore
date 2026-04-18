@@ -11,7 +11,6 @@ namespace DevCoreHospital.Views
         {
             this.InitializeComponent();
 
-            // Initialize the ViewModel and set it as the DataContext for XAML bindings
             ViewModel = new SalaryComputationViewModel();
             this.DataContext = ViewModel;
         }
