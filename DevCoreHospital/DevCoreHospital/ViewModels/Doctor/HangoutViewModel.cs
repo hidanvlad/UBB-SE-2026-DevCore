@@ -13,7 +13,7 @@ namespace DevCoreHospital.ViewModels.Doctor
 {
     public class HangoutViewModel : ObservableObject
     {
-        private readonly HangoutService _hangoutService;
+        private readonly IHangoutService _hangoutService;
         private readonly DatabaseManager _dbManager; // Added DatabaseManager
 
         public ObservableCollection<Hangout> Hangouts { get; } = new ObservableCollection<Hangout>();

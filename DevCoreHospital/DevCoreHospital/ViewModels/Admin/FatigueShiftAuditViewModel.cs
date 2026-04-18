@@ -122,6 +122,40 @@ namespace DevCoreHospital.ViewModels
 
         public bool HasConflicts => Violations.Count > 0;
 
+        /// <summary>
+        /// Applies the audit-recommended reassignment for a shift and re-runs the audit.
+        /// Returns a human-readable result status used by the view.
+        /// </summary>
+        public ReassignmentResult ApplyReassignment(int shiftId)
+        {
+            var suggestion = Suggestions.FirstOrDefault(s => s.ShiftId == shiftId);
+            if (suggestion == null || !suggestion.SuggestedStaffId.HasValue)
+            {
+                return new ReassignmentResult(
+                    false,
+                    "Invalid Reassignment",
+                    "No valid reassignment candidate found for this shift.");
+            }
+
+            bool success = _auditService.ReassignShift(shiftId, suggestion.SuggestedStaffId.Value);
+            if (!success)
+            {
+                return new ReassignmentResult(
+                    false,
+                    "Reassignment Failed",
+                    "Could not reassign shift. Please try again.");
+            }
+
+            RunAutoAudit();
+
+            return new ReassignmentResult(
+                true,
+                "Reassignment Applied",
+                $"Shift #{shiftId} has been reassigned to {suggestion.SuggestedStaffName}.\n\nAudit was re-run to verify changes.");
+        }
+
+        public sealed record ReassignmentResult(bool Success, string Title, string Message);
+
         private static DateTime StartOfWeek(DateTime date)
         {
             var diff = (7 + (date.DayOfWeek - DayOfWeek.Monday)) % 7;

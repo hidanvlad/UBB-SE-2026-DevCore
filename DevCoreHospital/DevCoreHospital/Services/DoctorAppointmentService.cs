@@ -55,8 +55,14 @@ namespace DevCoreHospital.Services
 
         public async Task CancelAppointmentAsync(Appointment appointment)
         {
-            // Anulăm programarea (Validarea cu "Cannot cancel finished" o faci în ViewModel / UI)
-            await _dataSource.UpdateAppointmentStatusAsync(appointment.Id, "Canceled");
+            // Business rule: an appointment that is already Finished cannot be canceled.
+            if (string.Equals(appointment?.Status, "Finished", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException(
+                    "Cannot cancel an appointment that is already Finished.");
+            }
+
+            await _dataSource.UpdateAppointmentStatusAsync(appointment!.Id, "Canceled");
         }
     }
 }
