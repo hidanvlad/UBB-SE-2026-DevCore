@@ -116,16 +116,16 @@ namespace DevCoreHospital.ViewModels
             OverrideCandidates.Clear();
             var candidates = await _dispatchService.GetManualOverrideCandidatesAsync(requestId, NearEndMinutesThreshold);
 
-            foreach (var c in candidates)
+            foreach (var candidate in candidates)
             {
-                var minutesToEnd = c.ScheduleEnd.HasValue
-                    ? Math.Max(0, (int)Math.Round((c.ScheduleEnd.Value - DateTime.Now).TotalMinutes))
+                var minutesToEnd = candidate.ScheduleEnd.HasValue
+                    ? Math.Max(0, (int)Math.Round((candidate.ScheduleEnd.Value - DateTime.Now).TotalMinutes))
                     : -1;
 
                 OverrideCandidates.Add(new OverrideCandidateRow
                 {
-                    DoctorId = c.DoctorId,
-                    FullName = c.FullName,
+                    DoctorId = candidate.DoctorId,
+                    FullName = candidate.FullName,
                     MinutesToEnd = minutesToEnd
                 });
             }
@@ -137,14 +137,14 @@ namespace DevCoreHospital.ViewModels
 
         public async Task<bool> ApplyOverrideAsync(int requestId, int doctorId)
         {
-            var req = UnmatchedRequests.FirstOrDefault(r => r.RequestId == requestId);
+            var req = UnmatchedRequests.FirstOrDefault(unmatchedRequest => unmatchedRequest.RequestId == requestId);
             if (req == null)
             {
                 ManualInterventionHint = "Select an unmatched request first.";
                 return false;
             }
 
-            var candidate = OverrideCandidates.FirstOrDefault(c => c.DoctorId == doctorId);
+            var candidate = OverrideCandidates.FirstOrDefault(overrideCandidate => overrideCandidate.DoctorId == doctorId);
             if (candidate == null)
             {
                 ManualInterventionHint = "Select an eligible override doctor first.";

@@ -20,9 +20,9 @@ namespace DevCoreHospital.Repositories
         {
             int newId = _dbManager.InsertHangout(hangout.title, hangout.description, hangout.date, hangout.maxParticipants);
 
-            foreach (var p in hangout.participantList)
+            foreach (var participant in hangout.participantList)
             {
-                _dbManager.InsertHangoutParticipant(newId, p.StaffID);
+                _dbManager.InsertHangoutParticipant(newId, participant.StaffID);
             }
         }
 
@@ -35,10 +35,10 @@ namespace DevCoreHospital.Repositories
         {
             var list = _dbManager.GetAllHangouts();
 
-            foreach (var h in list)
+            foreach (var hangout in list)
             {
-                var participants = _dbManager.GetHangoutParticipants(h.hangoutID);
-                h.participantList.AddRange(participants);
+                var participants = _dbManager.GetHangoutParticipants(hangout.hangoutID);
+                hangout.participantList.AddRange(participants);
             }
 
             return list;
@@ -46,13 +46,13 @@ namespace DevCoreHospital.Repositories
 
         public Hangout? GetHangoutById(int id)
         {
-            var h = _dbManager.GetHangoutById(id);
-            if (h != null)
+            var hangout = _dbManager.GetHangoutById(id);
+            if (hangout != null)
             {
-                var participants = _dbManager.GetHangoutParticipants(h.hangoutID);
-                h.participantList.AddRange(participants);
+                var participants = _dbManager.GetHangoutParticipants(hangout.hangoutID);
+                hangout.participantList.AddRange(participants);
             }
-            return h;
+            return hangout;
         }
 
         // Conflict Check: Evaluates the business logic locally using raw data from DB
@@ -60,10 +60,10 @@ namespace DevCoreHospital.Repositories
         {
             var statuses = _dbManager.GetAppointmentStatusesForStaffOnDate(staffId, date);
 
-            var activeConflicts = statuses.Where(status =>
-                !string.Equals(status, "Finished", StringComparison.OrdinalIgnoreCase) &&
-                !string.Equals(status, "Canceled", StringComparison.OrdinalIgnoreCase) &&
-                !string.Equals(status, "Cancelled", StringComparison.OrdinalIgnoreCase)
+            var activeConflicts = statuses.Where(appointmentStatus =>
+                !string.Equals(appointmentStatus, "Finished", StringComparison.OrdinalIgnoreCase) &&
+                !string.Equals(appointmentStatus, "Canceled", StringComparison.OrdinalIgnoreCase) &&
+                !string.Equals(appointmentStatus, "Cancelled", StringComparison.OrdinalIgnoreCase)
             );
 
             return activeConflicts.Any();

@@ -68,14 +68,14 @@ namespace DevCoreHospital.ViewModels.Doctor
             try
             {
                 var allDoctors = await _dbManager.GetAllDoctorsAsync();
-                foreach (var d in allDoctors.OrderBy(x => x.DoctorName))
+                foreach (var doctor in allDoctors.OrderBy(doctor => doctor.DoctorName))
                 {
                     Doctors.Add(new DoctorScheduleViewModel.DoctorOption
                     {
-                        DoctorId = d.DoctorId,
-                        DoctorName = d.DoctorName,
-                        FirstName = DoctorScheduleViewModel.DoctorOption.SplitFirstLast(d.DoctorName).FirstName,
-                        LastName = DoctorScheduleViewModel.DoctorOption.SplitFirstLast(d.DoctorName).LastName
+                        DoctorId = doctor.DoctorId,
+                        DoctorName = doctor.DoctorName,
+                        FirstName = DoctorScheduleViewModel.DoctorOption.SplitFirstLast(doctor.DoctorName).FirstName,
+                        LastName = DoctorScheduleViewModel.DoctorOption.SplitFirstLast(doctor.DoctorName).LastName
                     });
                 }
 
@@ -93,9 +93,9 @@ namespace DevCoreHospital.ViewModels.Doctor
         private void LoadHangouts()
         {
             Hangouts.Clear();
-            foreach (var h in _hangoutService.GetAllHangouts())
+            foreach (var hangout in _hangoutService.GetAllHangouts())
             {
-                Hangouts.Add(h);
+                Hangouts.Add(hangout);
             }
         }
 

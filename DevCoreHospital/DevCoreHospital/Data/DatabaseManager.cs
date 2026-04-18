@@ -42,24 +42,23 @@ namespace DevCoreHospital.Data
                     string contactInfo = reader.IsDBNull(4) ? "" : reader.GetString(4);
                     bool isAvailable = reader.GetBoolean(5);
                     string license = reader.IsDBNull(6) ? "" : reader.GetString(6);
-                    string special = reader.IsDBNull(7) ? "" : reader.GetString(7);
+                    string specialization = reader.IsDBNull(7) ? "" : reader.GetString(7);
                     string statusStr = reader.IsDBNull(8) ? "Available" : reader.GetString(8);
-                    string cert = reader.IsDBNull(9) ? "" : reader.GetString(9);
-                    int yearsExp = reader.IsDBNull(10) ? 0 : reader.GetInt32(10); 
+                    string certification = reader.IsDBNull(9) ? "" : reader.GetString(9);
+                    int yearsOfExperience = reader.IsDBNull(10) ? 0 : reader.GetInt32(10);
 
-                    Enum.TryParse<DoctorStatus>(statusStr, true, out DoctorStatus docStatus);
+                    Enum.TryParse<DoctorStatus>(statusStr, true, out DoctorStatus doctorStatus);
 
                     if (role == "Doctor")
                     {
-                        var doc = new Doctor(id, firstName, lastName, contactInfo, "", isAvailable, special, license, docStatus, yearsExp);
-                        staffList.Add(doc);
+                        var doctor = new Doctor(id, firstName, lastName, contactInfo, "", isAvailable, specialization, license, doctorStatus, yearsOfExperience);
+                        staffList.Add(doctor);
                     }
                     else if (role == "Pharmacist")
                     {
-                       
-                        var pharm = new Pharmacyst(id, firstName, lastName, contactInfo, isAvailable, cert,yearsExp);
+                        var pharmacist = new Pharmacyst(id, firstName, lastName, contactInfo, isAvailable, certification, yearsOfExperience);
                         
-                        staffList.Add(pharm);
+                        staffList.Add(pharmacist);
                     }
                 }
             }
@@ -94,7 +93,7 @@ namespace DevCoreHospital.Data
                     AddParameter(cmd, "@License", staff is Doctor doc ? doc.LicenseNumber : DBNull.Value);
                     AddParameter(cmd, "@Specialization", staff is Doctor doc2 ? doc2.Specialization : DBNull.Value);
                     AddParameter(cmd, "@Status", staff is Doctor doc3 ? doc3.DoctorStatus.ToString() : DBNull.Value);
-                    AddParameter(cmd, "@Certification", staff is Pharmacyst ph ? ph.Certification : DBNull.Value);
+                    AddParameter(cmd, "@Certification", staff is Pharmacyst pharmacist ? pharmacist.Certification : DBNull.Value);
                     AddParameter(cmd, "@Id", staff.StaffID);
                     cmd.ExecuteNonQuery();
                 }
@@ -657,10 +656,10 @@ namespace DevCoreHospital.Data
 
         private void AddParameter(DbCommand cmd, string name, object value)
         {
-            var p = cmd.CreateParameter();
-            p.ParameterName = name;
-            p.Value = value ?? DBNull.Value;
-            cmd.Parameters.Add(p);
+            var parameter = cmd.CreateParameter();
+            parameter.ParameterName = name;
+            parameter.Value = value ?? DBNull.Value;
+            cmd.Parameters.Add(parameter);
         }
 
         private Appointment MapReaderToAppointment(DbDataReader reader, bool hasDoctorName)
@@ -671,19 +670,19 @@ namespace DevCoreHospital.Data
             int statusOrdinal = reader.GetOrdinal("status");
             int doctorNameOrdinal = hasDoctorName ? reader.GetOrdinal("DoctorName") : -1;
 
-            DateTime startDt = reader.IsDBNull(startOrdinal) ? DateTime.Now : reader.GetDateTime(startOrdinal);
-            DateTime endDt = reader.IsDBNull(endOrdinal) ? startDt : reader.GetDateTime(endOrdinal);
-            int patId = reader.IsDBNull(patientOrdinal) ? 0 : reader.GetInt32(patientOrdinal);
+            DateTime startDateTime = reader.IsDBNull(startOrdinal) ? DateTime.Now : reader.GetDateTime(startOrdinal);
+            DateTime endDateTime = reader.IsDBNull(endOrdinal) ? startDateTime : reader.GetDateTime(endOrdinal);
+            int patientId = reader.IsDBNull(patientOrdinal) ? 0 : reader.GetInt32(patientOrdinal);
 
             return new Appointment
             {
                 Id = reader.GetInt32(reader.GetOrdinal("appointment_id")),
                 DoctorId = reader.GetInt32(reader.GetOrdinal("doctor_id")),
                 DoctorName = hasDoctorName && !reader.IsDBNull(doctorNameOrdinal) ? reader.GetString(doctorNameOrdinal) : "",
-                PatientName = "PAT-" + patId,
-                Date = startDt.Date,
-                StartTime = startDt.TimeOfDay,
-                EndTime = endDt.TimeOfDay,
+                PatientName = "PAT-" + patientId,
+                Date = startDateTime.Date,
+                StartTime = startDateTime.TimeOfDay,
+                EndTime = endDateTime.TimeOfDay,
                 Status = reader.IsDBNull(statusOrdinal) ? "Scheduled" : reader.GetString(statusOrdinal),
                 Type = "",
                 Location = ""
@@ -692,9 +691,9 @@ namespace DevCoreHospital.Data
         // HANGOUTS CRUD
         public int InsertHangout(string title, string description, DateTime date, int maxParticipants)
         {
-            using var conn = GetConnection();
-            conn.Open();
-            using var cmd = conn.CreateCommand();
+            using var connection = GetConnection();
+            connection.Open();
+            using var cmd = connection.CreateCommand();
             cmd.CommandText = @"
         INSERT INTO Hangouts (title, description, date_time, max_staff)
         OUTPUT INSERTED.hangout_id

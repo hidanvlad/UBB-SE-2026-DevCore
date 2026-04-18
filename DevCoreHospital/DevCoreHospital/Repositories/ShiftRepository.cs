@@ -51,10 +51,11 @@ namespace DevCoreHospital.Repositories
             var shifts = GetShiftsByStaffID(staffId);
             float totalHours = 0;
 
+            const int daysInWeek = 7;
             var now = DateTime.Now;
-            int diff = (7 + (now.DayOfWeek - DayOfWeek.Monday)) % 7;
-            var monday = now.Date.AddDays(-diff);
-            var nextMonday = monday.AddDays(7);
+            int daysFromMonday = (daysInWeek + (now.DayOfWeek - DayOfWeek.Monday)) % daysInWeek;
+            var monday = now.Date.AddDays(-daysFromMonday);
+            var nextMonday = monday.AddDays(daysInWeek);
 
             foreach (var shift in shifts)
             {

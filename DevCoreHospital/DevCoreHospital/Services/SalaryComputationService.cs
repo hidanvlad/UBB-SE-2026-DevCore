@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using DevCoreHospital.Models;
 using DevCoreHospital.Data;
@@ -7,6 +7,27 @@ namespace DevCoreHospital.Services
 {
     public class SalaryComputationService : ISalaryComputationService
     {
+        private const double DoctorBaseHourlyRate = 85.0;
+        private const double PharmacistBaseHourlyRate = 45.0;
+
+        private const double SaturdayOvertimeMultiplier = 1.15;
+        private const double SundayOvertimeMultiplier = 1.25;
+
+        private const int NightShiftStartHour = 20;
+        private const int NightShiftEndHour = 6;
+        private const double NightShiftOvertimeMultiplier = 1.20;
+
+        private const double SurgeonSpecializationBonusPercentage = 0.20;
+        private const double CardiologistSpecializationBonusPercentage = 0.15;
+        private const double EmergencySpecializationBonusPercentage = 0.10;
+
+        private const double YearsOfExperienceBonusPercentagePerYear = 0.02;
+        private const double HangoutParticipationBonusMultiplier = 1.05;
+
+        private const int MedicinesSoldBonusInterval = 10;
+        private const double MedicinesSoldBonusPerInterval = 0.01;
+        private const double MaxMedicineSalesBonusPercentage = 0.30;
+
         private readonly DatabaseManager _dbManager;
 
         public SalaryComputationService(DatabaseManager dbManager)
@@ -16,52 +37,48 @@ namespace DevCoreHospital.Services
 
         public Task<double> ComputeSalaryDoctorAsync(Doctor doctor, List<Shift> monthlyShifts, int month, int year)
         {
-            double initialSalary = 0;
-            double doctorHourlyRate = 85.0;
+            double baseSalaryFromShifts = 0;
 
             foreach (var shift in monthlyShifts)
             {
                 double dbHours = _dbManager.GetShiftHoursFromDb(shift.Id);
                 double shiftHours = dbHours > 0 ? dbHours : (shift.EndTime - shift.StartTime).TotalHours;
 
-                double shiftSalary = shiftHours * doctorHourlyRate;
+                double shiftSalary = shiftHours * DoctorBaseHourlyRate;
 
-                // Weekend logic
                 if (shift.StartTime.DayOfWeek == System.DayOfWeek.Saturday)
-                    shiftSalary *= 1.15;
+                    shiftSalary *= SaturdayOvertimeMultiplier;
                 else if (shift.StartTime.DayOfWeek == System.DayOfWeek.Sunday)
-                    shiftSalary *= 1.25;
+                    shiftSalary *= SundayOvertimeMultiplier;
 
-                // Night shift logic (+20%)
-                bool isNightShift = shift.StartTime.Hour >= 20 || shift.StartTime.Hour <= 6 || shift.EndTime.Hour <= 6;
+                bool isNightShift = shift.StartTime.Hour >= NightShiftStartHour || shift.StartTime.Hour <= NightShiftEndHour || shift.EndTime.Hour <= NightShiftEndHour;
                 if (isNightShift)
-                    shiftSalary *= 1.20;
+                    shiftSalary *= NightShiftOvertimeMultiplier;
 
-                initialSalary += shiftSalary;
+                baseSalaryFromShifts += shiftSalary;
             }
 
-            double finalSalary = initialSalary;
+            double finalSalary = baseSalaryFromShifts;
 
-            // Specialization bonus
-            double specBonusPercentage = 0;
-            string spec = doctor.Specialization?.ToLower() ?? "";
+            double specializationBonusPercentage = 0;
+            string normalizedSpecialization = doctor.Specialization?.ToLower() ?? "";
 
-            if (spec.Contains("surgeon") || spec.Contains("surgery")) specBonusPercentage = 0.20;
-            else if (spec.Contains("cardiologist")) specBonusPercentage = 0.15;
-            else if (spec.Contains("er") || spec.Contains("emergency")) specBonusPercentage = 0.10;
+            if (normalizedSpecialization.Contains("surgeon") || normalizedSpecialization.Contains("surgery"))
+                specializationBonusPercentage = SurgeonSpecializationBonusPercentage;
+            else if (normalizedSpecialization.Contains("cardiologist"))
+                specializationBonusPercentage = CardiologistSpecializationBonusPercentage;
+            else if (normalizedSpecialization.Contains("er") || normalizedSpecialization.Contains("emergency"))
+                specializationBonusPercentage = EmergencySpecializationBonusPercentage;
 
-            finalSalary += (initialSalary * specBonusPercentage);
+            finalSalary += baseSalaryFromShifts * specializationBonusPercentage;
 
-            // Years of experience bonus (+2% per year)
-            finalSalary += (initialSalary * (doctor.YearsOfExperience * 0.02));
+            finalSalary += baseSalaryFromShifts * (doctor.YearsOfExperience * YearsOfExperienceBonusPercentagePerYear);
 
-            // Hangout bonus (+5% if they attended at least one hangout this month)
-            // Note: Make sure DidStaffParticipateInHangout is implemented in DatabaseManager
             try
             {
                 if (_dbManager.DidStaffParticipateInHangout(doctor.StaffID, month, year))
                 {
-                    finalSalary *= 1.05;
+                    finalSalary *= HangoutParticipationBonusMultiplier;
                 }
             }
             catch { /* Ignore if not yet implemented */ }
@@ -71,33 +88,29 @@ namespace DevCoreHospital.Services
 
         public Task<double> ComputeSalaryPharmacistAsync(Pharmacyst pharmacist, List<Shift> monthlyShifts, int month, int year)
         {
-            double initialSalary = 0;
-            double pharmacistHourlyRate = 45.0;
+            double baseSalaryFromShifts = 0;
 
             foreach (var shift in monthlyShifts)
             {
                 double dbHours = _dbManager.GetShiftHoursFromDb(shift.Id);
                 double shiftHours = dbHours > 0 ? dbHours : (shift.EndTime - shift.StartTime).TotalHours;
 
-                double shiftSalary = shiftHours * pharmacistHourlyRate;
+                double shiftSalary = shiftHours * PharmacistBaseHourlyRate;
 
-                // Weekend logic (+15% Sat, +25% Sun)
                 if (shift.StartTime.DayOfWeek == System.DayOfWeek.Saturday)
-                    shiftSalary *= 1.15;
+                    shiftSalary *= SaturdayOvertimeMultiplier;
                 else if (shift.StartTime.DayOfWeek == System.DayOfWeek.Sunday)
-                    shiftSalary *= 1.25;
+                    shiftSalary *= SundayOvertimeMultiplier;
 
-                // Night shift logic (+20%)
-                bool isNightShift = shift.StartTime.Hour >= 20 || shift.StartTime.Hour <= 6 || shift.EndTime.Hour <= 6;
+                bool isNightShift = shift.StartTime.Hour >= NightShiftStartHour || shift.StartTime.Hour <= NightShiftEndHour || shift.EndTime.Hour <= NightShiftEndHour;
                 if (isNightShift)
-                    shiftSalary *= 1.20;
+                    shiftSalary *= NightShiftOvertimeMultiplier;
 
-                initialSalary += shiftSalary;
+                baseSalaryFromShifts += shiftSalary;
             }
 
-            double finalSalary = initialSalary;
+            double finalSalary = baseSalaryFromShifts;
 
-            // Medicines sold logic (Increased by M%)
             int medicinesSold = 0;
             try
             {
@@ -108,21 +121,19 @@ namespace DevCoreHospital.Services
                 medicinesSold = 0;
             }
 
-            // Example business rule: +1% bonus for every 10 medicines sold, capped at 30%
-            double medicineBonusPercent = (medicinesSold / 10) * 0.01;
-            if (medicineBonusPercent > 0.30) medicineBonusPercent = 0.30;
+            double medicineSalesBonusPercentage = (medicinesSold / MedicinesSoldBonusInterval) * MedicinesSoldBonusPerInterval;
+            if (medicineSalesBonusPercentage > MaxMedicineSalesBonusPercentage)
+                medicineSalesBonusPercentage = MaxMedicineSalesBonusPercentage;
 
-            finalSalary += (initialSalary * medicineBonusPercent);
+            finalSalary += baseSalaryFromShifts * medicineSalesBonusPercentage;
 
-            // Years of experience bonus (+2% per year)
-            finalSalary += (initialSalary * (pharmacist.YearsOfExperience * 0.02));
+            finalSalary += baseSalaryFromShifts * (pharmacist.YearsOfExperience * YearsOfExperienceBonusPercentagePerYear);
 
-            // Hangout bonus (+5% if they attended at least one hangout this month)
             try
             {
                 if (_dbManager.DidStaffParticipateInHangout(pharmacist.StaffID, month, year))
                 {
-                    finalSalary *= 1.05;
+                    finalSalary *= HangoutParticipationBonusMultiplier;
                 }
             }
             catch { /* Ignore if not yet implemented */ }

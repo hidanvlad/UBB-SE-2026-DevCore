@@ -178,12 +178,12 @@ namespace DevCoreHospital.ViewModels.Doctor
             {
                 var allDoctors = await _appointmentService.GetAllDoctorsAsync();
 
-                foreach (var d in allDoctors.OrderBy(x => x.DoctorName))
+                foreach (var doctor in allDoctors.OrderBy(doctor => doctor.DoctorName))
                 {
                     Doctors.Add(new DoctorOption
                     {
-                        DoctorId = d.DoctorId,
-                        DoctorName = d.DoctorName
+                        DoctorId = doctor.DoctorId,
+                        DoctorName = doctor.DoctorName
                     });
                 }
 
@@ -194,7 +194,7 @@ namespace DevCoreHospital.ViewModels.Doctor
                     return;
                 }
 
-                SelectedDoctor = Doctors.FirstOrDefault(d => d.DoctorId == _currentUser.UserId) ?? Doctors.First();
+                SelectedDoctor = Doctors.FirstOrDefault(doctor => doctor.DoctorId == _currentUser.UserId) ?? Doctors.First();
             }
             catch (Exception ex)
             {
@@ -242,21 +242,21 @@ namespace DevCoreHospital.ViewModels.Doctor
                 if (myVersion != _loadVersion) return;
 
                 var filteredAppointments = rawAppointments
-                    .Where(x => x.DoctorId == doctorId)
-                    .Where(x =>
+                    .Where(appointment => appointment.DoctorId == doctorId)
+                    .Where(appointment =>
                     {
-                        var start = x.Date.Date + x.StartTime;
-                        var end = x.Date.Date + x.EndTime;
+                        var start = appointment.Date.Date + appointment.StartTime;
+                        var end = appointment.Date.Date + appointment.EndTime;
                         if (end <= start) return false;
                         return start < to && end > from;
                     })
-                    .OrderBy(x => x.Date)
-                    .ThenBy(x => x.StartTime)
+                    .OrderBy(appointment => appointment.Date)
+                    .ThenBy(appointment => appointment.StartTime)
                     .ToList();
 
                 var filteredShifts = rawShifts
-                    .Where(x => x.Status != ShiftStatus.CANCELLED)
-                    .OrderBy(x => x.StartTime)
+                    .Where(shift => shift.Status != ShiftStatus.CANCELLED)
+                    .OrderBy(shift => shift.StartTime)
                     .ToList();
 
                 Appointments.Clear();
@@ -313,8 +313,9 @@ namespace DevCoreHospital.ViewModels.Doctor
 
         private static DateTime StartOfWeek(DateTime date)
         {
-            var diff = (7 + (date.DayOfWeek - DayOfWeek.Monday)) % 7;
-            return date.Date.AddDays(-1 * diff);
+            const int daysInWeek = 7;
+            var daysFromMonday = (daysInWeek + (date.DayOfWeek - DayOfWeek.Monday)) % daysInWeek;
+            return date.Date.AddDays(-1 * daysFromMonday);
         }
 
         public sealed class DoctorOption
@@ -325,7 +326,7 @@ namespace DevCoreHospital.ViewModels.Doctor
             public string LastName { get; set; } = string.Empty;
 
             public string DisplayName =>
-                string.Join(" ", new[] { FirstName?.Trim(), LastName?.Trim() }.Where(x => !string.IsNullOrWhiteSpace(x)));
+                string.Join(" ", new[] { FirstName?.Trim(), LastName?.Trim() }.Where(namePart => !string.IsNullOrWhiteSpace(namePart)));
 
             public static (string FirstName, string LastName) SplitFirstLast(string? fullName)
             {

@@ -87,9 +87,9 @@ namespace DevCoreHospital.ViewModels
             try
             {
                 // The ViewModel filters the shifts for the specific month/year
-                var staffShifts = ShiftList.Where(s => s.AppointedStaff?.StaffID == SelectedStaff.StaffID
-                                                    && s.StartTime.Month == SelectedMonth
-                                                    && s.StartTime.Year == SelectedYear).ToList();
+                var staffShifts = ShiftList.Where(shift => shift.AppointedStaff?.StaffID == SelectedStaff.StaffID
+                                                    && shift.StartTime.Month == SelectedMonth
+                                                    && shift.StartTime.Year == SelectedYear).ToList();
 
                 double salary = 0;
 

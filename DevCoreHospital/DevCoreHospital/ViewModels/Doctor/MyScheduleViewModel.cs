@@ -96,12 +96,12 @@ namespace DevCoreHospital.ViewModels.Doctor
             var doctors = _staffRepository
                 .LoadAllStaff()
                 .OfType<DoctorModel>()
-                .OrderBy(d => d.FirstName)
-                .ThenBy(d => d.LastName)
-                .Select(d => new DoctorOptionViewModel
+                .OrderBy(doctor => doctor.FirstName)
+                .ThenBy(doctor => doctor.LastName)
+                .Select(doctor => new DoctorOptionViewModel
                 {
-                    StaffId = d.StaffID,
-                    DisplayName = $"{d.FirstName} {d.LastName}".Trim()
+                    StaffId = doctor.StaffID,
+                    DisplayName = $"{doctor.FirstName} {doctor.LastName}".Trim()
                 });
 
             foreach (var doctor in doctors)
@@ -126,9 +126,9 @@ namespace DevCoreHospital.ViewModels.Doctor
 
             var data = _shiftRepository
                 .GetShiftsByStaffID(SelectedDoctor.StaffId)
-                .Where(s => s.StartTime > DateTime.Now)
-                .OrderBy(s => s.StartTime)
-                .Select(s => new DoctorShiftItemViewModel(s));
+                .Where(shift => shift.StartTime > DateTime.Now)
+                .OrderBy(shift => shift.StartTime)
+                .Select(shift => new DoctorShiftItemViewModel(shift));
 
             foreach (var item in data)
                 FutureShifts.Add(item);
@@ -165,12 +165,12 @@ namespace DevCoreHospital.ViewModels.Doctor
                 return;
             }
 
-            foreach (var c in colleagues)
+            foreach (var colleague in colleagues)
             {
                 EligibleColleagues.Add(new StaffOptionViewModel
                 {
-                    StaffId = c.StaffID,
-                    DisplayName = $"{c.FirstName} {c.LastName}".Trim()
+                    StaffId = colleague.StaffID,
+                    DisplayName = $"{colleague.FirstName} {colleague.LastName}".Trim()
                 });
             }
 

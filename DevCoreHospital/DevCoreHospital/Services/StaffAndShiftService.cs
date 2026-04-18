@@ -23,7 +23,7 @@ namespace DevCoreHospital.Services
 
         public void SetShiftActive(int shiftId)
         {
-            var shift = _shiftRepo.GetShifts().FirstOrDefault(s => s.Id == shiftId);
+            var shift = _shiftRepo.GetShifts().FirstOrDefault(existingShift => existingShift.Id == shiftId);
             if (shift != null)
             {
                 _shiftRepo.UpdateShiftStatus(shiftId, ShiftStatus.ACTIVE);
@@ -33,7 +33,7 @@ namespace DevCoreHospital.Services
 
         public void CancelShift(int shiftId)
         {
-            var shift = _shiftRepo.GetShifts().FirstOrDefault(s => s.Id == shiftId);
+            var shift = _shiftRepo.GetShifts().FirstOrDefault(existingShift => existingShift.Id == shiftId);
             if (shift != null)
             {
                 _staffRepo.UpdateStaffAvailability(shift.AppointedStaff.StaffID, false, DoctorStatus.OFF_DUTY);
@@ -76,12 +76,12 @@ namespace DevCoreHospital.Services
             if (location.Equals("Pharmacy", StringComparison.OrdinalIgnoreCase))
             {
                 filteredStaff.AddRange(allStaff.OfType<Pharmacyst>()
-                    .Where(p => p.Certification.Contains(requiredSpecializationOrCertification, StringComparison.OrdinalIgnoreCase)));
+                    .Where(pharmacist => pharmacist.Certification.Contains(requiredSpecializationOrCertification, StringComparison.OrdinalIgnoreCase)));
             }
             else
             {
                 filteredStaff.AddRange(allStaff.OfType<Doctor>()
-                    .Where(d => d.Specialization.Contains(requiredSpecializationOrCertification, StringComparison.OrdinalIgnoreCase)));
+                    .Where(doctor => doctor.Specialization.Contains(requiredSpecializationOrCertification, StringComparison.OrdinalIgnoreCase)));
             }
 
             return filteredStaff;
@@ -94,14 +94,14 @@ namespace DevCoreHospital.Services
             var currentStaff = shift.AppointedStaff;
             var allStaff = _staffRepo.LoadAllStaff();
 
-            return allStaff.Where(s =>
-                s.GetType() == currentStaff.GetType() &&
-                s.StaffID != currentStaff.StaffID &&
-                ValidateNoOverlap(s.StaffID, shift.StartTime, shift.EndTime)
+            return allStaff.Where(staffMember =>
+                staffMember.GetType() == currentStaff.GetType() &&
+                staffMember.StaffID != currentStaff.StaffID &&
+                ValidateNoOverlap(staffMember.StaffID, shift.StartTime, shift.EndTime)
             ).ToList();
         }
 
-        private static string N(string? s) => (s ?? string.Empty).Trim().ToLowerInvariant();
+        private static string NormalizeText(string? text) => (text ?? string.Empty).Trim().ToLowerInvariant();
 
         // ========================= SHIFT SWAP - REQUEST =========================
         public List<IStaff> GetEligibleSwapColleaguesForShift(int requesterId, int shiftId, out string error)
@@ -129,7 +129,7 @@ namespace DevCoreHospital.Services
 
             // Use fresh full staff list
             var all = _staffRepo.LoadAllStaff();
-            var requester = all.FirstOrDefault(s => s.StaffID == requesterId);
+            var requester = all.FirstOrDefault(staffMember => staffMember.StaffID == requesterId);
             if (requester == null)
             {
                 error = "Requester not found.";
@@ -138,28 +138,28 @@ namespace DevCoreHospital.Services
 
             List<IStaff> sameProfile = new();
 
-            if (requester is Doctor reqDoc)
+            if (requester is Doctor requestingDoctor)
             {
-                var reqSpec = N(reqDoc.Specialization);
+                var requesterSpecialization = NormalizeText(requestingDoctor.Specialization);
                 sameProfile = all
                     .OfType<Doctor>()
-                    .Where(d => d.StaffID != requesterId && N(d.Specialization) == reqSpec)
+                    .Where(doctor => doctor.StaffID != requesterId && NormalizeText(doctor.Specialization) == requesterSpecialization)
                     .Cast<IStaff>()
                     .ToList();
             }
-            else if (requester is Pharmacyst reqPh)
+            else if (requester is Pharmacyst requestingPharmacist)
             {
-                var reqCert = N(reqPh.Certification);
+                var requesterCertification = NormalizeText(requestingPharmacist.Certification);
                 sameProfile = all
                     .OfType<Pharmacyst>()
-                    .Where(p => p.StaffID != requesterId && N(p.Certification) == reqCert)
+                    .Where(pharmacist => pharmacist.StaffID != requesterId && NormalizeText(pharmacist.Certification) == requesterCertification)
                     .Cast<IStaff>()
                     .ToList();
             }
 
             // Must be FREE during requester shift
             var freeColleagues = sameProfile
-                .Where(c => !_shiftRepo.IsStaffWorkingDuring(c.StaffID, shift.StartTime, shift.EndTime))
+                .Where(colleague => !_shiftRepo.IsStaffWorkingDuring(colleague.StaffID, shift.StartTime, shift.EndTime))
                 .ToList();
 
             return freeColleagues;
@@ -176,7 +176,7 @@ namespace DevCoreHospital.Services
                 return false;
             }
 
-            if (!eligible.Any(c => c.StaffID == colleagueId))
+            if (!eligible.Any(colleague => colleague.StaffID == colleagueId))
             {
                 message = "Selected colleague is not eligible (must be same profile and free in interval).";
                 return false;
@@ -276,17 +276,17 @@ namespace DevCoreHospital.Services
             if (location.Equals("Pharmacy", StringComparison.OrdinalIgnoreCase))
             {
                 result.AddRange(allStaff.OfType<Pharmacyst>()
-                    .Where(p => !string.IsNullOrEmpty(p.Certification))
-                    .Select(p => p.Certification));
+                    .Where(pharmacist => !string.IsNullOrEmpty(pharmacist.Certification))
+                    .Select(pharmacist => pharmacist.Certification));
             }
             else
             {
                 result.AddRange(allStaff.OfType<Doctor>()
-                    .Where(d => !string.IsNullOrEmpty(d.Specialization))
-                    .Select(d => d.Specialization));
+                    .Where(doctor => !string.IsNullOrEmpty(doctor.Specialization))
+                    .Select(doctor => doctor.Specialization));
             }
 
-            result = result.Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(s => s).ToList();
+            result = result.Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(specializationName => specializationName).ToList();
             return result;
         }
     }

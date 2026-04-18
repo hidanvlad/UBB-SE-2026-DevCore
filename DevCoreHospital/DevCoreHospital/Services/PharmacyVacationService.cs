@@ -23,8 +23,8 @@ namespace DevCoreHospital.Services
         {
             return _staffRepository
                 .GetPharmacists()
-                .OrderBy(p => p.FirstName)
-                .ThenBy(p => p.LastName)
+                .OrderBy(pharmacist => pharmacist.FirstName)
+                .ThenBy(pharmacist => pharmacist.LastName)
                 .ToList();
         }
 
@@ -38,13 +38,13 @@ namespace DevCoreHospital.Services
 
             var pharmacist = _staffRepository
                 .GetPharmacists()
-                .FirstOrDefault(p => p.StaffID == pharmacistStaffId)
+                .FirstOrDefault(existingPharmacist => existingPharmacist.StaffID == pharmacistStaffId)
                 ?? throw new ArgumentException("Pharmacist not found.");
 
             var pharmacistShifts = _shiftRepository.GetShiftsByStaffID(pharmacistStaffId);
 
-            var overlappingShift = pharmacistShifts.FirstOrDefault(s =>
-                start < s.EndTime && endExclusive > s.StartTime);
+            var overlappingShift = pharmacistShifts.FirstOrDefault(shift =>
+                start < shift.EndTime && endExclusive > shift.StartTime);
 
             if (overlappingShift is not null)
                 throw new InvalidOperationException(
@@ -55,7 +55,7 @@ namespace DevCoreHospital.Services
                     $"Cannot add vacation: pharmacist would exceed {MaxVacationDaysPerMonth} vacation days in a month.");
 
             var allShifts = _shiftRepository.GetShifts();
-            var nextId = allShifts.Count == 0 ? 1 : allShifts.Max(s => s.Id) + 1;
+            var nextId = allShifts.Count == 0 ? 1 : allShifts.Max(shift => shift.Id) + 1;
 
             var vacationShift = new Shift(
                 nextId,
@@ -76,12 +76,12 @@ namespace DevCoreHospital.Services
         {
             var daysByMonth = new Dictionary<(int Year, int Month), HashSet<DateTime>>();
 
-            foreach (var shift in staffShifts.Where(s => s.Status == ShiftStatus.VACATION))
+            foreach (var shift in staffShifts.Where(vacationShift => vacationShift.Status == ShiftStatus.VACATION))
                 AddShiftDaysToBuckets(daysByMonth, shift.StartTime.Date, shift.EndTime.Date);
 
             AddShiftDaysToBuckets(daysByMonth, newStartInclusive.Date, newEndExclusive.Date);
 
-            return daysByMonth.Values.Any(set => set.Count > maxDaysPerMonth);
+            return daysByMonth.Values.Any(daysInMonth => daysInMonth.Count > maxDaysPerMonth);
         }
 
         private static void AddShiftDaysToBuckets(

@@ -88,30 +88,30 @@ namespace DevCoreHospital.ViewModels
             var englishCulture = CultureInfo.GetCultureInfo("en-US");
 
             Violations.Clear();
-            foreach (var v in result.Violations.OrderBy(x => x.ShiftStart))
+            foreach (var violation in result.Violations.OrderBy(violation => violation.ShiftStart))
             {
                 Violations.Add(new AuditViolationRow
                 {
-                    ShiftId = v.ShiftId,
-                    Staff = v.StaffName,
-                    Window = $"{v.ShiftStart.ToString("ddd HH:mm", englishCulture)} - {v.ShiftEnd.ToString("ddd HH:mm", englishCulture)}",
-                    Rule = v.Rule,
-                    Message = v.Message
+                    ShiftId = violation.ShiftId,
+                    Staff = violation.StaffName,
+                    Window = $"{violation.ShiftStart.ToString("ddd HH:mm", englishCulture)} - {violation.ShiftEnd.ToString("ddd HH:mm", englishCulture)}",
+                    Rule = violation.Rule,
+                    Message = violation.Message
                 });
             }
 
             Suggestions.Clear();
-            foreach (var s in result.Suggestions.OrderBy(x => x.ShiftId))
+            foreach (var suggestion in result.Suggestions.OrderBy(suggestion => suggestion.ShiftId))
             {
                 Suggestions.Add(new AutoSuggestRow
                 {
-                    ShiftId = s.ShiftId,
-                    ReassignText = s.SuggestedStaffId.HasValue
-                        ? $"Shift #{s.ShiftId}: {s.OriginalStaffName} -> {s.SuggestedStaffName}"
-                        : $"Shift #{s.ShiftId}: no replacement candidate",
-                    Reason = s.Reason,
-                    SuggestedStaffId = s.SuggestedStaffId,
-                    SuggestedStaffName = s.SuggestedStaffName
+                    ShiftId = suggestion.ShiftId,
+                    ReassignText = suggestion.SuggestedStaffId.HasValue
+                        ? $"Shift #{suggestion.ShiftId}: {suggestion.OriginalStaffName} -> {suggestion.SuggestedStaffName}"
+                        : $"Shift #{suggestion.ShiftId}: no replacement candidate",
+                    Reason = suggestion.Reason,
+                    SuggestedStaffId = suggestion.SuggestedStaffId,
+                    SuggestedStaffName = suggestion.SuggestedStaffName
                 });
             }
 
@@ -128,7 +128,7 @@ namespace DevCoreHospital.ViewModels
         /// </summary>
         public ReassignmentResult ApplyReassignment(int shiftId)
         {
-            var suggestion = Suggestions.FirstOrDefault(s => s.ShiftId == shiftId);
+            var suggestion = Suggestions.FirstOrDefault(auditSuggestion => auditSuggestion.ShiftId == shiftId);
             if (suggestion == null || !suggestion.SuggestedStaffId.HasValue)
             {
                 return new ReassignmentResult(
@@ -158,8 +158,9 @@ namespace DevCoreHospital.ViewModels
 
         private static DateTime StartOfWeek(DateTime date)
         {
-            var diff = (7 + (date.DayOfWeek - DayOfWeek.Monday)) % 7;
-            return date.Date.AddDays(-diff);
+            const int daysInWeek = 7;
+            var daysFromMonday = (daysInWeek + (date.DayOfWeek - DayOfWeek.Monday)) % daysInWeek;
+            return date.Date.AddDays(-daysFromMonday);
         }
 
         public sealed class AuditViolationRow

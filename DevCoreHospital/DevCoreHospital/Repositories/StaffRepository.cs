@@ -37,7 +37,7 @@ namespace DevCoreHospital.Repositories
         public IStaff? GetStaffById(int staffId)
         {
             // Fresh read avoids stale cache surprises
-            return _dbManager.GetStaff().FirstOrDefault(s => s.StaffID == staffId);
+            return _dbManager.GetStaff().FirstOrDefault(staffMember => staffMember.StaffID == staffId);
         }
 
         public List<Doctor> GetAvailableDoctors()
@@ -47,7 +47,7 @@ namespace DevCoreHospital.Repositories
 
         private List<Pharmacyst> GetAvailablePharmacists()
         {
-            return _dbManager.GetStaff().OfType<Pharmacyst>().Where(ph => ph.Available).ToList();
+            return _dbManager.GetStaff().OfType<Pharmacyst>().Where(pharmacist => pharmacist.Available).ToList();
         }
 
         public List<Pharmacyst> GetPharmacists()
@@ -62,35 +62,35 @@ namespace DevCoreHospital.Repositories
         {
             // Always fresh from DB
             var all = _dbManager.GetStaff();
-            var req = all.FirstOrDefault(s => s.StaffID == requester.StaffID);
+            var req = all.FirstOrDefault(staffMember => staffMember.StaffID == requester.StaffID);
             if (req == null) return new List<IStaff>();
 
             if (req is Doctor reqDoctor)
             {
-                var reqSpec = Normalize(reqDoctor.Specialization);
+                var requesterSpecialization = Normalize(reqDoctor.Specialization);
 
                 // IMPORTANT: removed Available==true filter for swap candidates
                 return all
                     .OfType<Doctor>()
-                    .Where(d =>
-                        d.StaffID != reqDoctor.StaffID &&
-                        !string.IsNullOrWhiteSpace(d.Specialization) &&
-                        Normalize(d.Specialization) == reqSpec)
+                    .Where(doctor =>
+                        doctor.StaffID != reqDoctor.StaffID &&
+                        !string.IsNullOrWhiteSpace(doctor.Specialization) &&
+                        Normalize(doctor.Specialization) == requesterSpecialization)
                     .Cast<IStaff>()
                     .ToList();
             }
 
             if (req is Pharmacyst reqPharmacyst)
             {
-                var reqCert = Normalize(reqPharmacyst.Certification);
+                var requesterCertification = Normalize(reqPharmacyst.Certification);
 
                 // IMPORTANT: removed Available==true filter for swap candidates
                 return all
                     .OfType<Pharmacyst>()
-                    .Where(p =>
-                        p.StaffID != reqPharmacyst.StaffID &&
-                        !string.IsNullOrWhiteSpace(p.Certification) &&
-                        Normalize(p.Certification) == reqCert)
+                    .Where(pharmacist =>
+                        pharmacist.StaffID != reqPharmacyst.StaffID &&
+                        !string.IsNullOrWhiteSpace(pharmacist.Certification) &&
+                        Normalize(pharmacist.Certification) == requesterCertification)
                     .Cast<IStaff>()
                     .ToList();
             }
@@ -107,7 +107,7 @@ namespace DevCoreHospital.Repositories
             if (!string.IsNullOrEmpty(doctorSpecialization) && !string.IsNullOrEmpty(pharmacystCertification))
             {
                 var filteredDoctors = availableDoctors.Where(doctor => doctor.Specialization.Equals(doctorSpecialization, StringComparison.OrdinalIgnoreCase));
-                var filteredPharmacists = availablePharmacists.Where(ph => ph.Certification.Equals(pharmacystCertification, StringComparison.OrdinalIgnoreCase));
+                var filteredPharmacists = availablePharmacists.Where(pharmacist => pharmacist.Certification.Equals(pharmacystCertification, StringComparison.OrdinalIgnoreCase));
                 availableStaff.AddRange(filteredDoctors);
                 availableStaff.AddRange(filteredPharmacists);
             }
@@ -118,7 +118,7 @@ namespace DevCoreHospital.Repositories
             }
             else if (!pharmacystCertification.IsNullOrEmpty())
             {
-                var filteredPharmacists = availablePharmacists.Where(ph => ph.Certification.Equals(pharmacystCertification, StringComparison.OrdinalIgnoreCase));
+                var filteredPharmacists = availablePharmacists.Where(pharmacist => pharmacist.Certification.Equals(pharmacystCertification, StringComparison.OrdinalIgnoreCase));
                 availableStaff.AddRange(filteredPharmacists);
             }
             else
@@ -140,17 +140,17 @@ namespace DevCoreHospital.Repositories
         public List<Pharmacyst> GetPharmacystsByCertification(string certification)
         {
             return _dbManager.GetStaff().OfType<Pharmacyst>()
-                .Where(ph => ph.Certification.Equals(certification, StringComparison.OrdinalIgnoreCase))
+                .Where(pharmacist => pharmacist.Certification.Equals(certification, StringComparison.OrdinalIgnoreCase))
                 .ToList();
         }
 
         public void UpdateStaffAvailability(int staffId, bool isAvailable, DoctorStatus status = DoctorStatus.OFF_DUTY)
         {
-            var staff = _staffList.FirstOrDefault(st => st.StaffID == staffId);
+            var staff = _staffList.FirstOrDefault(staffMember => staffMember.StaffID == staffId);
             if (staff != null)
             {
                 staff.Available = isAvailable;
-                if (staff is Doctor doc) doc.DoctorStatus = status;
+                if (staff is Doctor doctor) doctor.DoctorStatus = status;
                 _dbManager.UpdateStaff(staff);
             }
         }
