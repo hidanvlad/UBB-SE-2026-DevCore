@@ -321,6 +321,88 @@ namespace DevCoreHospital.Tests
             Assert.Equal(new[] { matchingDoctor.StaffID }, result.Select(staff => staff.StaffID).ToArray());
         }
 
+        [Theory]
+        [InlineData("Pharmacy")]
+        [InlineData("pharmacy")]
+        [InlineData("PHARMACY")]
+        public void GetSpecializationsAndCertificationsForLocation_WhenLocationIsPharmacy_ReturnsDistinctSortedNonEmptyCertifications(string location)
+        {
+            // Arrange
+            var compounding = BuildPharmacyst(30, "Compounding");
+            var toxicology = BuildPharmacyst(31, "Toxicology");
+            var duplicateCompounding = BuildPharmacyst(32, "compounding");
+            var emptyCertification = BuildPharmacyst(33, string.Empty);
+            var nullCertification = BuildPharmacyst(34, "Unused");
+            nullCertification.Certification = null!;
+            var doctor = BuildDoctor(35, "Cardiology");
+
+            staffRepository.Setup(repo => repo.LoadAllStaff()).Returns(new List<IStaff>
+            {
+                compounding,
+                toxicology,
+                duplicateCompounding,
+                emptyCertification,
+                nullCertification,
+                doctor,
+            });
+
+            // Act
+            var result = service.GetSpecializationsAndCertificationsForLocation(location);
+
+            // Assert
+            Assert.Equal(new[] { "Compounding", "Toxicology" }, result);
+        }
+
+        [Fact]
+        public void GetSpecializationsAndCertificationsForLocation_WhenLocationIsNotPharmacy_ReturnsDistinctSortedNonEmptySpecializations()
+        {
+            // Arrange
+            var cardiology = BuildDoctor(40, "Cardiology");
+            var neurology = BuildDoctor(41, "Neurology");
+            var duplicateCardiology = BuildDoctor(42, "cardiology");
+            var emptySpecialization = BuildDoctor(43, string.Empty);
+            var nullSpecialization = BuildDoctor(44, "Unused");
+            nullSpecialization.Specialization = null!;
+            var pharmacist = BuildPharmacyst(45, "Compounding");
+
+            staffRepository.Setup(repo => repo.LoadAllStaff()).Returns(new List<IStaff>
+            {
+                cardiology,
+                neurology,
+                duplicateCardiology,
+                emptySpecialization,
+                nullSpecialization,
+                pharmacist,
+            });
+
+            // Act
+            var result = service.GetSpecializationsAndCertificationsForLocation("ER");
+
+            // Assert
+            Assert.Equal(new[] { "Cardiology", "Neurology" }, result);
+        }
+
+        [Fact]
+        public void GetSpecializationsAndCertificationsForLocation_WhenNoMatchingNonEmptyValuesExist_ReturnsEmptyList()
+        {
+            // Arrange
+            var doctor = BuildDoctor(50, string.Empty);
+            var pharmacist = BuildPharmacyst(51, string.Empty);
+            staffRepository.Setup(repo => repo.LoadAllStaff()).Returns(new List<IStaff>
+            {
+                doctor,
+                pharmacist,
+            });
+
+            // Act
+            var pharmacyResult = service.GetSpecializationsAndCertificationsForLocation("Pharmacy");
+            var erResult = service.GetSpecializationsAndCertificationsForLocation("ER");
+
+            // Assert
+            Assert.Empty(pharmacyResult);
+            Assert.Empty(erResult);
+        }
+
         [Fact]
         public void FindStaffReplacements_WhenShiftIsNull_ReturnsEmptyList()
         {
