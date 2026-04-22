@@ -61,8 +61,8 @@ namespace DevCoreHospital.Views.Admin
 
                 var dialog = new ContentDialog
                 {
-                    Title = result.Title,
-                    Content = result.Message,
+                    Title = result.title,
+                    Content = result.message,
                     CloseButtonText = "OK",
                     XamlRoot = Content.XamlRoot
                 };

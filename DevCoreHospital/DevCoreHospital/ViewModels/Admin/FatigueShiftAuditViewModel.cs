@@ -150,7 +150,7 @@ namespace DevCoreHospital.ViewModels
                 $"Shift #{shiftId} has been reassigned to {suggestion.SuggestedStaffName}.\n\nAudit was re-run to verify changes.");
         }
 
-        public sealed record ReassignmentResult(bool IsSuccess, string Title, string Message);
+        public sealed record ReassignmentResult(bool isSuccess, string title, string message);
 
         private static DateTime StartOfWeek(DateTime date)
         {
