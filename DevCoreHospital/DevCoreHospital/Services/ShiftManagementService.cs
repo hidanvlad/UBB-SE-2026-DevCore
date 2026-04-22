@@ -8,10 +8,10 @@ namespace DevCoreHospital.Services
 {
     public class ShiftManagementService : IShiftManagementService
     {
-        private readonly StaffRepository staffRepository;
-        private readonly ShiftRepository shiftRepository;
+        private readonly IShiftManagementStaffRepository staffRepository;
+        private readonly IShiftManagementShiftRepository shiftRepository;
 
-        public ShiftManagementService(StaffRepository staffRepository, ShiftRepository shiftRepository)
+        public ShiftManagementService(IShiftManagementStaffRepository staffRepository, IShiftManagementShiftRepository shiftRepository)
         {
             this.staffRepository = staffRepository;
             this.shiftRepository = shiftRepository;
