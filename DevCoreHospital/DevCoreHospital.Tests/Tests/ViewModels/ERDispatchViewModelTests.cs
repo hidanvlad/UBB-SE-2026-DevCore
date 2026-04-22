@@ -128,4 +128,107 @@ public class ERDispatchViewModelTests
 
         Assert.True(isOverrideAccepted);
     }
+
+    [Fact]
+    public async Task LoadOverrideCandidatesAsync_WhenServiceReturnsDoctors_SetsFoundCountInHint()
+    {
+        var service = new Mock<IERDispatchService>();
+        var end = System.DateTime.Now.AddMinutes(20);
+        service
+            .Setup(dispatchService => dispatchService.GetManualOverrideCandidatesAsync(1, 30))
+            .ReturnsAsync(
+                (IReadOnlyList<DoctorProfile>)new List<DoctorProfile>
+                {
+                    new() { DoctorId = 1, FullName = "A", ScheduleEnd = end }
+                });
+        var vm = new ERDispatchViewModel(service.Object);
+
+        await vm.LoadOverrideCandidatesAsync(1);
+
+        Assert.Contains("Found 1 eligible", vm.ManualInterventionHint, System.StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task RunDispatchAsync_WhenAllMatched_SetsOverrideNotNeededHint()
+    {
+        var service = new Mock<IERDispatchService>();
+        var erRequest = new ERRequest { Id = 1, Specialization = "A", Location = "L" };
+        service.Setup(dispatchService => dispatchService.GetPendingRequestIdsAsync()).ReturnsAsync((IReadOnlyList<int>)new[] { 1 });
+        service
+            .Setup(dispatchService => dispatchService.DispatchERRequestAsync(1))
+            .ReturnsAsync(
+                new ERDispatchResult
+                {
+                    IsSuccess = true,
+                    Request = erRequest,
+                    MatchedDoctorName = "D"
+                });
+        var vm = new ERDispatchViewModel(service.Object);
+
+        await vm.RunDispatchAsync();
+
+        Assert.Contains("Override not needed", vm.ManualInterventionHint, System.StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task RunDispatchAsync_WhenServiceThrows_SetsErrorOnStatus()
+    {
+        var service = new Mock<IERDispatchService>();
+        service
+            .Setup(dispatchService => dispatchService.GetPendingRequestIdsAsync())
+            .ThrowsAsync(new System.InvalidOperationException("down"));
+        var vm = new ERDispatchViewModel(service.Object);
+
+        await vm.RunDispatchAsync();
+
+        Assert.Contains("down", vm.StatusMessage, System.StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task SimulateIncomingAsync_WhenServiceThrows_SetsErrorOnStatus()
+    {
+        var service = new Mock<IERDispatchService>();
+        service
+            .Setup(dispatchService => dispatchService.SimulateIncomingRequestsAsync(1))
+            .ThrowsAsync(new System.IO.IOException("net"));
+        var vm = new ERDispatchViewModel(service.Object);
+
+        await vm.SimulateIncomingAsync(1);
+
+        Assert.Contains("net", vm.StatusMessage, System.StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task ApplyOverrideAsync_WhenServiceReturnsNotSuccess_UsesServiceMessageInHint()
+    {
+        var service = new Mock<IERDispatchService>();
+        service
+            .Setup(dispatchService => dispatchService.ManualOverrideAsync(1, 2, 30))
+            .ReturnsAsync(
+                new ERDispatchResult
+                {
+                    IsSuccess = false,
+                    Message = "blocked for unit test"
+                });
+        var vm = new ERDispatchViewModel(service.Object);
+        vm.UnmatchedRequests.Add(new ERDispatchViewModel.UnmatchedRequestRow { RequestId = 1, RequestSpecialization = "A", RequestLocation = "B" });
+        vm.OverrideCandidates.Add(new ERDispatchViewModel.OverrideCandidateRow { DoctorId = 2, FullName = "X" });
+
+        _ = await vm.ApplyOverrideAsync(1, 2);
+
+        Assert.Equal("blocked for unit test", vm.ManualInterventionHint);
+    }
+
+    [Fact]
+    public async Task HandleERRequestAsync_WhenRequestIsNull_DoesNotCallDispatch()
+    {
+        var service = new Mock<IERDispatchService>(MockBehavior.Strict);
+        var vm = new ERDispatchViewModel(service.Object);
+
+        await vm.HandleERRequestAsync(null!);
+
+        service.Verify(
+            dispatchService => dispatchService.DispatchERRequestAsync(It.IsAny<int>()),
+            Times.Never);
+    }
 }

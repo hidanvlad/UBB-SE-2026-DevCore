@@ -181,4 +181,19 @@ public class IncomingSwapRequestsViewModelTests
 
         Assert.Equal("This request is no longer pending.", viewModel.StatusMessage);
     }
+
+    [Fact]
+    public void Constructor_WhenTwoPendingRequests_UsesPluralCountInStatus()
+    {
+        var service = new Mock<IShiftSwapService>();
+        var list = new List<ShiftSwapRequest>
+        {
+            new() { SwapId = 1, ShiftId = 1, RequesterId = 1, ColleagueId = 1, RequestedAt = DateTime.UtcNow, Status = ShiftSwapRequestStatus.PENDING },
+            new() { SwapId = 2, ShiftId = 1, RequesterId = 1, ColleagueId = 1, RequestedAt = DateTime.UtcNow, Status = ShiftSwapRequestStatus.PENDING }
+        };
+        service.Setup(shiftSwapService => shiftSwapService.GetIncomingSwapRequests(1)).Returns(list);
+        var viewModel = new IncomingSwapRequestsViewModel(service.Object, new[] { new DoctorOptionViewModel { StaffId = 1, DisplayName = "D" } });
+
+        Assert.Equal("2 pending request(s).", viewModel.StatusMessage);
+    }
 }
