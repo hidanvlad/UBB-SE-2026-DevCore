@@ -13,9 +13,9 @@ namespace DevCoreHospital.Services
         private const int MaxHangoutDescriptionLength = 100;
         private const int MinDaysAheadForHangout = 7;
 
-        private readonly HangoutRepository hangoutRepository;
+        private readonly IHangoutRepository hangoutRepository;
 
-        public HangoutService(HangoutRepository hangoutRepository)
+        public HangoutService(IHangoutRepository hangoutRepository)
         {
             this.hangoutRepository = hangoutRepository;
         }
