@@ -6,7 +6,7 @@ using Microsoft.Data.SqlClient;
 
 namespace DevCoreHospital.Repositories
 {
-    public class ShiftRepository : IShiftRepository, IShiftManagementShiftRepository
+    public class ShiftRepository : IShiftRepository, IShiftManagementShiftRepository, IPharmacyShiftRepository
     {
         private List<Shift> cachedShifts;
         private readonly string connectionString;

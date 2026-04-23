@@ -10,10 +10,10 @@ namespace DevCoreHospital.Services
     {
         private const int MaxVacationDaysPerMonth = 4;
 
-        private readonly StaffRepository staffRepository;
-        private readonly ShiftRepository shiftRepository;
+        private readonly IPharmacyStaffRepository staffRepository;
+        private readonly IPharmacyShiftRepository shiftRepository;
 
-        public PharmacyVacationService(StaffRepository staffRepository, ShiftRepository shiftRepository)
+        public PharmacyVacationService(IPharmacyStaffRepository staffRepository, IPharmacyShiftRepository shiftRepository)
         {
             this.staffRepository = staffRepository ?? throw new ArgumentNullException(nameof(staffRepository));
             this.shiftRepository = shiftRepository ?? throw new ArgumentNullException(nameof(shiftRepository));
