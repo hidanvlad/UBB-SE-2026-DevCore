@@ -22,7 +22,7 @@ namespace DevCoreHospital.Repositories
             command.Parameters.Add(new SqlParameter(name, value ?? DBNull.Value));
         }
 
-        public double GetShiftHoursFromDb(int shiftId)
+        public virtual double GetShiftHoursFromDb(int shiftId)
         {
             double totalHours = 0;
             try
@@ -47,7 +47,7 @@ namespace DevCoreHospital.Repositories
             return totalHours;
         }
 
-        public int GetMedicinesSold(int pharmacistStaffId, int month, int year)
+        public virtual int GetMedicinesSold(int pharmacistStaffId, int month, int year)
         {
             try
             {
@@ -70,7 +70,7 @@ namespace DevCoreHospital.Repositories
             }
         }
 
-        public bool DidStaffParticipateInHangout(int staffId, int month, int year)
+        public virtual bool DidStaffParticipateInHangout(int staffId, int month, int year)
         {
             try
             {

@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using System;
@@ -13,8 +14,8 @@ namespace DevCoreHospital.ViewModels
     public class SalaryComputationViewModel : ObservableObject
     {
         private readonly ISalaryComputationService salaryService;
-        private readonly StaffRepository staffRepository;
-        private readonly ShiftRepository shiftRepository;
+        private readonly StaffRepository? staffRepository;
+        private readonly ShiftRepository? shiftRepository;
 
         public ObservableCollection<IStaff> StaffList { get; } = new ObservableCollection<IStaff>();
         public ObservableCollection<Shift> ShiftList { get; } = new ObservableCollection<Shift>();
@@ -60,8 +61,32 @@ namespace DevCoreHospital.ViewModels
             LoadShiftList();
         }
 
+        public SalaryComputationViewModel(ISalaryComputationService salaryService, IEnumerable<IStaff> staffList, IEnumerable<Shift> shiftList)
+        {
+            this.salaryService = salaryService;
+            staffRepository = null;
+            shiftRepository = null;
+
+            ComputeSalaryCommand = new AsyncRelayCommand(ComputeSalaryAsync, CanComputeSalary);
+
+            foreach (var staff in staffList)
+            {
+                StaffList.Add(staff);
+            }
+
+            foreach (var shift in shiftList)
+            {
+                ShiftList.Add(shift);
+            }
+        }
+
         private void LoadStaffList()
         {
+            if (staffRepository == null)
+            {
+                return;
+            }
+
             StaffList.Clear();
             foreach (var staff in staffRepository.LoadAllStaff())
             {
@@ -71,6 +96,11 @@ namespace DevCoreHospital.ViewModels
 
         private void LoadShiftList()
         {
+            if (shiftRepository == null)
+            {
+                return;
+            }
+
             ShiftList.Clear();
             foreach (var shift in shiftRepository.GetShifts())
             {
