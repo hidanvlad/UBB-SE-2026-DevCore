@@ -145,7 +145,6 @@ namespace DevCoreHospital.Tests.Services
             mockShiftRepository.Setup(r => r.GetShiftsByStaffID(pharmacist.StaffID)).Returns(new List<Shift>());
             mockShiftRepository.Setup(r => r.GetShifts()).Returns(new List<Shift>());
 
-            // June 30 to July 2: June gets 1 day, July gets 2 days — both within the 4-day limit
             service.RegisterVacation(pharmacist.StaffID, new DateTime(2025, 6, 30), new DateTime(2025, 7, 2));
 
             mockShiftRepository.Verify(r => r.AddShift(It.IsAny<Shift>()), Times.Once);
@@ -181,7 +180,6 @@ namespace DevCoreHospital.Tests.Services
             mockStaffRepository.Setup(r => r.GetPharmacists()).Returns(new List<Pharmacyst> { pharmacist });
             mockShiftRepository.Setup(r => r.GetShiftsByStaffID(pharmacist.StaffID)).Returns(new List<Shift> { existingVacation });
 
-            // June 30 to July 2 adds 2 days to July — combined with existing 3 days = 5, exceeds limit
             Assert.Throws<InvalidOperationException>(() =>
                 service.RegisterVacation(pharmacist.StaffID, new DateTime(2025, 6, 30), new DateTime(2025, 7, 3)));
         }

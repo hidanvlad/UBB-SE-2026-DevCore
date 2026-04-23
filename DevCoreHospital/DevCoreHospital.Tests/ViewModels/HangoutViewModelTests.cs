@@ -231,5 +231,62 @@ namespace DevCoreHospital.Tests.ViewModels
 
             Assert.Single(vm.Hangouts);
         }
+
+        [Fact]
+        public void MaxParticipants_DefaultIsFive()
+        {
+            Assert.Equal(5, viewModel.MaxParticipants);
+        }
+
+        [Fact]
+        public void MaxParticipantsOptions_ContainsExpectedValues()
+        {
+            Assert.Equal(new[] { 2, 3, 4, 5, 10, 15, 20 }, viewModel.MaxParticipantsOptions);
+        }
+
+        [Fact]
+        public void CreateHangout_ReloadsHangouts_AfterSuccess()
+        {
+            // Arrange
+            var hangout = new Hangout(1, "My Hangout", "desc", DateTime.Now.AddDays(10), 5);
+            int getHangoutsCalls = 0;
+            mockService.Setup(s => s.GetAllHangouts()).Returns(() =>
+            {
+                getHangoutsCalls++;
+                return getHangoutsCalls > 1 ? new List<Hangout> { hangout } : new List<Hangout>();
+            });
+
+            var vm = new HangoutViewModel(mockService.Object);
+            vm.Title = "My Hangout";
+            vm.SelectedDoctor = TestDoctor;
+
+            // Act
+            vm.CreateCommand.Execute(null);
+
+            // Assert
+            Assert.Single(vm.Hangouts);
+        }
+
+        [Fact]
+        public void JoinHangoutById_ReloadsHangouts_AfterSuccess()
+        {
+            // Arrange
+            var hangout = new Hangout(1, "Team Lunch", "desc", DateTime.Now.AddDays(10), 5);
+            int getHangoutsCalls = 0;
+            mockService.Setup(s => s.GetAllHangouts()).Returns(() =>
+            {
+                getHangoutsCalls++;
+                return getHangoutsCalls > 1 ? new List<Hangout> { hangout } : new List<Hangout>();
+            });
+
+            var vm = new HangoutViewModel(mockService.Object);
+            vm.SelectedDoctor = TestDoctor;
+
+            // Act
+            vm.JoinHangoutById(1);
+
+            // Assert
+            Assert.Single(vm.Hangouts);
+        }
     }
 }

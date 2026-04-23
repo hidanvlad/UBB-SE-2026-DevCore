@@ -59,7 +59,7 @@ public class MyScheduleViewModelTests
 
         vm.SelectedShift = vm.FutureShifts.FirstOrDefault();
 
-        Assert.Equal(1, vm.EligibleColleagues.Count);
+        Assert.Single(vm.EligibleColleagues);
     }
 
     [Fact]

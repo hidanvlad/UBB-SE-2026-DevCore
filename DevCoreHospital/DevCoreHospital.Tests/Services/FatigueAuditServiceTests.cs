@@ -10,7 +10,6 @@ namespace DevCoreHospital.Tests.Services
 {
     public class FatigueAuditServiceTests
     {
-        // Fixed anchor: Monday 2025-04-14
         private static readonly DateTime WeekStart = new DateTime(2025, 4, 14);
 
         private readonly Mock<IFatigueAuditRepository> repoMock;
@@ -84,7 +83,6 @@ namespace DevCoreHospital.Tests.Services
         [Fact]
         public void RunAutoAudit_NormalizesAnyDayOfWeek_ToMonday()
         {
-            // Wednesday 2025-04-16 → Monday 2025-04-14
             var wednesday = new DateTime(2025, 4, 16);
             SetupRepo(Array.Empty<RosterShift>(), Array.Empty<StaffProfile>());
 
@@ -96,7 +94,6 @@ namespace DevCoreHospital.Tests.Services
         [Fact]
         public void RunAutoAudit_DetectsMaxWeeklyHoursViolation_WhenStaffExceeds60Hours()
         {
-            // 3 × 21 h = 63 h in the week; each separated by 24 h so no rest violation
             var shifts = new List<RosterShift>
             {
                 MakeShift(1, 1, "Alice", "Doctor", "Cardiology", WeekStart, WeekStart.AddHours(21)),
@@ -131,7 +128,6 @@ namespace DevCoreHospital.Tests.Services
         [Fact]
         public void RunAutoAudit_DoesNotViolate_WhenWeeklyHoursExactly60()
         {
-            // 2 × 30 h = 60 h, separated by 24 h gap
             var shifts = new List<RosterShift>
             {
                 MakeShift(1, 1, "Alice", "Doctor", "Cardiology", WeekStart, WeekStart.AddHours(30)),
@@ -147,7 +143,6 @@ namespace DevCoreHospital.Tests.Services
         [Fact]
         public void RunAutoAudit_DetectsMinRestGapViolation_WhenRestGapBelow12Hours()
         {
-            // Shift 1 ends at 20:00, Shift 2 starts at 22:00 → 2 h gap < 12 h
             var shift1 = MakeShift(1, 1, "Alice", "Doctor", "Cardiology",
                 WeekStart.AddHours(8), WeekStart.AddHours(20));
             var shift2 = MakeShift(2, 1, "Alice", "Doctor", "Cardiology",
@@ -180,7 +175,6 @@ namespace DevCoreHospital.Tests.Services
         {
             var shift1 = MakeShift(1, 1, "Alice", "Doctor", "Cardiology",
                 WeekStart.AddHours(8), WeekStart.AddHours(20));
-            // Gap = exactly 12 h (not less than 12 h)
             var shift2 = MakeShift(2, 1, "Alice", "Doctor", "Cardiology",
                 WeekStart.AddHours(32), WeekStart.AddHours(40));
             SetupRepo(new List<RosterShift> { shift1, shift2 }, Array.Empty<StaffProfile>());
@@ -193,7 +187,6 @@ namespace DevCoreHospital.Tests.Services
         [Fact]
         public void RunAutoAudit_ExcludesCancelledShifts_FromViolationDetection()
         {
-            // Would exceed 60 h, but the shifts are CANCELLED
             var shifts = new List<RosterShift>
             {
                 MakeShift(1, 1, "Alice", "Doctor", "Cardiology", WeekStart, WeekStart.AddHours(21), "CANCELLED"),
@@ -211,7 +204,6 @@ namespace DevCoreHospital.Tests.Services
         [Fact]
         public void RunAutoAudit_ExcludesShiftsOutsideCurrentWeek()
         {
-            // Shift is in the PREVIOUS week → should not appear in audit
             var previousWeekShift = MakeShift(1, 1, "Alice", "Doctor", "Cardiology",
                 WeekStart.AddDays(-7), WeekStart.AddDays(-7).AddHours(50));
             SetupRepo(new List<RosterShift> { previousWeekShift }, Array.Empty<StaffProfile>());
@@ -224,7 +216,6 @@ namespace DevCoreHospital.Tests.Services
         [Fact]
         public void RunAutoAudit_BuildsSuggestionWithCandidate_WhenEligibleStaffExists()
         {
-            // Alice (id=1) exceeds 60 h; Bob (id=2) is an eligible candidate
             var shifts = new List<RosterShift>
             {
                 MakeShift(1, 1, "Alice", "Doctor", "Cardiology", WeekStart, WeekStart.AddHours(21)),
@@ -353,7 +344,6 @@ namespace DevCoreHospital.Tests.Services
         [Fact]
         public void RunAutoAudit_ExcludesStaffWithInactiveStatus_FromCandidatePool()
         {
-            // Bob is active (IsActive = true) but marked INACTIVE via Status field
             var shifts = new List<RosterShift>
             {
                 MakeShift(1, 1, "Alice", "Doctor", "Cardiology", WeekStart, WeekStart.AddHours(21)),
@@ -400,7 +390,6 @@ namespace DevCoreHospital.Tests.Services
         [Fact]
         public void RunAutoAudit_ExcludesCandidate_WhenCandidateHasOverlappingShift()
         {
-            // Alice has a rest-gap violation on shift 2; Bob overlaps with that shift.
             var aliceShift1 = MakeShift(1, 1, "Alice", "Doctor", "Cardiology",
                 WeekStart.AddHours(8), WeekStart.AddHours(20));
             var aliceShift2 = MakeShift(2, 1, "Alice", "Doctor", "Cardiology",
@@ -420,12 +409,10 @@ namespace DevCoreHospital.Tests.Services
         [Fact]
         public void RunAutoAudit_ExcludesCandidate_WhenRestGapWithNextShiftIsTooSmall()
         {
-            // Alice has a rest-gap violation on shift 2; Bob's next shift starts only 6 h after shift 2 ends.
             var aliceShift1 = MakeShift(1, 1, "Alice", "Doctor", "Cardiology",
                 WeekStart.AddHours(8), WeekStart.AddHours(20));
             var aliceShift2 = MakeShift(2, 1, "Alice", "Doctor", "Cardiology",
                 WeekStart.AddHours(22), WeekStart.AddHours(32));
-            // Bob's existing shift starts 6h after shift 2 ends (32h) → rest gap = 6h < 12h minimum
             var bobShift = MakeShift(3, 2, "Bob", "Doctor", "Cardiology",
                 WeekStart.AddHours(38), WeekStart.AddHours(46));
             var profiles = new List<StaffProfile> { MakeProfile(2, "Bob", "Doctor", "Cardiology") };
@@ -441,7 +428,6 @@ namespace DevCoreHospital.Tests.Services
         [Fact]
         public void RunAutoAudit_ExcludesCandidate_WhenRestGapWithPreviousShiftIsTooSmall()
         {
-            // Alice has a rest-gap violation on shift 2; Bob's shift ends only 6 h before shift 2 starts.
             var aliceShift1 = MakeShift(1, 1, "Alice", "Doctor", "Cardiology",
                 WeekStart.AddHours(8), WeekStart.AddHours(20));
             var aliceShift2 = MakeShift(2, 1, "Alice", "Doctor", "Cardiology",

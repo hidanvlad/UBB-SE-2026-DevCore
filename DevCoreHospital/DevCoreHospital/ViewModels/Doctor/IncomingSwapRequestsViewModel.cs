@@ -1,9 +1,12 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Windows.Input;
 using DevCoreHospital.Models;
+using DevCoreHospital.Repositories;
 using DevCoreHospital.Services;
 using DevCoreHospital.ViewModels;
 using DevCoreHospital.ViewModels.Base;
@@ -42,13 +45,31 @@ namespace DevCoreHospital.ViewModels.Doctor
         public ICommand AcceptCommand { get; }
         public ICommand RejectCommand { get; }
 
-        public IncomingSwapRequestsViewModel(IShiftSwapService service, System.Collections.Generic.IEnumerable<DoctorOptionViewModel> doctors)
+        public IncomingSwapRequestsViewModel(IShiftSwapService shiftSwapService, IStaffRepository staffRepository)
+            : this(shiftSwapService, LoadDoctorsFromRepository(staffRepository))
+        {
+        }
+
+        private static IEnumerable<DoctorOptionViewModel> LoadDoctorsFromRepository(IStaffRepository staffRepository)
+        {
+            return staffRepository.LoadAllStaff()
+                .OfType<Models.Doctor>()
+                .OrderBy(doctorModel => doctorModel.FirstName)
+                .ThenBy(doctorModel => doctorModel.LastName)
+                .Select(doctorModel => new DoctorOptionViewModel
+                {
+                    StaffId = doctorModel.StaffID,
+                    DisplayName = $"{doctorModel.FirstName} {doctorModel.LastName}".Trim(),
+                });
+        }
+
+        public IncomingSwapRequestsViewModel(IShiftSwapService service, IEnumerable<DoctorOptionViewModel> doctors)
         {
             this.service = service;
 
-            foreach (var d in doctors)
+            foreach (var doctor in doctors)
             {
-                Doctors.Add(d);
+                Doctors.Add(doctor);
             }
 
             if (Doctors.Count > 0)
@@ -118,15 +139,15 @@ namespace DevCoreHospital.ViewModels.Doctor
             }
 
             var list = service.GetIncomingSwapRequests(SelectedDoctor.StaffId);
-            foreach (var r in list)
+            foreach (var request in list)
             {
                 Requests.Add(new IncomingSwapRequestItemViewModel
                 {
-                    SwapId = r.SwapId,
-                    ShiftId = r.ShiftId,
-                    RequesterId = r.RequesterId,
-                    RequestedAt = r.RequestedAt,
-                    Status = r.Status.ToString(),
+                    SwapId = request.SwapId,
+                    ShiftId = request.ShiftId,
+                    RequesterId = request.RequesterId,
+                    RequestedAt = request.RequestedAt,
+                    Status = request.Status.ToString(),
                 });
             }
 

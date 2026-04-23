@@ -42,7 +42,7 @@ namespace DevCoreHospital.Services
                 throw new InvalidOperationException("You cannot create a hangout on a day where you have active scheduled appointments.");
             }
 
-            Hangout newHangout = new Hangout(0, title, description, date, maxParticipants);
+            Hangout newHangout = new Hangout(0, title, description ?? string.Empty, date, maxParticipants);
             newHangout.ParticipantList.Add(creator);
 
             hangoutRepository.AddHangout(newHangout);

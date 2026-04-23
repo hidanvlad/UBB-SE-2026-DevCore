@@ -312,9 +312,9 @@ var assemblies = [
       { "name": "DevCoreHospital.Models.Doctor", "rp": "DevCoreHospital_Doctor.html", "cl": 25, "ucl": 0, "cal": 25, "tl": 33, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "DevCoreHospital.Models.DoctorItem", "rp": "DevCoreHospital_DoctorItem.html", "cl": 0, "ucl": 2, "cal": 2, "tl": 7, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "DevCoreHospital.Models.DoctorProfile", "rp": "DevCoreHospital_DoctorProfile.html", "cl": 7, "ucl": 0, "cal": 7, "tl": 51, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
-      { "name": "DevCoreHospital.Models.DoctorRosterEntry", "rp": "DevCoreHospital_DoctorRosterEntry.html", "cl": 9, "ucl": 1, "cal": 10, "tl": 51, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
+      { "name": "DevCoreHospital.Models.DoctorRosterEntry", "rp": "DevCoreHospital_DoctorRosterEntry.html", "cl": 10, "ucl": 0, "cal": 10, "tl": 51, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "DevCoreHospital.Models.ERDispatchResult", "rp": "DevCoreHospital_ERDispatchResult.html", "cl": 6, "ucl": 0, "cal": 6, "tl": 51, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
-      { "name": "DevCoreHospital.Models.ERRequest", "rp": "DevCoreHospital_ERRequest.html", "cl": 4, "ucl": 3, "cal": 7, "tl": 51, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
+      { "name": "DevCoreHospital.Models.ERRequest", "rp": "DevCoreHospital_ERRequest.html", "cl": 5, "ucl": 2, "cal": 7, "tl": 51, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "DevCoreHospital.Models.Hangout", "rp": "DevCoreHospital_Hangout.html", "cl": 15, "ucl": 1, "cal": 16, "tl": 26, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "DevCoreHospital.Models.MedicalEvaluation", "rp": "DevCoreHospital_MedicalEvaluation.html", "cl": 0, "ucl": 9, "cal": 9, "tl": 18, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "DevCoreHospital.Models.Pharmacist", "rp": "DevCoreHospital_Pharmacist.html", "cl": 0, "ucl": 22, "cal": 22, "tl": 35, "cb": 0, "tb": 10, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
@@ -325,15 +325,15 @@ var assemblies = [
       { "name": "DevCoreHospital.Models.Staff", "rp": "DevCoreHospital_Staff.html", "cl": 0, "ucl": 16, "cal": 16, "tl": 23, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "DevCoreHospital.Models.StaffProfile", "rp": "DevCoreHospital_StaffProfile.html", "cl": 7, "ucl": 0, "cal": 7, "tl": 60, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "DevCoreHospital.Program", "rp": "DevCoreHospital_Program.html", "cl": 0, "ucl": 9, "cal": 9, "tl": 81, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
-      { "name": "DevCoreHospital.Repositories.AppointmentRepository", "rp": "DevCoreHospital_AppointmentRepository.html", "cl": 0, "ucl": 135, "cal": 135, "tl": 181, "cb": 0, "tb": 38, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
-      { "name": "DevCoreHospital.Repositories.ERDispatchRepository", "rp": "DevCoreHospital_ERDispatchRepository.html", "cl": 0, "ucl": 72, "cal": 72, "tl": 118, "cb": 0, "tb": 36, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
-      { "name": "DevCoreHospital.Repositories.EvaluationsRepository", "rp": "DevCoreHospital_EvaluationsRepository.html", "cl": 0, "ucl": 202, "cal": 202, "tl": 251, "cb": 0, "tb": 50, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
-      { "name": "DevCoreHospital.Repositories.FatigueAuditRepository", "rp": "DevCoreHospital_FatigueAuditRepository.html", "cl": 13, "ucl": 0, "cal": 13, "tl": 32, "cb": 1, "tb": 2, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
+      { "name": "DevCoreHospital.Repositories.AppointmentRepository", "rp": "DevCoreHospital_AppointmentRepository.html", "cl": 134, "ucl": 1, "cal": 135, "tl": 181, "cb": 29, "tb": 38, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
+      { "name": "DevCoreHospital.Repositories.ERDispatchRepository", "rp": "DevCoreHospital_ERDispatchRepository.html", "cl": 72, "ucl": 0, "cal": 72, "tl": 118, "cb": 31, "tb": 36, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
+      { "name": "DevCoreHospital.Repositories.EvaluationsRepository", "rp": "DevCoreHospital_EvaluationsRepository.html", "cl": 11, "ucl": 191, "cal": 202, "tl": 251, "cb": 1, "tb": 50, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
+      { "name": "DevCoreHospital.Repositories.FatigueAuditRepository", "rp": "DevCoreHospital_FatigueAuditRepository.html", "cl": 13, "ucl": 0, "cal": 13, "tl": 32, "cb": 2, "tb": 2, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "DevCoreHospital.Repositories.HangoutRepository", "rp": "DevCoreHospital_HangoutRepository.html", "cl": 0, "ucl": 144, "cal": 144, "tl": 190, "cb": 0, "tb": 28, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
-      { "name": "DevCoreHospital.Repositories.SalaryRepository", "rp": "DevCoreHospital_SalaryRepository.html", "cl": 4, "ucl": 62, "cal": 66, "tl": 101, "cb": 0, "tb": 8, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
-      { "name": "DevCoreHospital.Repositories.ShiftRepository", "rp": "DevCoreHospital_ShiftRepository.html", "cl": 56, "ucl": 106, "cal": 162, "tl": 220, "cb": 4, "tb": 24, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
-      { "name": "DevCoreHospital.Repositories.ShiftSwapRepository", "rp": "DevCoreHospital_ShiftSwapRepository.html", "cl": 0, "ucl": 133, "cal": 133, "tl": 181, "cb": 0, "tb": 10, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
-      { "name": "DevCoreHospital.Repositories.StaffRepository", "rp": "DevCoreHospital_StaffRepository.html", "cl": 27, "ucl": 234, "cal": 261, "tl": 334, "cb": 1, "tb": 64, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
+      { "name": "DevCoreHospital.Repositories.SalaryRepository", "rp": "DevCoreHospital_SalaryRepository.html", "cl": 57, "ucl": 9, "cal": 66, "tl": 101, "cb": 3, "tb": 8, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
+      { "name": "DevCoreHospital.Repositories.ShiftRepository", "rp": "DevCoreHospital_ShiftRepository.html", "cl": 128, "ucl": 34, "cal": 162, "tl": 220, "cb": 21, "tb": 24, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
+      { "name": "DevCoreHospital.Repositories.ShiftSwapRepository", "rp": "DevCoreHospital_ShiftSwapRepository.html", "cl": 131, "ucl": 2, "cal": 133, "tl": 181, "cb": 6, "tb": 10, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
+      { "name": "DevCoreHospital.Repositories.StaffRepository", "rp": "DevCoreHospital_StaffRepository.html", "cl": 150, "ucl": 111, "cal": 261, "tl": 334, "cb": 30, "tb": 64, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "DevCoreHospital.Services.CurrentUserService", "rp": "DevCoreHospital_CurrentUserService.html", "cl": 5, "ucl": 0, "cal": 5, "tl": 19, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "DevCoreHospital.Services.DialogService", "rp": "DevCoreHospital_DialogService.html", "cl": 5, "ucl": 9, "cal": 14, "tl": 32, "cb": 1, "tb": 2, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "DevCoreHospital.Services.DoctorAppointmentService", "rp": "DevCoreHospital_DoctorAppointmentService.html", "cl": 27, "ucl": 0, "cal": 27, "tl": 59, "cb": 5, "tb": 6, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
@@ -509,12 +509,6 @@ var riskHotspots = [
       { "value": 18, "exceeded": true },
     ]},
   {
-    "assembly": "DevCoreHospital", "class": "DevCoreHospital.Repositories.ERDispatchRepository", "reportPath": "DevCoreHospital_ERDispatchRepository.html", "methodName": "IsOnCurrentShift(DevCoreHospital.Models.DoctorRosterEntry,System.DateTime)", "methodShortName": "IsOnCurrentShift(...)", "fileIndex": 0, "line": 85,
-    "metrics": [
-      { "value": 342, "exceeded": true },
-      { "value": 18, "exceeded": true },
-    ]},
-  {
     "assembly": "DevCoreHospital", "class": "DevCoreHospital.Views.Admin.AdminShiftView", "reportPath": "DevCoreHospital_AdminShiftView.html", "methodName": "PropertyChanged_ViewModel(System.Object,System.ComponentModel.PropertyChangedEventArgs)", "methodShortName": "PropertyChanged_ViewModel(...)", "fileIndex": 0, "line": 813,
     "metrics": [
       { "value": 342, "exceeded": true },
@@ -570,18 +564,6 @@ var riskHotspots = [
     ]},
   {
     "assembly": "DevCoreHospital", "class": "DevCoreHospital.Data.SqlERDispatchDataSource", "reportPath": "DevCoreHospital_SqlERDispatchDataSource.html", "methodName": "GetRequestById(System.Int32)", "methodShortName": "GetRequestById(...)", "fileIndex": 0, "line": 155,
-    "metrics": [
-      { "value": 210, "exceeded": true },
-      { "value": 14, "exceeded": false },
-    ]},
-  {
-    "assembly": "DevCoreHospital", "class": "DevCoreHospital.Repositories.AppointmentRepository", "reportPath": "DevCoreHospital_AppointmentRepository.html", "methodName": "MapReaderToAppointment(Microsoft.Data.SqlClient.SqlDataReader,System.Boolean)", "methodShortName": "MapReaderToAppointment(...)", "fileIndex": 0, "line": 155,
-    "metrics": [
-      { "value": 210, "exceeded": true },
-      { "value": 14, "exceeded": false },
-    ]},
-  {
-    "assembly": "DevCoreHospital", "class": "DevCoreHospital.Repositories.StaffRepository", "reportPath": "DevCoreHospital_StaffRepository.html", "methodName": "GetPotentialSwapColleagues(DevCoreHospital.Models.IStaff)", "methodShortName": "GetPotentialSwapColleagues(...)", "fileIndex": 0, "line": 241,
     "metrics": [
       { "value": 210, "exceeded": true },
       { "value": 14, "exceeded": false },
@@ -659,12 +641,6 @@ var riskHotspots = [
       { "value": 12, "exceeded": false },
     ]},
   {
-    "assembly": "DevCoreHospital", "class": "DevCoreHospital.Repositories.StaffRepository", "reportPath": "DevCoreHospital_StaffRepository.html", "methodName": "FetchAllStaffFromDatabase()", "methodShortName": "FetchAllStaffFromDatabase()", "fileIndex": 0, "line": 41,
-    "metrics": [
-      { "value": 155, "exceeded": true },
-      { "value": 18, "exceeded": true },
-    ]},
-  {
     "assembly": "DevCoreHospital", "class": "DevCoreHospital.Views.Admin.AdminSchedulePage", "reportPath": "DevCoreHospital_AdminSchedulePage.html", "methodName": "Connect(System.Int32,System.Object)", "methodShortName": "Connect(...)", "fileIndex": 0, "line": 132,
     "metrics": [
       { "value": 132, "exceeded": true },
@@ -726,12 +702,6 @@ var riskHotspots = [
     ]},
   {
     "assembly": "DevCoreHospital", "class": "DevCoreHospital.Repositories.EvaluationsRepository", "reportPath": "DevCoreHospital_EvaluationsRepository.html", "methodName": "CheckPatientHistoryForRisk(System.String,System.String)", "methodShortName": "CheckPatientHistoryForRisk(...)", "fileIndex": 0, "line": 220,
-    "metrics": [
-      { "value": 72, "exceeded": true },
-      { "value": 8, "exceeded": false },
-    ]},
-  {
-    "assembly": "DevCoreHospital", "class": "DevCoreHospital.Repositories.StaffRepository", "reportPath": "DevCoreHospital_StaffRepository.html", "methodName": "GetAvailableStaff(System.String,System.String)", "methodShortName": "GetAvailableStaff(...)", "fileIndex": 0, "line": 279,
     "metrics": [
       { "value": 72, "exceeded": true },
       { "value": 8, "exceeded": false },
@@ -875,24 +845,6 @@ var riskHotspots = [
       { "value": 6, "exceeded": false },
     ]},
   {
-    "assembly": "DevCoreHospital", "class": "DevCoreHospital.Repositories.AppointmentRepository", "reportPath": "DevCoreHospital_AppointmentRepository.html", "methodName": "GetAllDoctorsAsync()", "methodShortName": "GetAllDoctorsAsync()", "fileIndex": 0, "line": 58,
-    "metrics": [
-      { "value": 42, "exceeded": true },
-      { "value": 6, "exceeded": false },
-    ]},
-  {
-    "assembly": "DevCoreHospital", "class": "DevCoreHospital.Repositories.ERDispatchRepository", "reportPath": "DevCoreHospital_ERDispatchRepository.html", "methodName": "GetDoctorRoster()", "methodShortName": "GetDoctorRoster()", "fileIndex": 0, "line": 19,
-    "metrics": [
-      { "value": 42, "exceeded": true },
-      { "value": 6, "exceeded": false },
-    ]},
-  {
-    "assembly": "DevCoreHospital", "class": "DevCoreHospital.Repositories.ERDispatchRepository", "reportPath": "DevCoreHospital_ERDispatchRepository.html", "methodName": "GetDoctorById(System.Int32)", "methodShortName": "GetDoctorById(...)", "fileIndex": 0, "line": 45,
-    "metrics": [
-      { "value": 42, "exceeded": true },
-      { "value": 6, "exceeded": false },
-    ]},
-  {
     "assembly": "DevCoreHospital", "class": "DevCoreHospital.Repositories.EvaluationsRepository", "reportPath": "DevCoreHospital_EvaluationsRepository.html", "methodName": "GetDoctorById(System.Int32)", "methodShortName": "GetDoctorById(...)", "fileIndex": 0, "line": 153,
     "metrics": [
       { "value": 42, "exceeded": true },
@@ -900,12 +852,6 @@ var riskHotspots = [
     ]},
   {
     "assembly": "DevCoreHospital", "class": "DevCoreHospital.Repositories.EvaluationsRepository", "reportPath": "DevCoreHospital_EvaluationsRepository.html", "methodName": "GetAllDoctors()", "methodShortName": "GetAllDoctors()", "fileIndex": 0, "line": 177,
-    "metrics": [
-      { "value": 42, "exceeded": true },
-      { "value": 6, "exceeded": false },
-    ]},
-  {
-    "assembly": "DevCoreHospital", "class": "DevCoreHospital.Repositories.ShiftRepository", "reportPath": "DevCoreHospital_ShiftRepository.html", "methodName": "GetWeeklyHours(System.Int32)", "methodShortName": "GetWeeklyHours(...)", "fileIndex": 0, "line": 123,
     "metrics": [
       { "value": 42, "exceeded": true },
       { "value": 6, "exceeded": false },
@@ -1251,6 +1197,18 @@ var riskHotspots = [
     "metrics": [
       { "value": 20, "exceeded": false },
       { "value": 20, "exceeded": true },
+    ]},
+  {
+    "assembly": "DevCoreHospital", "class": "DevCoreHospital.Repositories.ERDispatchRepository", "reportPath": "DevCoreHospital_ERDispatchRepository.html", "methodName": "IsOnCurrentShift(DevCoreHospital.Models.DoctorRosterEntry,System.DateTime)", "methodShortName": "IsOnCurrentShift(...)", "fileIndex": 0, "line": 85,
+    "metrics": [
+      { "value": 18, "exceeded": false },
+      { "value": 18, "exceeded": true },
+    ]},
+  {
+    "assembly": "DevCoreHospital", "class": "DevCoreHospital.Repositories.StaffRepository", "reportPath": "DevCoreHospital_StaffRepository.html", "methodName": "FetchAllStaffFromDatabase()", "methodShortName": "FetchAllStaffFromDatabase()", "fileIndex": 0, "line": 41,
+    "metrics": [
+      { "value": 18, "exceeded": false },
+      { "value": 18, "exceeded": true },
     ]},
   {
     "assembly": "DevCoreHospital", "class": "DevCoreHospital.Services.FatigueAuditService", "reportPath": "DevCoreHospital_FatigueAuditService.html", "methodName": "BuildSuggestions(System.Collections.Generic.IReadOnlyList`1<DevCoreHospital.Models.AuditViolation>,System.DateTime,System.Collections.Generic.IReadOnlyList`1<DevCoreHospital.Models.RosterShift>,System.Collections.Generic.IReadOnlyList`1<DevCoreHospital.Models.RosterShift>,System.Collections.Generic.IReadOnlyList`1<DevCoreHospital.Models.StaffProfile>)", "methodShortName": "BuildSuggestions(...)", "fileIndex": 0, "line": 122,

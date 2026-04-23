@@ -1,6 +1,7 @@
+using DevCoreHospital.ViewModels.Doctor;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml;
-using DevCoreHospital.ViewModels.Doctor;
 
 namespace DevCoreHospital.Views
 {
@@ -12,7 +13,7 @@ namespace DevCoreHospital.Views
         {
             this.InitializeComponent();
 
-            ViewModel = new HangoutViewModel();
+            ViewModel = App.Services.GetRequiredService<HangoutViewModel>();
             this.DataContext = ViewModel;
         }
 

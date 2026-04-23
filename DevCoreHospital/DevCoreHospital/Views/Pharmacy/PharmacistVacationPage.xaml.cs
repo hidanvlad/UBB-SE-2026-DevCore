@@ -1,7 +1,6 @@
-using DevCoreHospital.Configuration;
-using DevCoreHospital.Repositories;
-using DevCoreHospital.Services;
+using DevCoreHospital.Models;
 using DevCoreHospital.ViewModels.Pharmacy;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml;
 
@@ -15,12 +14,7 @@ public sealed partial class PharmacistVacationPage : Page
     {
         InitializeComponent();
 
-        var staffRepository = new StaffRepository(AppSettings.ConnectionString);
-        var shiftRepository = new ShiftRepository(AppSettings.ConnectionString, staffRepository);
-
-        IPharmacyVacationService service = new PharmacyVacationService(staffRepository, shiftRepository);
-        ViewModel = new PharmacistVacationViewModel(service);
-
+        ViewModel = App.Services.GetRequiredService<PharmacistVacationViewModel>();
         DataContext = ViewModel;
         PharmacistComboBox.ItemsSource = ViewModel.Pharmacists;
     }

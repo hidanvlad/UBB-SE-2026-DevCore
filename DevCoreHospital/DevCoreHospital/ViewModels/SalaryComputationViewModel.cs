@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using System;
-using DevCoreHospital.Configuration;
 using DevCoreHospital.Models;
 using DevCoreHospital.Repositories;
 using DevCoreHospital.Services;
@@ -14,8 +13,8 @@ namespace DevCoreHospital.ViewModels
     public class SalaryComputationViewModel : ObservableObject
     {
         private readonly ISalaryComputationService salaryService;
-        private readonly StaffRepository? staffRepository;
-        private readonly ShiftRepository? shiftRepository;
+        private readonly IStaffRepository? staffRepository;
+        private readonly IShiftManagementShiftRepository? shiftRepository;
 
         public ObservableCollection<IStaff> StaffList { get; } = new ObservableCollection<IStaff>();
         public ObservableCollection<Shift> ShiftList { get; } = new ObservableCollection<Shift>();
@@ -48,12 +47,14 @@ namespace DevCoreHospital.ViewModels
 
         public AsyncRelayCommand ComputeSalaryCommand { get; }
 
-        public SalaryComputationViewModel()
+        public SalaryComputationViewModel(
+            ISalaryComputationService salaryService,
+            IStaffRepository staffRepository,
+            IShiftManagementShiftRepository shiftRepository)
         {
-            staffRepository = new StaffRepository(AppSettings.ConnectionString);
-            shiftRepository = new ShiftRepository(AppSettings.ConnectionString, staffRepository);
-            var salaryRepository = new SalaryRepository(AppSettings.ConnectionString);
-            salaryService = new SalaryComputationService(salaryRepository);
+            this.salaryService = salaryService;
+            this.staffRepository = staffRepository;
+            this.shiftRepository = shiftRepository;
 
             ComputeSalaryCommand = new AsyncRelayCommand(ComputeSalaryAsync, CanComputeSalary);
 
@@ -121,9 +122,11 @@ namespace DevCoreHospital.ViewModels
 
             try
             {
-                var staffShiftsForPeriod = ShiftList.Where(shift => shift.AppointedStaff?.StaffID == SelectedStaff.StaffID
-                                                    && shift.StartTime.Month == SelectedMonth
-                                                    && shift.StartTime.Year == SelectedYear).ToList();
+                var staffShiftsForPeriod = ShiftList
+                    .Where(shift => shift.AppointedStaff?.StaffID == SelectedStaff.StaffID
+                                    && shift.StartTime.Month == SelectedMonth
+                                    && shift.StartTime.Year == SelectedYear)
+                    .ToList();
 
                 double computedSalary = 0;
 

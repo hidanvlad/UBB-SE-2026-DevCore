@@ -1,9 +1,6 @@
-using System;
-using DevCoreHospital.Configuration;
 using DevCoreHospital.Models;
-using DevCoreHospital.Repositories;
-using DevCoreHospital.Services;
 using DevCoreHospital.ViewModels.Admin;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml;
 
@@ -17,11 +14,7 @@ namespace DevCoreHospital.Views.Admin
         {
             this.InitializeComponent();
 
-            var staffRepo = new StaffRepository(AppSettings.ConnectionString);
-            var shiftRepo = new ShiftRepository(AppSettings.ConnectionString, staffRepo);
-            var service = new ShiftManagementService(staffRepo, shiftRepo);
-
-            ViewModel = new AdminShiftViewModel(service);
+            ViewModel = App.Services.GetRequiredService<AdminShiftViewModel>();
         }
 
         private void LocationComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -66,9 +59,9 @@ namespace DevCoreHospital.Views.Admin
                 return;
             }
 
-            DateTime date = ShiftDatePicker.Date.Value.Date;
-            DateTime start = date.Add(StartTimePicker.SelectedTime.Value);
-            DateTime end = date.Add(EndTimePicker.SelectedTime.Value);
+            System.DateTime date = ShiftDatePicker.Date.Value.Date;
+            System.DateTime start = date.Add(StartTimePicker.SelectedTime.Value);
+            System.DateTime end = date.Add(EndTimePicker.SelectedTime.Value);
 
             if (end <= start)
             {

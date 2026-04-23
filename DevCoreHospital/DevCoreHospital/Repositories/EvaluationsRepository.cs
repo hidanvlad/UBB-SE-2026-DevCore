@@ -1,16 +1,24 @@
 using System;
 using System.Collections.Generic;
-using System.Data;
-using System.Linq;
 using DevCoreHospital.Configuration;
 using DevCoreHospital.Models;
 using Microsoft.Data.SqlClient;
 
 namespace DevCoreHospital.Repositories
 {
-    public class EvaluationsRepository
+    public class EvaluationsRepository : IEvaluationsRepository
     {
-        private readonly string connectionString = AppSettings.ConnectionString;
+        private readonly string connectionString;
+
+        public EvaluationsRepository(string connectionString)
+        {
+            this.connectionString = connectionString;
+        }
+
+        public EvaluationsRepository()
+        {
+            this.connectionString = AppSettings.ConnectionString;
+        }
 
         public List<Appointment> GetAppointmentsByDoctor(int doctorId)
         {

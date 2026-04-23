@@ -28,7 +28,7 @@ public class ShiftSwapFlowIntegrationTests
             throughService,
             new[] { new DoctorOptionViewModel { StaffId = 3, DisplayName = "On-call" } });
 
-        Assert.Equal(0, incoming.Requests.Count);
+        Assert.Empty(incoming.Requests);
     }
 
     [Fact]
@@ -54,7 +54,7 @@ public class ShiftSwapFlowIntegrationTests
             throughService,
             new[] { new DoctorOptionViewModel { StaffId = 1, DisplayName = "A" } });
 
-        Assert.Equal(1, incoming.Requests.Count);
+        Assert.Single(incoming.Requests);
     }
 
     [Fact]

@@ -115,7 +115,7 @@ namespace DevCoreHospital.Tests.ViewModels
             viewModel.SelectedDepartment = "ER";
 
             // Assert
-            Assert.Equal(1, viewModel.Shifts.Count);
+            Assert.Single(viewModel.Shifts);
             Assert.Equal("ER", viewModel.Shifts[0].Location);
             Assert.Equal(erShift.Id, viewModel.Shifts[0].Id);
         }

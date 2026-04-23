@@ -1,8 +1,5 @@
-using DevCoreHospital.Configuration;
-using DevCoreHospital.Data;
-using DevCoreHospital.Repositories;
-using DevCoreHospital.Services;
 using DevCoreHospital.ViewModels;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml;
 
@@ -10,17 +7,15 @@ namespace DevCoreHospital.Views
 {
     public sealed partial class ERDispatchPage : Page
     {
+        private const int SimulatedIncomingRequestCount = 3;
+
         public ERDispatchViewModel ViewModel { get; }
 
         public ERDispatchPage()
         {
             InitializeComponent();
 
-            var dataSource = new SqlERDispatchDataSource(AppSettings.ConnectionString);
-            var repository = new ERDispatchRepository(dataSource);
-            var dispatchService = new ERDispatchService(repository);
-
-            ViewModel = new ERDispatchViewModel(dispatchService);
+            ViewModel = App.Services.GetRequiredService<ERDispatchViewModel>();
             DataContext = ViewModel;
         }
 
@@ -43,7 +38,7 @@ namespace DevCoreHospital.Views
 
         private async void SimulateIncoming_Click(object sender, RoutedEventArgs e)
         {
-            await ViewModel.SimulateIncomingAsync(3);
+            await ViewModel.SimulateIncomingAsync(SimulatedIncomingRequestCount);
         }
 
         private async void UnmatchedRequestCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)

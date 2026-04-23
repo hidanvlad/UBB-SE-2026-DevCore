@@ -190,7 +190,6 @@ public class SalaryComputationServiceTests
     public async Task ComputeSalaryPharmacistAsync_AppliesNoMedicineBonus_WhenZeroMedicinesSold()
     {
         var pharmacist = new Pharmacyst { StaffID = 52, YearsOfExperience = 0 };
-        // Monday, daytime — no weekend or night multiplier
         var shift = CreateShift(8, pharmacist, new DateTime(2026, 5, 4, 8, 0, 0), new DateTime(2026, 5, 4, 16, 0, 0));
         var repoMock = new Mock<SalaryRepository>("fake");
 
@@ -201,7 +200,6 @@ public class SalaryComputationServiceTests
         var service = new SalaryComputationService(repoMock.Object);
         var result = await service.ComputeSalaryPharmacistAsync(pharmacist, [shift], 5, 2026);
 
-        // 8h * $45 = $360, no medicine bonus, no experience bonus
         Assert.Equal(360.0, result, 2);
     }
 

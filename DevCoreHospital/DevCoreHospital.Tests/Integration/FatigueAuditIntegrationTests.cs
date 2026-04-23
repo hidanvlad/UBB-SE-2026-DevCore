@@ -9,13 +9,8 @@ using Moq;
 
 namespace DevCoreHospital.Tests.Integration
 {
-    /// <summary>
-    /// Integration tests for the full chain:
-    /// IFatigueShiftDataSource (mocked) → FatigueAuditRepository → FatigueAuditService → FatigueShiftAuditViewModel
-    /// </summary>
     public class FatigueAuditIntegrationTests
     {
-        // Anchor is always the current week's Monday so shifts match the ViewModel's initial SelectedWeekStart.
         private static readonly DateTime WeekStart = CurrentWeekMonday();
 
         private static DateTime CurrentWeekMonday()
@@ -73,12 +68,9 @@ namespace DevCoreHospital.Tests.Integration
                 IsActive = true,
             };
 
-        // --- Full audit flow ---
-
         [Fact]
         public void Integration_CleanRoster_ViewModelShowsNoViolationsAndCanPublish()
         {
-            // Two shifts within 60 h limit, with adequate rest gap
             var shifts = new List<RosterShift>
             {
                 MakeShift(1, 1, "Alice", "Doctor", "Cardiology", WeekStart.AddHours(8), WeekStart.AddHours(20)),
@@ -96,7 +88,6 @@ namespace DevCoreHospital.Tests.Integration
         [Fact]
         public void Integration_WeeklyHoursExceeded_ViewModelShowsViolationsAndBlocksPublish()
         {
-            // 3 × 21 h = 63 h > 60 h
             var shifts = new List<RosterShift>
             {
                 MakeShift(1, 1, "Alice", "Doctor", "Cardiology", WeekStart, WeekStart.AddHours(21)),
@@ -116,7 +107,6 @@ namespace DevCoreHospital.Tests.Integration
         [Fact]
         public void Integration_RestGapViolation_ViewModelReportsMinRestRule()
         {
-            // 2 h gap between consecutive shifts (< 12 h minimum)
             var shift1 = MakeShift(1, 1, "Alice", "Doctor", "Cardiology",
                 WeekStart.AddHours(8), WeekStart.AddHours(20));
             var shift2 = MakeShift(2, 1, "Alice", "Doctor", "Cardiology",
@@ -132,7 +122,6 @@ namespace DevCoreHospital.Tests.Integration
         [Fact]
         public void Integration_CancelledShifts_AreIgnoredByAudit()
         {
-            // Shift count would exceed 60 h but all are cancelled
             var shifts = new List<RosterShift>
             {
                 MakeShift(1, 1, "Alice", "Doctor", "Cardiology", WeekStart, WeekStart.AddHours(21), "CANCELLED"),
@@ -169,8 +158,6 @@ namespace DevCoreHospital.Tests.Integration
             Assert.NotNull(suggestion.SuggestedStaffId);
         }
 
-        // --- ApplyReassignment triggers re-audit ---
-
         [Fact]
         public void Integration_ApplyReassignment_TriggersReauditAndUpdatesViewModel()
         {
@@ -191,8 +178,6 @@ namespace DevCoreHospital.Tests.Integration
             var vm = CreateViewModel();
             Assert.True(vm.HasConflicts);
 
-            // After the re-audit triggered by ApplyReassignment the data source still returns the
-            // same overloaded shifts (we simulate a clean slate by resetting the mock)
             SetupDataSource(Array.Empty<RosterShift>(), Array.Empty<StaffProfile>());
             var firstSuggestionShiftId = vm.Suggestions[0].ShiftId;
 
@@ -207,7 +192,6 @@ namespace DevCoreHospital.Tests.Integration
         [Fact]
         public void Integration_ApplyReassignment_ReturnsFailure_WhenNoSuggestionExists()
         {
-            // Clean roster → no violations → no suggestions
             SetupDataSource(Array.Empty<RosterShift>(), Array.Empty<StaffProfile>());
             var vm = CreateViewModel();
 
@@ -215,8 +199,6 @@ namespace DevCoreHospital.Tests.Integration
 
             Assert.False(result.isSuccess);
         }
-
-        // --- Repository layer validation ---
 
         [Fact]
         public void Integration_Repository_DelegatesToDataSource_ForGetAllShifts()

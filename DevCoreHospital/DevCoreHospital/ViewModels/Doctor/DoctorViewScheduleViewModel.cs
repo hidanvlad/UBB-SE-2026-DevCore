@@ -233,7 +233,6 @@ namespace DevCoreHospital.ViewModels.Doctor
             try
             {
                 IsLoading = true;
-                ErrorMessage = string.Empty;
 
                 if (SelectedDoctor is null)
                 {
@@ -243,6 +242,8 @@ namespace DevCoreHospital.ViewModels.Doctor
                     RaisePropertyChanged(nameof(IsEmpty));
                     return;
                 }
+
+                ErrorMessage = string.Empty;
 
                 var doctorId = SelectedDoctor.DoctorId;
                 DateTime from = IsDaily ? SelectedDate.Date : StartOfWeek(SelectedDate);

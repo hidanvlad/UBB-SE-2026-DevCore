@@ -95,20 +95,20 @@ namespace DevCoreHospital.ViewModels.Admin
             }
             else
             {
-                filtered = filtered.Where(s => s.StartTime.Date == SelectedDate.Date);
+                filtered = filtered.Where(shift => shift.StartTime.Date == SelectedDate.Date);
                 ScheduleTitle = $"Daily Roster ({SelectedDate.ToString("dddd, dd MMM yyyy", englishCulture)})";
             }
 
             if (!string.IsNullOrEmpty(SelectedDepartment) && SelectedDepartment != "All Departments")
             {
-                filtered = filtered.Where(s => s.Location == SelectedDepartment);
+                filtered = filtered.Where(shift => shift.Location == SelectedDepartment);
             }
 
             Shifts.Clear();
-            var finalResult = filtered.OrderBy(s => s.StartTime).ToList();
-            foreach (var s in finalResult)
+            var orderedShifts = filtered.OrderBy(shift => shift.StartTime).ToList();
+            foreach (var shift in orderedShifts)
             {
-                Shifts.Add(s);
+                Shifts.Add(shift);
             }
         }
 

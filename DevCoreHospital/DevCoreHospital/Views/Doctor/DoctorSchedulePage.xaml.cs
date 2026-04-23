@@ -1,8 +1,7 @@
-using System;
 using DevCoreHospital.Configuration;
-using DevCoreHospital.Repositories;
 using DevCoreHospital.Services;
 using DevCoreHospital.ViewModels.Doctor;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Navigation;
@@ -12,23 +11,15 @@ namespace DevCoreHospital.Views.Doctor
     public sealed partial class DoctorSchedulePage : Page
     {
         private readonly DoctorScheduleViewModel vm;
-        private readonly DialogService dialogService;
+        private readonly IDialogService dialogService;
         private bool initialized;
 
         public DoctorSchedulePage()
         {
             InitializeComponent();
 
-            dialogService = new DialogService();
-            var staffRepo = new StaffRepository(AppSettings.ConnectionString);
-            var appointmentRepository = new AppointmentRepository(AppSettings.ConnectionString);
-            var shiftRepository = new ShiftRepository(AppSettings.ConnectionString, staffRepo);
-            vm = new DoctorScheduleViewModel(
-                new CurrentUserService(),
-                new DoctorAppointmentService(appointmentRepository),
-                shiftRepository,
-                dialogService);
-
+            vm = App.Services.GetRequiredService<DoctorScheduleViewModel>();
+            dialogService = App.Services.GetRequiredService<IDialogService>();
             DataContext = vm;
         }
 
@@ -56,9 +47,8 @@ namespace DevCoreHospital.Views.Doctor
             }
 
             var picked = sender.SelectedDates[0].Date;
-            var minSqlDate = new DateTime(1753, 1, 1);
 
-            if (picked < minSqlDate)
+            if (picked < AppSettings.SqlMinimumDate)
             {
                 return;
             }

@@ -1,9 +1,6 @@
 using System;
-using DevCoreHospital.Configuration;
-using DevCoreHospital.Data;
-using DevCoreHospital.Repositories;
-using DevCoreHospital.Services;
 using DevCoreHospital.ViewModels;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml;
 
@@ -17,14 +14,10 @@ namespace DevCoreHospital.Views.Admin
         {
             InitializeComponent();
 
-            var sqlDataSource = new SqlFatigueShiftDataSource(AppSettings.ConnectionString);
-            IFatigueAuditRepository auditRepository = new FatigueAuditRepository(sqlDataSource);
-            IFatigueAuditService auditService = new FatigueAuditService(auditRepository);
-
-            viewModel = new FatigueShiftAuditViewModel(auditService);
+            viewModel = App.Services.GetRequiredService<FatigueShiftAuditViewModel>();
             DataContext = viewModel;
 
-            WeekStartPicker.Date = new DateTimeOffset(DateTime.Today);
+            WeekStartPicker.Date = new System.DateTimeOffset(System.DateTime.Today);
         }
 
         private void WeekStartPicker_DateChanged(CalendarDatePicker sender, CalendarDatePickerDateChangedEventArgs args)
@@ -41,7 +34,7 @@ namespace DevCoreHospital.Views.Admin
             {
                 viewModel.RunAutoAudit();
             }
-            catch (Exception ex)
+            catch (System.Exception ex)
             {
                 viewModel.StatusMessage = $"Error during audit: {ex.Message}";
             }

@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
-using DevCoreHospital.Configuration;
 using DevCoreHospital.Models;
 using DevCoreHospital.Repositories;
+using DevCoreHospital.Services;
 using DevCoreHospital.ViewModels.Base;
 using Microsoft.UI;
 using Microsoft.UI.Xaml;
@@ -15,7 +15,8 @@ namespace DevCoreHospital.ViewModels
 {
     public partial class MedicalEvaluationViewModel : ObservableObject
     {
-        private readonly EvaluationsRepository repository = new EvaluationsRepository();
+        private readonly IEvaluationsRepository repository;
+        private readonly ICurrentUserService currentUserService;
         private List<MedicalEvaluation> allRecords = new List<MedicalEvaluation>();
 
         public ObservableCollection<MedicalEvaluation> PastEvaluations { get; } = new ObservableCollection<MedicalEvaluation>();
@@ -243,8 +244,11 @@ namespace DevCoreHospital.ViewModels
         public RelayCommand SaveDiagnosisCommand { get; }
         public RelayCommand DeleteEvaluationCommand { get; }
 
-        public MedicalEvaluationViewModel()
+        public MedicalEvaluationViewModel(IEvaluationsRepository repository, ICurrentUserService currentUserService)
         {
+            this.repository = repository;
+            this.currentUserService = currentUserService;
+
             SaveDiagnosisCommand = new RelayCommand(SaveDiagnosis, CanSaveDiagnosis);
             DeleteEvaluationCommand = new RelayCommand(ExecuteDeletion, () => IsEditing);
 
@@ -263,12 +267,12 @@ namespace DevCoreHospital.ViewModels
         {
             AllDoctors.Clear();
             var doctors = repository.GetAllDoctors();
-            foreach (var doc in doctors)
+            foreach (var doctor in doctors)
             {
-                AllDoctors.Add(doc);
+                AllDoctors.Add(doctor);
             }
 
-            selectedDoctor = AllDoctors.FirstOrDefault(d => d.StaffID == AppSettings.DefaultDoctorId);
+            selectedDoctor = AllDoctors.FirstOrDefault(doctor => doctor.StaffID == currentUserService.UserId);
             if (selectedDoctor != null)
             {
                 CurrentDoctorName = $"Dr. {selectedDoctor.FirstName} {selectedDoctor.LastName}";
@@ -278,10 +282,10 @@ namespace DevCoreHospital.ViewModels
         private void LoadAppointments()
         {
             AvailableAppointments.Clear();
-            var appointments = repository.GetAppointmentsByDoctor(AppSettings.DefaultDoctorId);
-            foreach (var app in appointments)
+            var appointments = repository.GetAppointmentsByDoctor(currentUserService.UserId);
+            foreach (var appointment in appointments)
             {
-                AvailableAppointments.Add(app);
+                AvailableAppointments.Add(appointment);
             }
         }
 
@@ -350,7 +354,10 @@ namespace DevCoreHospital.ViewModels
                     MedsList = this.MedsList,
                     Notes = this.DoctorNotes,
                     EvaluationDate = DateTime.Now,
-                    Evaluator = new DevCoreHospital.Models.Doctor(AppSettings.DefaultDoctorId, string.Empty, string.Empty, string.Empty, string.Empty, true, string.Empty, "Available", DoctorStatus.AVAILABLE, 0),
+                    Evaluator = new DevCoreHospital.Models.Doctor(
+                        currentUserService.UserId,
+                        string.Empty, string.Empty, string.Empty, string.Empty,
+                        true, string.Empty, "Available", DoctorStatus.AVAILABLE, 0),
                 };
 
                 repository.SaveEvaluation(newRecord);
@@ -420,7 +427,7 @@ namespace DevCoreHospital.ViewModels
             PastEvaluations.Clear();
             await Task.Delay(500);
 
-            allRecords = repository.GetEvaluationsByDoctor(AppSettings.DefaultDoctorId.ToString());
+            allRecords = repository.GetEvaluationsByDoctor(currentUserService.UserId.ToString());
 
             ApplyFilter();
             IsLoading = false;
@@ -429,11 +436,11 @@ namespace DevCoreHospital.ViewModels
         private void ApplyFilter()
         {
             PastEvaluations.Clear();
-            var filtered = string.IsNullOrWhiteSpace(SearchText)
+            var filteredRecords = string.IsNullOrWhiteSpace(SearchText)
                 ? allRecords
-                : allRecords.Where(r => r.PatientId.Contains(SearchText, StringComparison.OrdinalIgnoreCase));
+                : allRecords.Where(record => record.PatientId.Contains(SearchText, StringComparison.OrdinalIgnoreCase));
 
-            foreach (var record in filtered)
+            foreach (var record in filteredRecords)
             {
                 PastEvaluations.Add(record);
             }
@@ -444,8 +451,9 @@ namespace DevCoreHospital.ViewModels
 
         private void CheckDoctorFatigue()
         {
-            double fatigueHours = repository.GetDoctorFatigueHours(AppSettings.DefaultDoctorId.ToString());
-            IsFatigued = fatigueHours >= 12.0;
+            const double fatigueThresholdHours = 12.0;
+            double fatigueHours = repository.GetDoctorFatigueHours(currentUserService.UserId.ToString());
+            IsFatigued = fatigueHours >= fatigueThresholdHours;
         }
 
         public void ExecuteDeletion()

@@ -41,6 +41,12 @@
 		<Using Include="Xunit" />
 	</ItemGroup>
 
+	<ItemGroup>
+		<Content Include="appsettings.json">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</Content>
+	</ItemGroup>
+
 
 	<!-- Link only the pure-logic files that have no WinUI dependency -->
 	<ItemGroup>

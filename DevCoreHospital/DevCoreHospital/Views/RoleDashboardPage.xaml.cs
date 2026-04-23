@@ -8,6 +8,7 @@ using DevCoreHospital.Services;
 using DevCoreHospital.Views.Admin;
 using DevCoreHospital.Views.Doctor;
 using DevCoreHospital.Views.Pharmacy;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media.Animation;
@@ -17,13 +18,15 @@ namespace DevCoreHospital.Views
     [SupportedOSPlatform("windows10.0.17763.0")]
     public sealed partial class RoleDashboardPage : Page
     {
-        private readonly ICurrentUserService currentUser = new CurrentUserService();
+        private readonly ICurrentUserService currentUser;
         private readonly ObservableCollection<MenuEntry> items = new ObservableCollection<MenuEntry>();
         private readonly Dictionary<string, Type> routes = new Dictionary<string, Type>();
 
         public RoleDashboardPage()
         {
             InitializeComponent();
+
+            currentUser = App.Services.GetRequiredService<ICurrentUserService>();
             MenuList.ItemsSource = items;
             BuildForRole();
         }

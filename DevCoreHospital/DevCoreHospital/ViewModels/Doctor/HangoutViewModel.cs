@@ -2,9 +2,7 @@ using System;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
-using DevCoreHospital.Configuration;
 using DevCoreHospital.Models;
-using DevCoreHospital.Repositories;
 using DevCoreHospital.Services;
 using DevCoreHospital.ViewModels.Base;
 
@@ -18,10 +16,9 @@ namespace DevCoreHospital.ViewModels.Doctor
         private const int MinDaysAheadForHangoutCreation = 7;
 
         private readonly IHangoutService hangoutService;
-        private readonly StaffRepository staffRepository;
+        private readonly IDoctorAppointmentService? doctorService;
 
         public ObservableCollection<Hangout> Hangouts { get; } = new ObservableCollection<Hangout>();
-
         public ObservableCollection<DoctorScheduleViewModel.DoctorOption> Doctors { get; } = new ObservableCollection<DoctorScheduleViewModel.DoctorOption>();
 
         private DoctorScheduleViewModel.DoctorOption? selectedDoctor;
@@ -97,12 +94,10 @@ namespace DevCoreHospital.ViewModels.Doctor
 
         public RelayCommand CreateCommand { get; }
 
-        private static HangoutRepository sharedHangoutRepository = new HangoutRepository();
-
-        public HangoutViewModel()
+        public HangoutViewModel(IHangoutService hangoutService, IDoctorAppointmentService doctorService)
         {
-            hangoutService = new HangoutService(sharedHangoutRepository);
-            staffRepository = new StaffRepository(AppSettings.ConnectionString);
+            this.hangoutService = hangoutService;
+            this.doctorService = doctorService;
 
             CreateCommand = new RelayCommand(CreateHangout, CanCreateHangout);
             LoadHangouts();
@@ -112,17 +107,22 @@ namespace DevCoreHospital.ViewModels.Doctor
         public HangoutViewModel(IHangoutService hangoutService)
         {
             this.hangoutService = hangoutService;
-            this.staffRepository = null!;
+            this.doctorService = null;
             CreateCommand = new RelayCommand(CreateHangout, CanCreateHangout);
             LoadHangouts();
         }
 
         private async Task LoadDoctorsAsync()
         {
+            if (doctorService == null)
+            {
+                return;
+            }
+
             Doctors.Clear();
             try
             {
-                var allDoctors = await staffRepository.GetAllDoctorsAsync();
+                var allDoctors = await doctorService.GetAllDoctorsAsync();
                 foreach (var doctor in allDoctors.OrderBy(doctor => doctor.DoctorName))
                 {
                     Doctors.Add(new DoctorScheduleViewModel.DoctorOption

@@ -1,10 +1,7 @@
-using System;
-using DevCoreHospital.Configuration;
 using DevCoreHospital.Models;
-using DevCoreHospital.Repositories;
-using DevCoreHospital.Services;
 using DevCoreHospital.ViewModels;
 using DevCoreHospital.Views.Doctor;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml;
 
@@ -18,10 +15,7 @@ namespace DevCoreHospital.Views
         {
             this.InitializeComponent();
 
-            var appointmentRepository = new AppointmentRepository(AppSettings.ConnectionString);
-            var service = new DoctorAppointmentService(appointmentRepository);
-
-            ViewModel = new AdminAppointmentsViewModel(service);
+            ViewModel = App.Services.GetRequiredService<AdminAppointmentsViewModel>();
             DataContext = ViewModel;
 
             Loaded += AppointmentsPage_Loaded;
@@ -53,8 +47,8 @@ namespace DevCoreHospital.Views
 
             try
             {
-                DateTime date = AppointmentDatePicker.Date.Value.DateTime;
-                TimeSpan time = AppointmentTimePicker.SelectedTime.Value;
+                System.DateTime date = AppointmentDatePicker.Date.Value.DateTime;
+                System.TimeSpan time = AppointmentTimePicker.SelectedTime.Value;
 
                 await ViewModel.BookAppointmentAsync(patientId, selectedDoctorId, date, time);
 
@@ -68,7 +62,7 @@ namespace DevCoreHospital.Views
                     await ViewModel.LoadAppointmentsForDoctorAsync(filterDocId);
                 }
             }
-            catch (Exception ex)
+            catch (System.Exception ex)
             {
                 ShowMessage($"Error booking appointment: {ex.Message}", InfoBarSeverity.Error);
             }
@@ -104,7 +98,7 @@ namespace DevCoreHospital.Views
                         await ViewModel.LoadAppointmentsForDoctorAsync(doctorId);
                     }
                 }
-                catch (InvalidOperationException ex)
+                catch (System.InvalidOperationException ex)
                 {
                     ShowMessage(ex.Message, InfoBarSeverity.Error);
                 }

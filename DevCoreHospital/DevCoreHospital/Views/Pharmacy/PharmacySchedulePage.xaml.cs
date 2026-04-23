@@ -1,8 +1,6 @@
-using System;
 using DevCoreHospital.Configuration;
-using DevCoreHospital.Repositories;
-using DevCoreHospital.Services;
 using DevCoreHospital.ViewModels.Pharmacy;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml.Controls;
 
 namespace DevCoreHospital.Views.Pharmacy;
@@ -15,11 +13,7 @@ public sealed partial class PharmacySchedulePage : Page
     {
         InitializeComponent();
 
-        ICurrentUserService currentUser = new CurrentUserService();
-        var staffRepo = new StaffRepository(AppSettings.ConnectionString);
-        var shiftRepo = new ShiftRepository(AppSettings.ConnectionString, staffRepo);
-        var scheduleService = new PharmacyScheduleService(shiftRepo);
-        ViewModel = new PharmacyScheduleViewModel(currentUser, scheduleService, staffRepo);
+        ViewModel = App.Services.GetRequiredService<PharmacyScheduleViewModel>();
         DataContext = ViewModel;
 
         Loaded += PharmacySchedulePage_Loaded;
@@ -39,9 +33,8 @@ public sealed partial class PharmacySchedulePage : Page
         }
 
         var picked = sender.SelectedDates[0].Date;
-        var minSqlDate = new DateTime(1753, 1, 1);
 
-        if (picked < minSqlDate)
+        if (picked < AppSettings.SqlMinimumDate)
         {
             return;
         }

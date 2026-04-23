@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Threading.Tasks;
 using DevCoreHospital.Models;
 using DevCoreHospital.Repositories;
@@ -408,6 +409,218 @@ namespace DevCoreHospital.Tests.ViewModels
             };
 
             Assert.Equal("John", option.DisplayName);
+        }
+
+
+        [Fact]
+        public void IsDaily_IsTrue_WhenViewModeIsDaily()
+        {
+            viewModel.ViewMode = DoctorScheduleViewModel.ScheduleViewMode.Daily;
+
+            Assert.True(viewModel.IsDaily);
+        }
+
+        [Fact]
+        public void IsWeekly_IsTrue_WhenViewModeIsWeekly()
+        {
+            viewModel.ViewMode = DoctorScheduleViewModel.ScheduleViewMode.Weekly;
+
+            Assert.True(viewModel.IsWeekly);
+        }
+
+        [Fact]
+        public void PreviousButtonText_IsPrevious_InDailyMode()
+        {
+            viewModel.ViewMode = DoctorScheduleViewModel.ScheduleViewMode.Daily;
+
+            Assert.Equal("Previous", viewModel.PreviousButtonText);
+        }
+
+        [Fact]
+        public void NextButtonText_IsNext_InDailyMode()
+        {
+            viewModel.ViewMode = DoctorScheduleViewModel.ScheduleViewMode.Daily;
+
+            Assert.Equal("Next", viewModel.NextButtonText);
+        }
+
+        [Fact]
+        public void PreviousButtonText_IsPreviousWeek_InWeeklyMode()
+        {
+            viewModel.ViewMode = DoctorScheduleViewModel.ScheduleViewMode.Weekly;
+
+            Assert.Equal("Previous Week", viewModel.PreviousButtonText);
+        }
+
+        [Fact]
+        public void NextButtonText_IsNextWeek_InWeeklyMode()
+        {
+            viewModel.ViewMode = DoctorScheduleViewModel.ScheduleViewMode.Weekly;
+
+            Assert.Equal("Next Week", viewModel.NextButtonText);
+        }
+
+        [Fact]
+        public void SelectedDateText_InDailyMode_FormatsAsFullDate()
+        {
+            // Arrange
+            var date = new DateTime(2025, 6, 11);
+            var expected = date.ToString("dddd, dd MMM yyyy", CultureInfo.GetCultureInfo("en-US"));
+
+            // Act
+            viewModel.SelectedDate = date;
+            viewModel.ViewMode = DoctorScheduleViewModel.ScheduleViewMode.Daily;
+
+            // Assert
+            Assert.Equal(expected, viewModel.SelectedDateText);
+        }
+
+        [Fact]
+        public void SelectedDateText_InWeeklyMode_FormatsAsWeekOf()
+        {
+            // Arrange
+            var wednesday = new DateTime(2025, 6, 11);
+            var monday = new DateTime(2025, 6, 9);
+            var expected = $"Week of {monday.ToString("dd MMM yyyy", CultureInfo.GetCultureInfo("en-US"))}";
+
+            // Act
+            viewModel.SelectedDate = wednesday;
+            viewModel.ViewMode = DoctorScheduleViewModel.ScheduleViewMode.Weekly;
+
+            // Assert
+            Assert.Equal(expected, viewModel.SelectedDateText);
+        }
+
+        [Fact]
+        public void TodayCommand_SetsSelectedDateToToday()
+        {
+            // Arrange
+            viewModel.SelectedDate = new DateTime(2020, 1, 1);
+
+            // Act
+            viewModel.TodayCommand.Execute(null);
+
+            // Assert
+            Assert.Equal(DateTime.Today, viewModel.SelectedDate);
+        }
+
+        [Fact]
+        public void NextDayCommand_AdvancesOneDayInDailyMode()
+        {
+            // Arrange
+            var date = new DateTime(2025, 6, 11);
+            viewModel.ViewMode = DoctorScheduleViewModel.ScheduleViewMode.Daily;
+            viewModel.SelectedDate = date;
+
+            // Act
+            viewModel.NextDayCommand.Execute(null);
+
+            // Assert
+            Assert.Equal(date.AddDays(1), viewModel.SelectedDate);
+        }
+
+        [Fact]
+        public void NextDayCommand_AdvancesSevenDaysInWeeklyMode()
+        {
+            // Arrange
+            var date = new DateTime(2025, 6, 11);
+            viewModel.ViewMode = DoctorScheduleViewModel.ScheduleViewMode.Weekly;
+            viewModel.SelectedDate = date;
+
+            // Act
+            viewModel.NextDayCommand.Execute(null);
+
+            // Assert
+            Assert.Equal(date.AddDays(7), viewModel.SelectedDate);
+        }
+
+        [Fact]
+        public void PreviousDayCommand_GoesBackOneDayInDailyMode()
+        {
+            // Arrange
+            var date = new DateTime(2025, 6, 11);
+            viewModel.ViewMode = DoctorScheduleViewModel.ScheduleViewMode.Daily;
+            viewModel.SelectedDate = date;
+
+            // Act
+            viewModel.PreviousDayCommand.Execute(null);
+
+            // Assert
+            Assert.Equal(date.AddDays(-1), viewModel.SelectedDate);
+        }
+
+        [Fact]
+        public void PreviousDayCommand_GoesBackSevenDaysInWeeklyMode()
+        {
+            // Arrange
+            var date = new DateTime(2025, 6, 11);
+            viewModel.ViewMode = DoctorScheduleViewModel.ScheduleViewMode.Weekly;
+            viewModel.SelectedDate = date;
+
+            // Act
+            viewModel.PreviousDayCommand.Execute(null);
+
+            // Assert
+            Assert.Equal(date.AddDays(-7), viewModel.SelectedDate);
+        }
+
+        [Fact]
+        public void DailyModeCommand_SetsViewModeToDaily()
+        {
+            // Arrange
+            viewModel.ViewMode = DoctorScheduleViewModel.ScheduleViewMode.Weekly;
+
+            // Act
+            viewModel.DailyModeCommand.Execute(null);
+
+            // Assert
+            Assert.Equal(DoctorScheduleViewModel.ScheduleViewMode.Daily, viewModel.ViewMode);
+        }
+
+        [Fact]
+        public void WeeklyModeCommand_SetsViewModeToWeekly()
+        {
+            // Arrange
+            viewModel.ViewMode = DoctorScheduleViewModel.ScheduleViewMode.Daily;
+
+            // Act
+            viewModel.WeeklyModeCommand.Execute(null);
+
+            // Assert
+            Assert.Equal(DoctorScheduleViewModel.ScheduleViewMode.Weekly, viewModel.ViewMode);
+        }
+
+        [Fact]
+        public async Task InitializeAsync_SetsNoDoctorsErrorMessage_WhenServiceReturnsEmptyList()
+        {
+            // Arrange
+            mockAppointmentService
+                .Setup(s => s.GetAllDoctorsAsync())
+                .ReturnsAsync(new List<(int DoctorId, string DoctorName)>());
+
+            // Act
+            await viewModel.InitializeAsync();
+
+            // Assert
+            Assert.Equal("No doctors available.", viewModel.ErrorMessage);
+        }
+
+        [Fact]
+        public async Task LoadAsync_SetsErrorMessage_WhenAppointmentServiceThrows()
+        {
+            // Arrange
+            mockAppointmentService
+                .Setup(s => s.GetUpcomingAppointmentsAsync(
+                    It.IsAny<int>(), It.IsAny<DateTime>(), It.IsAny<int>(), It.IsAny<int>()))
+                .ThrowsAsync(new InvalidOperationException("DB error"));
+
+            viewModel.SelectedDoctor = TestDoctor;
+
+            // Act
+            await viewModel.LoadAsync();
+
+            // Assert
+            Assert.Contains("DB error", viewModel.ErrorMessage);
         }
     }
 }

@@ -1,5 +1,6 @@
 using System;
 using DevCoreHospital.ViewModels;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml;
 
@@ -7,12 +8,13 @@ namespace DevCoreHospital.Views
 {
     public sealed partial class MedicalEvaluationView : Page
     {
-        public MedicalEvaluationViewModel ViewModel { get; } = new MedicalEvaluationViewModel();
+        public MedicalEvaluationViewModel ViewModel { get; }
 
         public MedicalEvaluationView()
         {
             this.InitializeComponent();
 
+            ViewModel = App.Services.GetRequiredService<MedicalEvaluationViewModel>();
             this.DataContext = ViewModel;
         }
 

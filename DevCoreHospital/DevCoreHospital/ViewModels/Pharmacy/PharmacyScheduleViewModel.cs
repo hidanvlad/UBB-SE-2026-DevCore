@@ -13,7 +13,7 @@ public class PharmacyScheduleViewModel : ObservableObject
 {
     private readonly ICurrentUserService currentUser;
     private readonly IPharmacyScheduleService scheduleService;
-    private readonly StaffRepository staffRepository;
+    private readonly IPharmacyStaffRepository staffRepository;
     private bool isInitializing;
 
     public ObservableCollection<PharmacyShiftItemViewModel> Shifts { get; } = new ObservableCollection<PharmacyShiftItemViewModel>();
@@ -77,7 +77,7 @@ public class PharmacyScheduleViewModel : ObservableObject
 
     public string HeaderSubtitle =>
         IsWeeklyView
-            ? $"Week of {StartOfWeek(AnchorDate):dd MMM yyyy} – {(StartOfWeek(AnchorDate).AddDays(6)):dd MMM yyyy}"
+            ? $"Week of {StartOfWeek(AnchorDate):dd MMM yyyy} \u2013 {StartOfWeek(AnchorDate).AddDays(6):dd MMM yyyy}"
             : AnchorDate.ToString("dddd, dd MMM yyyy");
 
     public string SelectedDateText =>
@@ -100,7 +100,7 @@ public class PharmacyScheduleViewModel : ObservableObject
     public PharmacyScheduleViewModel(
         ICurrentUserService currentUser,
         IPharmacyScheduleService scheduleService,
-        StaffRepository staffRepository)
+        IPharmacyStaffRepository staffRepository)
     {
         this.currentUser = currentUser;
         this.scheduleService = scheduleService;
@@ -135,9 +135,9 @@ public class PharmacyScheduleViewModel : ObservableObject
 
     private static DateTime StartOfWeek(DateTime date)
     {
-        var d = date.Date;
-        var diff = (7 + (int)d.DayOfWeek - (int)DayOfWeek.Monday) % 7;
-        return d.AddDays(-diff);
+        var normalizedDate = date.Date;
+        var daysFromMonday = (7 + (int)normalizedDate.DayOfWeek - (int)DayOfWeek.Monday) % 7;
+        return normalizedDate.AddDays(-daysFromMonday);
     }
 
     public async Task LoadAsync()
@@ -168,11 +168,11 @@ public class PharmacyScheduleViewModel : ObservableObject
             var rangeEnd = IsWeeklyView ? rangeStart.AddDays(7) : rangeStart.AddDays(1);
 
             var staffId = SelectedPharmacist.StaffId;
-            var raw = await scheduleService.GetShiftsAsync(staffId, rangeStart, rangeEnd);
+            var rawShifts = await scheduleService.GetShiftsAsync(staffId, rangeStart, rangeEnd);
 
-            foreach (var vm in raw.Select(s => new PharmacyShiftItemViewModel(s)))
+            foreach (var shiftViewModel in rawShifts.Select(rawShift => new PharmacyShiftItemViewModel(rawShift)))
             {
-                Shifts.Add(vm);
+                Shifts.Add(shiftViewModel);
             }
         }
         catch (Exception ex)
@@ -190,14 +190,17 @@ public class PharmacyScheduleViewModel : ObservableObject
     private async Task LoadPharmacistsAsync()
     {
         Pharmacists.Clear();
-        var all = await Task.Run(() => staffRepository.GetPharmacists());
+        var allPharmacists = await Task.Run(() => staffRepository.GetPharmacists());
 
-        foreach (var p in all.OrderBy(x => x.FirstName).ThenBy(x => x.LastName))
+        foreach (var pharmacist in allPharmacists
+            .OrderBy(pharmacist => pharmacist.FirstName)
+            .ThenBy(pharmacist => pharmacist.LastName))
         {
             Pharmacists.Add(new PharmacistOption
             {
-                StaffId = p.StaffID,
-                PharmacistName = string.Join(" ", new[] { p.FirstName?.Trim(), p.LastName?.Trim() }.Where(x => !string.IsNullOrWhiteSpace(x))),
+                StaffId = pharmacist.StaffID,
+                PharmacistName = string.Join(" ", new[] { pharmacist.FirstName?.Trim(), pharmacist.LastName?.Trim() }
+                    .Where(namePart => !string.IsNullOrWhiteSpace(namePart))),
             });
         }
 
@@ -208,7 +211,8 @@ public class PharmacyScheduleViewModel : ObservableObject
             return;
         }
 
-        SelectedPharmacist = Pharmacists.FirstOrDefault(p => p.StaffId == currentUser.UserId) ?? Pharmacists.First();
+        SelectedPharmacist = Pharmacists.FirstOrDefault(pharmacist => pharmacist.StaffId == currentUser.UserId)
+            ?? Pharmacists.First();
     }
 
     public sealed class PharmacistOption

@@ -48,7 +48,7 @@ public class ERDispatchViewModelTests
 
         await vm.RunDispatchAsync();
 
-        Assert.Equal(1, vm.SuccessfulMatches.Count);
+        Assert.Single(vm.SuccessfulMatches);
     }
 
     [Fact]
@@ -65,7 +65,7 @@ public class ERDispatchViewModelTests
 
         await vm.RunDispatchAsync();
 
-        Assert.Equal(1, vm.UnmatchedRequests.Count);
+        Assert.Single(vm.UnmatchedRequests);
     }
 
     [Fact]

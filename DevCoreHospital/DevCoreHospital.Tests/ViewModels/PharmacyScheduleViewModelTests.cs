@@ -29,11 +29,9 @@ namespace DevCoreHospital.Tests.ViewModels
                 .ReturnsAsync(new List<Shift>());
         }
 
-        // StaffRepository is a concrete class; pass null since tests never call InitializeAsync
         private PharmacyScheduleViewModel CreateViewModel()
             => new PharmacyScheduleViewModel(userMock.Object, serviceMock.Object, null!);
 
-        // Sets the backing field directly to avoid triggering the fire-and-forget LoadAsync in the setter
         private static void SetSelectedPharmacist(PharmacyScheduleViewModel vm, PharmacyScheduleViewModel.PharmacistOption? pharmacist)
         {
             var field = typeof(PharmacyScheduleViewModel)
@@ -57,8 +55,6 @@ namespace DevCoreHospital.Tests.ViewModels
 
         private static PharmacyScheduleViewModel.PharmacistOption MakePharmacist(int id = 1, string name = "Alice Smith")
             => new PharmacyScheduleViewModel.PharmacistOption { StaffId = id, PharmacistName = name };
-
-        // --- Access denied ---
 
         [Fact]
         public void IsAccessDenied_IsTrue_WhenRoleIsNotPharmacistOrAdmin()
@@ -116,8 +112,6 @@ namespace DevCoreHospital.Tests.ViewModels
                 Times.Never);
         }
 
-        // --- Pharmacist path: daily ---
-
         [Fact]
         public async Task LoadAsync_UsesCorrectDailyRange_WhenIsDailyView()
         {
@@ -139,7 +133,6 @@ namespace DevCoreHospital.Tests.ViewModels
         [Fact]
         public async Task LoadAsync_UsesCorrectWeeklyRange_WhenIsWeeklyView()
         {
-            // Anchor = Wednesday 2025-04-16 → week starts Monday 2025-04-14
             var anchor = new DateTime(2025, 4, 16);
             var vm = CreateViewModel();
             SetAnchorDate(vm, anchor);
@@ -148,7 +141,7 @@ namespace DevCoreHospital.Tests.ViewModels
 
             await vm.LoadAsync();
 
-            var expectedStart = new DateTime(2025, 4, 14); // Monday
+            var expectedStart = new DateTime(2025, 4, 14);
             var expectedEnd = new DateTime(2025, 4, 21);   // +7 days
             serviceMock.Verify(
                 s => s.GetShiftsAsync(1, expectedStart, expectedEnd),
@@ -190,12 +183,10 @@ namespace DevCoreHospital.Tests.ViewModels
             Assert.Contains("Failed to load pharmacy schedule", vm.ErrorMessage);
         }
 
-        // --- Computed properties ---
-
         [Fact]
         public void HeaderSubtitle_ShowsWeekRange_WhenIsWeeklyView()
         {
-            var anchor = new DateTime(2025, 4, 16); // Wednesday → week Mon 14 – Sun 20
+            var anchor = new DateTime(2025, 4, 16);
             var vm = CreateViewModel();
             SetAnchorDate(vm, anchor);
             SetIsWeeklyView(vm, true);
@@ -209,7 +200,7 @@ namespace DevCoreHospital.Tests.ViewModels
         [Fact]
         public void HeaderSubtitle_ShowsDayName_WhenIsDailyView()
         {
-            var anchor = new DateTime(2025, 4, 16); // Wednesday
+            var anchor = new DateTime(2025, 4, 16);
             var vm = CreateViewModel();
             SetAnchorDate(vm, anchor);
             SetIsWeeklyView(vm, false);
@@ -253,8 +244,6 @@ namespace DevCoreHospital.Tests.ViewModels
 
             Assert.True(vm.IsDailyView);
         }
-
-        // --- Navigation commands ---
 
         [Fact]
         public void NextPeriodCommand_AdvancesAnchorByOneWeek_WhenIsWeeklyView()
@@ -336,15 +325,12 @@ namespace DevCoreHospital.Tests.ViewModels
         public void TodayCommand_SetsAnchorDateToToday()
         {
             var vm = CreateViewModel();
-            // Move anchor away from today
-            SetAnchorDate(vm, new DateTime(2020, 1, 1));
+                SetAnchorDate(vm, new DateTime(2020, 1, 1));
 
             vm.TodayCommand.Execute(null);
 
             Assert.Equal(DateTime.Today, vm.AnchorDate);
         }
-
-        // --- IsEmpty / IsLoading ---
 
         [Fact]
         public async Task IsEmpty_IsTrue_WhenNoShiftsLoadedAndNoError()

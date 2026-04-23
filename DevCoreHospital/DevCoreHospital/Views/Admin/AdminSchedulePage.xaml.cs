@@ -1,9 +1,7 @@
-using System;
 using DevCoreHospital.Configuration;
 using DevCoreHospital.Models;
-using DevCoreHospital.Repositories;
-using DevCoreHospital.Services;
 using DevCoreHospital.ViewModels.Admin;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Navigation;
@@ -20,11 +18,7 @@ namespace DevCoreHospital.Views.Admin
         {
             this.InitializeComponent();
 
-            var staffRepo = new StaffRepository(AppSettings.ConnectionString);
-            var shiftRepo = new ShiftRepository(AppSettings.ConnectionString, staffRepo);
-            var service = new ShiftManagementService(staffRepo, shiftRepo);
-            ViewModel = new AdminShiftViewModel(service);
-
+            ViewModel = App.Services.GetRequiredService<AdminShiftViewModel>();
             DataContext = ViewModel;
         }
 
@@ -40,7 +34,7 @@ namespace DevCoreHospital.Views.Admin
             initialized = true;
 
             ViewModel.LoadAndFilterShifts();
-            DateCalendar.SelectedDates.Add(DateTime.Today);
+            DateCalendar.SelectedDates.Add(System.DateTime.Today);
         }
 
         private void DateCalendar_SelectedDatesChanged(CalendarView sender, CalendarViewSelectedDatesChangedEventArgs args)
@@ -51,9 +45,8 @@ namespace DevCoreHospital.Views.Admin
             }
 
             var picked = sender.SelectedDates[0].Date;
-            var minSqlDate = new DateTime(1753, 1, 1);
 
-            if (picked >= minSqlDate)
+            if (picked >= AppSettings.SqlMinimumDate)
             {
                 ViewModel.SelectedDate = picked;
             }
@@ -69,13 +62,13 @@ namespace DevCoreHospital.Views.Admin
 
         private void ViewMode_Click(object sender, RoutedEventArgs e)
         {
-            if (sender == DailyBtn)
+            if (ReferenceEquals(sender, DailyBtn))
             {
                 DailyBtn.IsChecked = true;
                 WeeklyBtn.IsChecked = false;
                 ViewModel.IsWeeklyView = false;
             }
-            else if (sender == WeeklyBtn)
+            else if (ReferenceEquals(sender, WeeklyBtn))
             {
                 WeeklyBtn.IsChecked = true;
                 DailyBtn.IsChecked = false;

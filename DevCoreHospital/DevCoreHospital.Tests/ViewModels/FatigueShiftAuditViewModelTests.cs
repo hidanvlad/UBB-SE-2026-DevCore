@@ -201,7 +201,6 @@ namespace DevCoreHospital.Tests.ViewModels
         {
             var vm = CreateViewModel();
 
-            // Expected format: "Week of dd MMM yyyy" in en-US
             var mondayOfCurrentWeek = vm.SelectedWeekStart.Date;
             var expected = $"Week of {mondayOfCurrentWeek.ToString("dd MMM yyyy", CultureInfo.GetCultureInfo("en-US"))}";
 
@@ -240,7 +239,6 @@ namespace DevCoreHospital.Tests.ViewModels
         [Fact]
         public void CanPublish_Change_RaisesPropertyChangedForPublishStatus()
         {
-            // Start with violations (CanPublish = false)
             auditServiceMock
                 .SetupSequence(s => s.RunAutoAudit(It.IsAny<DateTime>()))
                 .Returns(ResultWithViolations(MakeViolation()))
@@ -254,7 +252,7 @@ namespace DevCoreHospital.Tests.ViewModels
                     raisedProperties.Add(e.PropertyName);
             };
 
-            vm.RunAutoAudit(); // second call returns clean result → CanPublish flips to true
+            vm.RunAutoAudit();
 
             Assert.Contains(nameof(vm.PublishStatus), raisedProperties);
             Assert.Contains(nameof(vm.PublishStatusDescription), raisedProperties);
@@ -344,7 +342,6 @@ namespace DevCoreHospital.Tests.ViewModels
 
             vm.ApplyReassignment(shiftId: 3);
 
-            // Once in constructor + once after successful reassignment
             auditServiceMock.Verify(s => s.RunAutoAudit(It.IsAny<DateTime>()), Times.Exactly(2));
         }
 
@@ -363,7 +360,6 @@ namespace DevCoreHospital.Tests.ViewModels
 
             vm.ApplyReassignment(shiftId: 3);
 
-            // Only the constructor call
             auditServiceMock.Verify(s => s.RunAutoAudit(It.IsAny<DateTime>()), Times.Once);
         }
 
