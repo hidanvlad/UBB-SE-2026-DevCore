@@ -5,7 +5,6 @@ using System.Linq;
 using System;
 using DevCoreHospital.Models;
 using DevCoreHospital.Services;
-using Microsoft.IdentityModel.Tokens;
 
 namespace DevCoreHospital.ViewModels.Admin
 {
@@ -168,7 +167,7 @@ namespace DevCoreHospital.ViewModels.Admin
         public void AutoFindReplacement(Shift shift)
         {
             var replacementsList = staffAndShiftService.FindStaffReplacements(shift);
-            if (!replacementsList.IsNullOrEmpty())
+            if (replacementsList != null && replacementsList.Count > 0)
             {
                 ReassignShift(shift, replacementsList.First());
             }

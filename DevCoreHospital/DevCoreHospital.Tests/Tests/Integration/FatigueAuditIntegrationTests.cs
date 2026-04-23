@@ -198,7 +198,7 @@ namespace DevCoreHospital.Tests.Integration
 
             var result = vm.ApplyReassignment(firstSuggestionShiftId);
 
-            Assert.True(result.IsSuccess);
+            Assert.True(result.isSuccess);
             // The re-audit ran on the now-empty roster → no conflicts
             Assert.False(vm.HasConflicts);
             Assert.True(vm.CanPublish);
@@ -213,7 +213,7 @@ namespace DevCoreHospital.Tests.Integration
 
             var result = vm.ApplyReassignment(shiftId: 99);
 
-            Assert.False(result.IsSuccess);
+            Assert.False(result.isSuccess);
         }
 
         // --- Repository layer validation ---

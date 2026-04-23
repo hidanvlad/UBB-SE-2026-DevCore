@@ -1,10 +1,12 @@
+using System.Collections.Generic;
 using DevCoreHospital.Models;
 
-namespace DevCoreHospital.Repositories;
-
-public interface IStaffRepository
+namespace DevCoreHospital.Repositories
 {
-    Doctor? GetDoctorBySpecialization(string spec);
+    public interface IStaffRepository
+    {
+        List<IStaff> LoadAllStaff();
 
-    IStaff? FindByStaffCode(string staffCode);
+        IStaff? GetStaffById(int staffId);
+    }
 }

@@ -15,8 +15,8 @@ namespace DevCoreHospital.ViewModels.Doctor
     public sealed class MyScheduleViewModel : INotifyPropertyChanged
     {
         private readonly IShiftSwapService staffAndShiftService;
-        private readonly ShiftRepository shiftRepository;
-        private readonly StaffRepository staffRepository;
+        private readonly IShiftRepository shiftRepository;
+        private readonly IStaffRepository staffRepository;
 
         public ObservableCollection<DoctorOptionViewModel> Doctors { get; } = new ObservableCollection<DoctorOptionViewModel>();
         public ObservableCollection<DoctorShiftItemViewModel> FutureShifts { get; } = new ObservableCollection<DoctorShiftItemViewModel>();
@@ -76,8 +76,8 @@ namespace DevCoreHospital.ViewModels.Doctor
 
         public MyScheduleViewModel(
             IShiftSwapService staffAndShiftService,
-            ShiftRepository shiftRepository,
-            StaffRepository staffRepository)
+            IShiftRepository shiftRepository,
+            IStaffRepository staffRepository)
         {
             this.staffAndShiftService = staffAndShiftService;
             this.shiftRepository = shiftRepository;

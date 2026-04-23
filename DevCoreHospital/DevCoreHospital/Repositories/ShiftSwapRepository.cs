@@ -5,7 +5,7 @@ using Microsoft.Data.SqlClient;
 
 namespace DevCoreHospital.Repositories
 {
-    public class ShiftSwapRepository
+    public class ShiftSwapRepository : IShiftSwapRepository
     {
         private readonly string connectionString;
 

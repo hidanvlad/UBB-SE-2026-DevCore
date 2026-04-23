@@ -267,8 +267,8 @@ namespace DevCoreHospital.Tests.ViewModels
 
             var result = vm.ApplyReassignment(shiftId: 999);
 
-            Assert.False(result.IsSuccess);
-            Assert.Equal("Invalid Reassignment", result.Title);
+            Assert.False(result.isSuccess);
+            Assert.Equal("Invalid Reassignment", result.title);
         }
 
         [Fact]
@@ -285,8 +285,8 @@ namespace DevCoreHospital.Tests.ViewModels
             var vm = CreateViewModel();
             var result = vm.ApplyReassignment(shiftId: 7);
 
-            Assert.False(result.IsSuccess);
-            Assert.Equal("Invalid Reassignment", result.Title);
+            Assert.False(result.isSuccess);
+            Assert.Equal("Invalid Reassignment", result.title);
             auditServiceMock.Verify(s => s.ReassignShift(It.IsAny<int>(), It.IsAny<int>()), Times.Never);
         }
 
@@ -305,9 +305,9 @@ namespace DevCoreHospital.Tests.ViewModels
 
             var result = vm.ApplyReassignment(shiftId: 3);
 
-            Assert.True(result.IsSuccess);
-            Assert.Equal("Reassignment Applied", result.Title);
-            Assert.Contains("Bob", result.Message);
+            Assert.True(result.isSuccess);
+            Assert.Equal("Reassignment Applied", result.title);
+            Assert.Contains("Bob", result.message);
         }
 
         [Fact]
@@ -325,8 +325,8 @@ namespace DevCoreHospital.Tests.ViewModels
 
             var result = vm.ApplyReassignment(shiftId: 3);
 
-            Assert.False(result.IsSuccess);
-            Assert.Equal("Reassignment Failed", result.Title);
+            Assert.False(result.isSuccess);
+            Assert.Equal("Reassignment Failed", result.title);
         }
 
         [Fact]

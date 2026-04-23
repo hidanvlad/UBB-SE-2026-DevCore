@@ -7,7 +7,7 @@ using Microsoft.Data.SqlClient;
 
 namespace DevCoreHospital.Repositories
 {
-    public class HangoutRepository
+    public class HangoutRepository : IHangoutRepository
     {
         private readonly string connectionString;
 
