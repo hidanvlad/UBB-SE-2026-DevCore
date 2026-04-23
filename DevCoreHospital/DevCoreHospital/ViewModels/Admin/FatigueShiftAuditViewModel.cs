@@ -150,7 +150,9 @@ namespace DevCoreHospital.ViewModels
                 $"Shift #{shiftId} has been reassigned to {suggestion.SuggestedStaffName}.\n\nAudit was re-run to verify changes.");
         }
 
+#pragma warning disable SA1313
         public sealed record ReassignmentResult(bool IsSuccess, string Title, string Message);
+#pragma warning restore SA1313
 
         private static DateTime StartOfWeek(DateTime date)
         {
