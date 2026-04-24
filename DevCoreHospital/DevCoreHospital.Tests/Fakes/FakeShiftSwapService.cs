@@ -10,6 +10,8 @@ public sealed class FakeShiftSwapService : IShiftSwapService
 {
     public Dictionary<int, List<Shift>> FutureShiftsByStaffId { get; } = new();
 
+    public List<Doctor> AllDoctors { get; } = new();
+
     public List<IStaff> EligibleColleagues { get; } = new();
 
     public string EligibleError { get; set; } = string.Empty;
@@ -31,6 +33,8 @@ public sealed class FakeShiftSwapService : IShiftSwapService
     public bool ReturningEmptyInboxOnSecondGetIncoming { get; set; }
 
     private int getIncomingQueryCount;
+
+    public List<Doctor> GetAllDoctors() => AllDoctors;
 
     public List<Shift> GetFutureShiftsForStaff(int staffId)
     {

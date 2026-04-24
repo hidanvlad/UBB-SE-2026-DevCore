@@ -1,9 +1,7 @@
 using DevCoreHospital.Models;
-using DevCoreHospital.Repositories;
 using DevCoreHospital.Services;
 using DevCoreHospital.ViewModels;
 using Moq;
-using System.Reflection;
 
 namespace DevCoreHospital.Tests.ViewModels;
 
@@ -203,28 +201,6 @@ public class SalaryComputationViewModelTests
 
         Assert.Equal($"Computed Salary: $4567{GetSeparator()}80", viewModel.SalaryResult);
         Assert.False(viewModel.IsLoading);
-    }
-
-    [Fact]
-    public void LoadStaffList_WhenRepositoryIsNull_ReturnsWithoutThrowing()
-    {
-        var viewModel = CreateViewModelWithStubService();
-
-        var method = typeof(SalaryComputationViewModel).GetMethod("LoadStaffList", BindingFlags.Instance | BindingFlags.NonPublic);
-        var exception = Record.Exception(() => method!.Invoke(viewModel, null));
-
-        Assert.Null(exception);
-    }
-
-    [Fact]
-    public void LoadShiftList_WhenRepositoryIsNull_ReturnsWithoutThrowing()
-    {
-        var viewModel = CreateViewModelWithStubService();
-
-        var method = typeof(SalaryComputationViewModel).GetMethod("LoadShiftList", BindingFlags.Instance | BindingFlags.NonPublic);
-        var exception = Record.Exception(() => method!.Invoke(viewModel, null));
-
-        Assert.Null(exception);
     }
 
     [Fact]

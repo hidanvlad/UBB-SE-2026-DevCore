@@ -4,7 +4,6 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
 using DevCoreHospital.Models;
-using DevCoreHospital.Repositories;
 using DevCoreHospital.Services;
 using DevCoreHospital.ViewModels.Base;
 using Microsoft.UI;
@@ -15,7 +14,7 @@ namespace DevCoreHospital.ViewModels
 {
     public partial class MedicalEvaluationViewModel : ObservableObject
     {
-        private readonly IEvaluationsRepository repository;
+        private readonly IMedicalEvaluationService evaluationService;
         private readonly ICurrentUserService currentUserService;
         private List<MedicalEvaluation> allRecords = new List<MedicalEvaluation>();
 
@@ -244,9 +243,9 @@ namespace DevCoreHospital.ViewModels
         public RelayCommand SaveDiagnosisCommand { get; }
         public RelayCommand DeleteEvaluationCommand { get; }
 
-        public MedicalEvaluationViewModel(IEvaluationsRepository repository, ICurrentUserService currentUserService)
+        public MedicalEvaluationViewModel(IMedicalEvaluationService evaluationService, ICurrentUserService currentUserService)
         {
-            this.repository = repository;
+            this.evaluationService = evaluationService;
             this.currentUserService = currentUserService;
 
             SaveDiagnosisCommand = new RelayCommand(SaveDiagnosis, CanSaveDiagnosis);
@@ -266,7 +265,7 @@ namespace DevCoreHospital.ViewModels
         private void LoadDoctorList()
         {
             AllDoctors.Clear();
-            var doctors = repository.GetAllDoctors();
+            var doctors = evaluationService.GetAllDoctors();
             foreach (var doctor in doctors)
             {
                 AllDoctors.Add(doctor);
@@ -282,7 +281,7 @@ namespace DevCoreHospital.ViewModels
         private void LoadAppointments()
         {
             AvailableAppointments.Clear();
-            var appointments = repository.GetAppointmentsByDoctor(currentUserService.UserId);
+            var appointments = evaluationService.GetAppointmentsByDoctor(currentUserService.UserId);
             foreach (var appointment in appointments)
             {
                 AvailableAppointments.Add(appointment);
@@ -297,7 +296,7 @@ namespace DevCoreHospital.ViewModels
                 return;
             }
 
-            string? warning = repository.CheckMedicineConflict(PatientId, currentMeds);
+            string? warning = evaluationService.CheckMedicineConflict(PatientId, currentMeds);
 
             if (!string.IsNullOrEmpty(warning))
             {
@@ -359,7 +358,7 @@ namespace DevCoreHospital.ViewModels
                         true, string.Empty, "Available", DoctorStatus.AVAILABLE, 0),
                 };
 
-                repository.SaveEvaluation(newRecord);
+                evaluationService.SaveEvaluation(newRecord);
             }
 
             ResetForm();
@@ -426,7 +425,7 @@ namespace DevCoreHospital.ViewModels
             PastEvaluations.Clear();
             await Task.Delay(500);
 
-            allRecords = repository.GetEvaluationsByDoctor(currentUserService.UserId.ToString());
+            allRecords = evaluationService.GetEvaluationsByDoctor(currentUserService.UserId.ToString());
 
             ApplyFilter();
             IsLoading = false;
@@ -450,7 +449,7 @@ namespace DevCoreHospital.ViewModels
 
         private void CheckDoctorFatigue()
         {
-            IsFatigued = repository.IsDoctorFatigued(currentUserService.UserId.ToString());
+            IsFatigued = evaluationService.IsDoctorFatigued(currentUserService.UserId.ToString());
         }
 
         public void ExecuteDeletion()
@@ -460,7 +459,7 @@ namespace DevCoreHospital.ViewModels
                 return;
             }
 
-            repository.DeleteEvaluation(SelectedEvaluation.EvaluationID);
+            evaluationService.DeleteEvaluation(SelectedEvaluation.EvaluationID);
             ResetForm();
             PopulateHistory();
         }

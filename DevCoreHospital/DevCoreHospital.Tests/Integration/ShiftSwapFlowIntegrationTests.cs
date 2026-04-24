@@ -99,7 +99,7 @@ public class ShiftSwapFlowIntegrationTests : IClassFixture<SqlTestFixture>
             var shiftRepo = new ShiftRepository(db.ConnectionString, staffRepo);
             var swapRepo  = new ShiftSwapRepository(db.ConnectionString);
             var service   = new ShiftSwapService(staffRepo, shiftRepo, swapRepo);
-            var viewModel = new MyScheduleViewModel(service, staffRepo);
+            var viewModel = new MyScheduleViewModel(service);
 
             viewModel.SelectedDoctor   = viewModel.Doctors.First(d => d.StaffId == requesterId);
             viewModel.SelectedShift    = viewModel.FutureShifts.First(s => s.Id == shiftId);
@@ -137,7 +137,7 @@ public class ShiftSwapFlowIntegrationTests : IClassFixture<SqlTestFixture>
             var shiftRepo = new ShiftRepository(db.ConnectionString, staffRepo);
             var swapRepo  = new ShiftSwapRepository(db.ConnectionString);
             var service   = new ShiftSwapService(staffRepo, shiftRepo, swapRepo);
-            var viewModel = new MyScheduleViewModel(service, staffRepo);
+            var viewModel = new MyScheduleViewModel(service);
 
             viewModel.SelectedDoctor    = viewModel.Doctors.First(d => d.StaffId == requesterId);
             viewModel.SelectedShift     = viewModel.FutureShifts.First(s => s.Id == shiftId);

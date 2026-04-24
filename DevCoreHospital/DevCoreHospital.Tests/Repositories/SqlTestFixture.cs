@@ -165,6 +165,47 @@ public class SqlTestFixture : IDisposable
     public void DeleteStaff(SqlConnection conn, int staffId)
         => Execute(conn, "DELETE FROM Staff WHERE staff_id = @Id", staffId);
 
+    // -----------------------------------------------------------------------
+    // Medical_Evaluations helpers
+    // -----------------------------------------------------------------------
+
+    public int InsertMedicalEvaluation(
+        SqlConnection conn,
+        int doctorId,
+        int patientId,
+        string diagnosis = "Test diagnosis",
+        string notes = "Test notes",
+        string meds = "TestMed",
+        bool assumedRisk = false)
+    {
+        using var cmd = new SqlCommand(@"
+            INSERT INTO Medical_Evaluations
+                (doctor_id, patient_id, diagnosis, doctor_notes, medications, source, assumed_risk)
+            OUTPUT INSERTED.evaluation_id
+            VALUES (@DocId, @PatId, @Diag, @Notes, @Meds, @Source, @Risk)", conn);
+        cmd.Parameters.AddWithValue("@DocId", doctorId);
+        cmd.Parameters.AddWithValue("@PatId", patientId);
+        cmd.Parameters.AddWithValue("@Diag", diagnosis);
+        cmd.Parameters.AddWithValue("@Notes", notes);
+        cmd.Parameters.AddWithValue("@Meds", meds);
+        cmd.Parameters.AddWithValue("@Source", "TEST");
+        cmd.Parameters.AddWithValue("@Risk", assumedRisk);
+        return (int)cmd.ExecuteScalar()!;
+    }
+
+    public void DeleteMedicalEvaluation(SqlConnection conn, int evaluationId)
+        => Execute(conn, "DELETE FROM Medical_Evaluations WHERE evaluation_id = @Id", evaluationId);
+
+    public void DeleteMedicalEvaluationsByDoctor(SqlConnection conn, int doctorId)
+        => Execute(conn, "DELETE FROM Medical_Evaluations WHERE doctor_id = @Id", doctorId);
+
+    // -----------------------------------------------------------------------
+    // Appointments helper (with explicit status)
+    // -----------------------------------------------------------------------
+
+    public int InsertAppointmentWithStatus(SqlConnection conn, int patientId, int doctorId, DateTime start, DateTime end, string status)
+        => InsertAppointment(conn, patientId, doctorId, start, end, status);
+
     private static void Execute(SqlConnection conn, string sql, int id)
     {
         using var cmd = new SqlCommand(sql, conn);

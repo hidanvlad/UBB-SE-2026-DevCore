@@ -6,7 +6,6 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Windows.Input;
 using DevCoreHospital.Models;
-using DevCoreHospital.Repositories;
 using DevCoreHospital.Services;
 using DevCoreHospital.ViewModels;
 using DevCoreHospital.ViewModels.Base;
@@ -45,15 +44,14 @@ namespace DevCoreHospital.ViewModels.Doctor
         public ICommand AcceptCommand { get; }
         public ICommand RejectCommand { get; }
 
-        public IncomingSwapRequestsViewModel(IShiftSwapService shiftSwapService, IStaffRepository staffRepository)
-            : this(shiftSwapService, LoadDoctorsFromRepository(staffRepository))
+        public IncomingSwapRequestsViewModel(IShiftSwapService shiftSwapService)
+            : this(shiftSwapService, LoadDoctorsFromService(shiftSwapService))
         {
         }
 
-        private static IEnumerable<DoctorOptionViewModel> LoadDoctorsFromRepository(IStaffRepository staffRepository)
+        private static IEnumerable<DoctorOptionViewModel> LoadDoctorsFromService(IShiftSwapService shiftSwapService)
         {
-            return staffRepository.LoadAllStaff()
-                .OfType<Models.Doctor>()
+            return shiftSwapService.GetAllDoctors()
                 .OrderBy(doctorModel => doctorModel.FirstName)
                 .ThenBy(doctorModel => doctorModel.LastName)
                 .Select(doctorModel => new DoctorOptionViewModel

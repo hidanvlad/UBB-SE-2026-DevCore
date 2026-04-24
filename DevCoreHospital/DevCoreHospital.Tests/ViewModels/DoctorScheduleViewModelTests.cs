@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Threading.Tasks;
 using DevCoreHospital.Models;
-using DevCoreHospital.Repositories;
 using DevCoreHospital.Services;
 using DevCoreHospital.ViewModels.Doctor;
 using Moq;
@@ -14,7 +13,6 @@ namespace DevCoreHospital.Tests.ViewModels
     {
         private readonly Mock<ICurrentUserService> mockCurrentUser;
         private readonly Mock<IDoctorAppointmentService> mockAppointmentService;
-        private readonly Mock<IShiftRepository> mockShiftRepository;
         private readonly Mock<IDialogService> mockDialogService = new Mock<IDialogService>();
         private readonly DoctorScheduleViewModel viewModel;
 
@@ -36,16 +34,14 @@ namespace DevCoreHospital.Tests.ViewModels
                     It.IsAny<int>(), It.IsAny<DateTime>(), It.IsAny<DateTime>()))
                 .ReturnsAsync(new List<Appointment>());
 
-            mockShiftRepository = new Mock<IShiftRepository>();
-            mockShiftRepository
-                .Setup(r => r.GetShiftsForStaffInRange(
+            mockAppointmentService
+                .Setup(s => s.GetShiftsForStaffInRangeAsync(
                     It.IsAny<int>(), It.IsAny<DateTime>(), It.IsAny<DateTime>()))
-                .Returns(new List<Shift>());
+                .ReturnsAsync(new List<Shift>());
 
             viewModel = new DoctorScheduleViewModel(
                 mockCurrentUser.Object,
                 mockAppointmentService.Object,
-                mockShiftRepository.Object,
                 mockDialogService.Object);
         }
 
@@ -177,7 +173,7 @@ namespace DevCoreHospital.Tests.ViewModels
 
 
         [Fact]
-        public async Task LoadAsync_IncludesShift_WhenItFallsWithinCurrentWeekInWeeklyMode()
+        public async Task LoadAsync_IncludesShift_WhenServiceReturnsShiftInWeeklyMode()
         {
             var selectedDate = new DateTime(2025, 6, 11);
             var shiftOnFriday = new Shift(
@@ -186,10 +182,10 @@ namespace DevCoreHospital.Tests.ViewModels
                 new DateTime(2025, 6, 13, 16, 0, 0),
                 ShiftStatus.SCHEDULED);
 
-            mockShiftRepository
-                .Setup(r => r.GetShiftsForStaffInRange(
+            mockAppointmentService
+                .Setup(s => s.GetShiftsForStaffInRangeAsync(
                     It.IsAny<int>(), It.IsAny<DateTime>(), It.IsAny<DateTime>()))
-                .Returns(new List<Shift> { shiftOnFriday });
+                .ReturnsAsync(new List<Shift> { shiftOnFriday });
 
             viewModel.ViewMode = DoctorScheduleViewModel.ScheduleViewMode.Weekly;
             viewModel.SelectedDate = selectedDate;
@@ -226,19 +222,14 @@ namespace DevCoreHospital.Tests.ViewModels
 
 
         [Fact]
-        public async Task LoadAsync_ExcludesShift_WhenStatusIsCancelled()
+        public async Task LoadAsync_ExcludesShift_WhenServiceDoesNotReturnIt()
         {
             var selectedDate = new DateTime(2025, 6, 11);
-            var cancelledShift = new Shift(
-                1, DummyStaff, "Ward A",
-                new DateTime(2025, 6, 11, 8, 0, 0),
-                new DateTime(2025, 6, 11, 16, 0, 0),
-                ShiftStatus.CANCELLED);
 
-            mockShiftRepository
-                .Setup(r => r.GetShiftsForStaffInRange(
+            mockAppointmentService
+                .Setup(s => s.GetShiftsForStaffInRangeAsync(
                     It.IsAny<int>(), It.IsAny<DateTime>(), It.IsAny<DateTime>()))
-                .Returns(new List<Shift> { cancelledShift });
+                .ReturnsAsync(new List<Shift>());
 
             viewModel.SelectedDate = selectedDate;
             viewModel.SelectedDoctor = TestDoctor;
@@ -249,7 +240,7 @@ namespace DevCoreHospital.Tests.ViewModels
         }
 
         [Fact]
-        public async Task LoadAsync_IncludesShift_WhenStatusIsScheduled()
+        public async Task LoadAsync_IncludesShift_WhenServiceReturnsIt()
         {
             var selectedDate = new DateTime(2025, 6, 11);
             var scheduledShift = new Shift(
@@ -258,10 +249,10 @@ namespace DevCoreHospital.Tests.ViewModels
                 new DateTime(2025, 6, 11, 16, 0, 0),
                 ShiftStatus.SCHEDULED);
 
-            mockShiftRepository
-                .Setup(r => r.GetShiftsForStaffInRange(
+            mockAppointmentService
+                .Setup(s => s.GetShiftsForStaffInRangeAsync(
                     It.IsAny<int>(), It.IsAny<DateTime>(), It.IsAny<DateTime>()))
-                .Returns(new List<Shift> { scheduledShift });
+                .ReturnsAsync(new List<Shift> { scheduledShift });
 
             viewModel.SelectedDate = selectedDate;
             viewModel.SelectedDoctor = TestDoctor;
@@ -315,10 +306,10 @@ namespace DevCoreHospital.Tests.ViewModels
                 new DateTime(2025, 6, 11, 16, 0, 0),
                 ShiftStatus.SCHEDULED);
 
-            mockShiftRepository
-                .Setup(r => r.GetShiftsForStaffInRange(
+            mockAppointmentService
+                .Setup(s => s.GetShiftsForStaffInRangeAsync(
                     It.IsAny<int>(), It.IsAny<DateTime>(), It.IsAny<DateTime>()))
-                .Returns(new List<Shift> { shift });
+                .ReturnsAsync(new List<Shift> { shift });
 
             viewModel.SelectedDate = selectedDate;
             viewModel.SelectedDoctor = TestDoctor;
@@ -438,152 +429,121 @@ namespace DevCoreHospital.Tests.ViewModels
         [Fact]
         public void SelectedDateText_InDailyMode_FormatsAsFullDate()
         {
-            // Arrange
             var date = new DateTime(2025, 6, 11);
             var expected = date.ToString("dddd, dd MMM yyyy", CultureInfo.GetCultureInfo("en-US"));
 
-            // Act
             viewModel.SelectedDate = date;
             viewModel.ViewMode = DoctorScheduleViewModel.ScheduleViewMode.Daily;
 
-            // Assert
             Assert.Equal(expected, viewModel.SelectedDateText);
         }
 
         [Fact]
         public void SelectedDateText_InWeeklyMode_FormatsAsWeekOf()
         {
-            // Arrange
             var wednesday = new DateTime(2025, 6, 11);
             var monday = new DateTime(2025, 6, 9);
             var expected = $"Week of {monday.ToString("dd MMM yyyy", CultureInfo.GetCultureInfo("en-US"))}";
 
-            // Act
             viewModel.SelectedDate = wednesday;
             viewModel.ViewMode = DoctorScheduleViewModel.ScheduleViewMode.Weekly;
 
-            // Assert
             Assert.Equal(expected, viewModel.SelectedDateText);
         }
 
         [Fact]
         public void TodayCommand_SetsSelectedDateToToday()
         {
-            // Arrange
             viewModel.SelectedDate = new DateTime(2020, 1, 1);
 
-            // Act
             viewModel.TodayCommand.Execute(null);
 
-            // Assert
             Assert.Equal(DateTime.Today, viewModel.SelectedDate);
         }
 
         [Fact]
         public void NextDayCommand_AdvancesOneDayInDailyMode()
         {
-            // Arrange
             var date = new DateTime(2025, 6, 11);
             viewModel.ViewMode = DoctorScheduleViewModel.ScheduleViewMode.Daily;
             viewModel.SelectedDate = date;
 
-            // Act
             viewModel.NextDayCommand.Execute(null);
 
-            // Assert
             Assert.Equal(date.AddDays(1), viewModel.SelectedDate);
         }
 
         [Fact]
         public void NextDayCommand_AdvancesSevenDaysInWeeklyMode()
         {
-            // Arrange
             var date = new DateTime(2025, 6, 11);
             viewModel.ViewMode = DoctorScheduleViewModel.ScheduleViewMode.Weekly;
             viewModel.SelectedDate = date;
 
-            // Act
             viewModel.NextDayCommand.Execute(null);
 
-            // Assert
             Assert.Equal(date.AddDays(7), viewModel.SelectedDate);
         }
 
         [Fact]
         public void PreviousDayCommand_GoesBackOneDayInDailyMode()
         {
-            // Arrange
             var date = new DateTime(2025, 6, 11);
             viewModel.ViewMode = DoctorScheduleViewModel.ScheduleViewMode.Daily;
             viewModel.SelectedDate = date;
 
-            // Act
             viewModel.PreviousDayCommand.Execute(null);
 
-            // Assert
             Assert.Equal(date.AddDays(-1), viewModel.SelectedDate);
         }
 
         [Fact]
         public void PreviousDayCommand_GoesBackSevenDaysInWeeklyMode()
         {
-            // Arrange
             var date = new DateTime(2025, 6, 11);
             viewModel.ViewMode = DoctorScheduleViewModel.ScheduleViewMode.Weekly;
             viewModel.SelectedDate = date;
 
-            // Act
             viewModel.PreviousDayCommand.Execute(null);
 
-            // Assert
             Assert.Equal(date.AddDays(-7), viewModel.SelectedDate);
         }
 
         [Fact]
         public void DailyModeCommand_SetsViewModeToDaily()
         {
-            // Arrange
             viewModel.ViewMode = DoctorScheduleViewModel.ScheduleViewMode.Weekly;
 
-            // Act
             viewModel.DailyModeCommand.Execute(null);
 
-            // Assert
             Assert.Equal(DoctorScheduleViewModel.ScheduleViewMode.Daily, viewModel.ViewMode);
         }
 
         [Fact]
         public void WeeklyModeCommand_SetsViewModeToWeekly()
         {
-            // Arrange
             viewModel.ViewMode = DoctorScheduleViewModel.ScheduleViewMode.Daily;
 
-            // Act
             viewModel.WeeklyModeCommand.Execute(null);
 
-            // Assert
             Assert.Equal(DoctorScheduleViewModel.ScheduleViewMode.Weekly, viewModel.ViewMode);
         }
 
         [Fact]
         public async Task InitializeAsync_SetsNoDoctorsErrorMessage_WhenServiceReturnsEmptyList()
         {
-            // Arrange
             mockAppointmentService
                 .Setup(s => s.GetAllDoctorsAsync())
                 .ReturnsAsync(new List<(int DoctorId, string DoctorName)>());
 
-            // Act
             await viewModel.InitializeAsync();
 
-            // Assert
             Assert.Equal("No doctors available.", viewModel.ErrorMessage);
         }
 
         [Fact]
         public async Task LoadAsync_SetsErrorMessage_WhenAppointmentServiceThrows()
         {
-            // Arrange
             mockAppointmentService
                 .Setup(s => s.GetAppointmentsInRangeAsync(
                     It.IsAny<int>(), It.IsAny<DateTime>(), It.IsAny<DateTime>()))
@@ -591,10 +551,8 @@ namespace DevCoreHospital.Tests.ViewModels
 
             viewModel.SelectedDoctor = TestDoctor;
 
-            // Act
             await viewModel.LoadAsync();
 
-            // Assert
             Assert.Contains("DB error", viewModel.ErrorMessage);
         }
     }

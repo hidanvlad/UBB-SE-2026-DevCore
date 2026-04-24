@@ -535,6 +535,40 @@ public class ShiftSwapServiceTests
         Assert.Empty(result);
     }
 
+    [Fact]
+    public void GetAllDoctors_ReturnsOnlyDoctorsFromStaffRepository()
+    {
+        var doctor = BuildDoctor(1, "Cardiology");
+        var pharmacist = new Pharmacyst(2, "P", "H", string.Empty, true, "General", 1);
+        var staff = new Mock<IStaffRepository>();
+        var shift = new Mock<IShiftRepository>();
+        var swap = new Mock<IShiftSwapRepository>();
+        staff.Setup(staffRepository => staffRepository.LoadAllStaff())
+            .Returns(new List<IStaff> { doctor, pharmacist });
+        var service = new ShiftSwapService(staff.Object, shift.Object, swap.Object);
+
+        var result = service.GetAllDoctors();
+
+        Assert.Single(result);
+        Assert.Equal(1, result[0].StaffID);
+    }
+
+    [Fact]
+    public void GetAllDoctors_ReturnsEmptyList_WhenNoStaffAreDoctors()
+    {
+        var pharmacist = new Pharmacyst(1, "P", "H", string.Empty, true, "General", 1);
+        var staff = new Mock<IStaffRepository>();
+        var shift = new Mock<IShiftRepository>();
+        var swap = new Mock<IShiftSwapRepository>();
+        staff.Setup(staffRepository => staffRepository.LoadAllStaff())
+            .Returns(new List<IStaff> { pharmacist });
+        var service = new ShiftSwapService(staff.Object, shift.Object, swap.Object);
+
+        var result = service.GetAllDoctors();
+
+        Assert.Empty(result);
+    }
+
     private static Doctor BuildDoctor(int id, string spec)
         => new(id, "A", "B", string.Empty, string.Empty, true, spec, "L-1", DoctorStatus.AVAILABLE, 1);
 }

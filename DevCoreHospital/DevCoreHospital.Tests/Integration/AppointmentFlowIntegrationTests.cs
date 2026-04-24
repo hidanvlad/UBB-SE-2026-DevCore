@@ -156,11 +156,10 @@ namespace DevCoreHospital.Tests.Integration
             var mockUser = new Mock<ICurrentUserService>();
             mockUser.Setup(u => u.Role).Returns("Doctor");
             mockUser.Setup(u => u.UserId).Returns(1);
-            var service = new DoctorAppointmentService(dataSource);
+            var service = new DoctorAppointmentService(dataSource, shiftRepo);
             var viewModel = new DoctorScheduleViewModel(
                 mockUser.Object,
                 service,
-                shiftRepo,
                 new Mock<IDialogService>().Object);
             return (viewModel, dataSource);
         }

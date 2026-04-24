@@ -4,7 +4,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using System;
 using DevCoreHospital.Models;
-using DevCoreHospital.Repositories;
 using DevCoreHospital.Services;
 using DevCoreHospital.ViewModels.Base;
 
@@ -13,8 +12,6 @@ namespace DevCoreHospital.ViewModels
     public class SalaryComputationViewModel : ObservableObject
     {
         private readonly ISalaryComputationService salaryService;
-        private readonly IStaffRepository? staffRepository;
-        private readonly IShiftManagementShiftRepository? shiftRepository;
 
         public ObservableCollection<IStaff> StaffList { get; } = new ObservableCollection<IStaff>();
         public ObservableCollection<Shift> ShiftList { get; } = new ObservableCollection<Shift>();
@@ -47,14 +44,9 @@ namespace DevCoreHospital.ViewModels
 
         public AsyncRelayCommand ComputeSalaryCommand { get; }
 
-        public SalaryComputationViewModel(
-            ISalaryComputationService salaryService,
-            IStaffRepository staffRepository,
-            IShiftManagementShiftRepository shiftRepository)
+        public SalaryComputationViewModel(ISalaryComputationService salaryService)
         {
             this.salaryService = salaryService;
-            this.staffRepository = staffRepository;
-            this.shiftRepository = shiftRepository;
 
             ComputeSalaryCommand = new AsyncRelayCommand(ComputeSalaryAsync, CanComputeSalary);
 
@@ -65,8 +57,6 @@ namespace DevCoreHospital.ViewModels
         public SalaryComputationViewModel(ISalaryComputationService salaryService, IEnumerable<IStaff> staffList, IEnumerable<Shift> shiftList)
         {
             this.salaryService = salaryService;
-            staffRepository = null;
-            shiftRepository = null;
 
             ComputeSalaryCommand = new AsyncRelayCommand(ComputeSalaryAsync, CanComputeSalary);
 
@@ -83,13 +73,8 @@ namespace DevCoreHospital.ViewModels
 
         private void LoadStaffList()
         {
-            if (staffRepository == null)
-            {
-                return;
-            }
-
             StaffList.Clear();
-            foreach (var staff in staffRepository.LoadAllStaff())
+            foreach (var staff in salaryService.GetAllStaff())
             {
                 StaffList.Add(staff);
             }
@@ -97,13 +82,8 @@ namespace DevCoreHospital.ViewModels
 
         private void LoadShiftList()
         {
-            if (shiftRepository == null)
-            {
-                return;
-            }
-
             ShiftList.Clear();
-            foreach (var shift in shiftRepository.GetShifts())
+            foreach (var shift in salaryService.GetAllShifts())
             {
                 ShiftList.Add(shift);
             }

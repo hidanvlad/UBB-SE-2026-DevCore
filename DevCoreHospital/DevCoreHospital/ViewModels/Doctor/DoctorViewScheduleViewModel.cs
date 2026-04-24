@@ -4,7 +4,6 @@ using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 using DevCoreHospital.Models;
-using DevCoreHospital.Repositories;
 using DevCoreHospital.Services;
 using DevCoreHospital.ViewModels.Base;
 
@@ -14,7 +13,6 @@ namespace DevCoreHospital.ViewModels.Doctor
     {
         private readonly ICurrentUserService currentUser;
         private readonly IDoctorAppointmentService appointmentService;
-        private readonly IShiftRepository shiftRepository;
         private readonly IDialogService dialogService;
 
         private int loadVersion;
@@ -133,12 +131,10 @@ namespace DevCoreHospital.ViewModels.Doctor
         public DoctorScheduleViewModel(
             ICurrentUserService currentUser,
             IDoctorAppointmentService appointmentService,
-            IShiftRepository shiftRepository,
             IDialogService dialogService)
         {
             this.currentUser = currentUser;
             this.appointmentService = appointmentService;
-            this.shiftRepository = shiftRepository;
             this.dialogService = dialogService;
 
             RefreshCommand = new AsyncRelayCommand(LoadAsync, () => IsDoctor);
@@ -248,17 +244,12 @@ namespace DevCoreHospital.ViewModels.Doctor
                 DateTime to = IsDaily ? from.AddDays(1) : from.AddDays(7);
 
                 var filteredAppointments = await appointmentService.GetAppointmentsInRangeAsync(doctorId, from, to);
-                var rawShifts = await Task.Run(() => shiftRepository.GetShiftsForStaffInRange(doctorId, from, to));
+                var filteredShifts = await appointmentService.GetShiftsForStaffInRangeAsync(doctorId, from, to);
 
                 if (capturedLoadVersion != loadVersion)
                 {
                     return;
                 }
-
-                var filteredShifts = rawShifts
-                    .Where(shift => shift.Status != ShiftStatus.CANCELLED)
-                    .OrderBy(shift => shift.StartTime)
-                    .ToList();
 
                 Appointments.Clear();
                 foreach (var appointment in filteredAppointments)

@@ -16,5 +16,7 @@ namespace DevCoreHospital.Services
         Task FinishAppointmentAsync(Appointment appointment);
         Task<IReadOnlyList<Appointment>> GetAppointmentsInRangeAsync(int doctorId, DateTime from, DateTime to);
         Task CancelAppointmentAsync(Appointment appointment);
+
+        Task<IReadOnlyList<Shift>> GetShiftsForStaffInRangeAsync(int doctorId, DateTime from, DateTime to);
     }
 }

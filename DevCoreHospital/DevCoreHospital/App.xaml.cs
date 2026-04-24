@@ -88,7 +88,12 @@ namespace DevCoreHospital
             services.AddSingleton<IPharmacyVacationService, PharmacyVacationService>();
             services.AddSingleton<IShiftManagementService, ShiftManagementService>();
             services.AddSingleton<IShiftSwapService, ShiftSwapService>();
-            services.AddSingleton<ISalaryComputationService, SalaryComputationService>();
+            services.AddSingleton<ISalaryComputationService>(sp =>
+                new SalaryComputationService(
+                    sp.GetRequiredService<SalaryRepository>(),
+                    sp.GetRequiredService<IStaffRepository>(),
+                    sp.GetRequiredService<IShiftManagementShiftRepository>()));
+            services.AddSingleton<IMedicalEvaluationService, MedicalEvaluationService>();
         }
 
         private static void RegisterViewModels(IServiceCollection services)
@@ -109,8 +114,7 @@ namespace DevCoreHospital
             // so any ViewModel with an IEnumerable<T> overload must be wired explicitly.
             services.AddTransient<IncomingSwapRequestsViewModel>(sp =>
                 new IncomingSwapRequestsViewModel(
-                    sp.GetRequiredService<IShiftSwapService>(),
-                    sp.GetRequiredService<IStaffRepository>()));
+                    sp.GetRequiredService<IShiftSwapService>()));
 
             services.AddTransient<HangoutViewModel>(sp =>
                 new HangoutViewModel(
@@ -119,9 +123,7 @@ namespace DevCoreHospital
 
             services.AddTransient<SalaryComputationViewModel>(sp =>
                 new SalaryComputationViewModel(
-                    sp.GetRequiredService<ISalaryComputationService>(),
-                    sp.GetRequiredService<IStaffRepository>(),
-                    sp.GetRequiredService<IShiftManagementShiftRepository>()));
+                    sp.GetRequiredService<ISalaryComputationService>()));
         }
     }
 }

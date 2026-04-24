@@ -11,12 +11,14 @@ namespace DevCoreHospital.Tests.Services
     public class PharmacyScheduleServiceTests
     {
         private readonly Mock<IShiftRepository> shiftRepoMock;
+        private readonly Mock<IPharmacyStaffRepository> staffRepoMock;
         private readonly PharmacyScheduleService sut;
 
         public PharmacyScheduleServiceTests()
         {
             shiftRepoMock = new Mock<IShiftRepository>();
-            sut = new PharmacyScheduleService(shiftRepoMock.Object);
+            staffRepoMock = new Mock<IPharmacyStaffRepository>();
+            sut = new PharmacyScheduleService(shiftRepoMock.Object, staffRepoMock.Object);
         }
 
         private static Shift MakeShift(int id, DateTime start, DateTime end)
@@ -106,6 +108,28 @@ namespace DevCoreHospital.Tests.Services
             var result = await sut.GetShiftsAsync(1, rangeStart, rangeEnd);
 
             Assert.Equal(3, result.Count);
+        }
+
+        [Fact]
+        public void GetPharmacists_DelegatesToStaffRepository()
+        {
+            var pharmacist = new Pharmacyst(1, "Ana", "Pop", string.Empty, true, "General", 2);
+            staffRepoMock.Setup(r => r.GetPharmacists()).Returns(new List<Pharmacyst> { pharmacist });
+
+            var result = sut.GetPharmacists();
+
+            Assert.Single(result);
+            Assert.Equal(1, result[0].StaffID);
+        }
+
+        [Fact]
+        public void GetPharmacists_ReturnsEmptyList_WhenRepositoryReturnsNoPharmacists()
+        {
+            staffRepoMock.Setup(r => r.GetPharmacists()).Returns(new List<Pharmacyst>());
+
+            var result = sut.GetPharmacists();
+
+            Assert.Empty(result);
         }
     }
 }

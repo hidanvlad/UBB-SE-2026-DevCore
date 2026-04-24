@@ -11,5 +11,7 @@ namespace DevCoreHospital.Services
         List<ShiftSwapRequest> GetIncomingSwapRequests(int colleagueId);
         bool AcceptSwapRequest(int swapId, int colleagueId, out string message);
         bool RejectSwapRequest(int swapId, int colleagueId, out string message);
+
+        List<Doctor> GetAllDoctors();
     }
 }

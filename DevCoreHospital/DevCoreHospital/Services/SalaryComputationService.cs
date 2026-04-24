@@ -29,10 +29,17 @@ namespace DevCoreHospital.Services
         private const double MaxMedicineSalesBonusPercentage = 0.30;
 
         private readonly SalaryRepository salaryRepository;
+        private readonly IStaffRepository? staffRepository;
+        private readonly IShiftManagementShiftRepository? shiftRepository;
 
-        public SalaryComputationService(SalaryRepository salaryRepository)
+        public SalaryComputationService(
+            SalaryRepository salaryRepository,
+            IStaffRepository? staffRepository = null,
+            IShiftManagementShiftRepository? shiftRepository = null)
         {
             this.salaryRepository = salaryRepository;
+            this.staffRepository = staffRepository;
+            this.shiftRepository = shiftRepository;
         }
 
         public Task<double> ComputeSalaryDoctorAsync(Doctor doctor, List<Shift> monthlyShifts, int month, int year)
@@ -166,5 +173,11 @@ namespace DevCoreHospital.Services
 
             return Task.FromResult(finalSalary);
         }
+
+        public List<IStaff> GetAllStaff() =>
+            staffRepository?.LoadAllStaff() ?? new List<IStaff>();
+
+        public List<Shift> GetAllShifts() =>
+            shiftRepository?.GetShifts() ?? new List<Shift>();
     }
 }

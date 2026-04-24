@@ -10,10 +10,12 @@ namespace DevCoreHospital.Services
     public sealed class DoctorAppointmentService : IDoctorAppointmentService
     {
         private readonly IAppointmentRepository dataSource;
+        private readonly IShiftRepository? shiftRepository;
 
-        public DoctorAppointmentService(IAppointmentRepository dataSource)
+        public DoctorAppointmentService(IAppointmentRepository dataSource, IShiftRepository? shiftRepository = null)
         {
             this.dataSource = dataSource;
+            this.shiftRepository = shiftRepository;
         }
 
         public Task<IReadOnlyList<Appointment>> GetUpcomingAppointmentsAsync(int doctorUserId, DateTime fromDate, int skip, int take) =>
@@ -97,6 +99,21 @@ namespace DevCoreHospital.Services
             }
 
             await dataSource.UpdateAppointmentStatusAsync(appointment!.Id, "Canceled");
+        }
+
+        public Task<IReadOnlyList<Shift>> GetShiftsForStaffInRangeAsync(int doctorId, DateTime from, DateTime to)
+        {
+            if (shiftRepository == null)
+            {
+                return Task.FromResult<IReadOnlyList<Shift>>(new List<Shift>());
+            }
+
+            return Task.Run<IReadOnlyList<Shift>>(() =>
+                shiftRepository
+                    .GetShiftsForStaffInRange(doctorId, from, to)
+                    .Where(shift => shift.Status != ShiftStatus.CANCELLED)
+                    .OrderBy(shift => shift.StartTime)
+                    .ToList());
         }
     }
 }

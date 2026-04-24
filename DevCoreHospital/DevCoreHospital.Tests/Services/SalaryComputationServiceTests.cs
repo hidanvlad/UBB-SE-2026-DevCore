@@ -203,6 +203,61 @@ public class SalaryComputationServiceTests
         Assert.Equal(360.0, result, 2);
     }
 
+    [Fact]
+    public void GetAllStaff_ReturnsStaffFromRepository()
+    {
+        var doctor = new Doctor { StaffID = 1, FirstName = "A", LastName = "B" };
+        var pharmacist = new Pharmacyst { StaffID = 2, FirstName = "C", LastName = "D" };
+        var salaryRepo = new Mock<SalaryRepository>("fake");
+        var staffRepo = new Mock<IStaffRepository>();
+        staffRepo.Setup(r => r.LoadAllStaff()).Returns(new List<IStaff> { doctor, pharmacist });
+
+        var service = new SalaryComputationService(salaryRepo.Object, staffRepo.Object, null);
+
+        var result = service.GetAllStaff();
+
+        Assert.Equal(2, result.Count);
+    }
+
+    [Fact]
+    public void GetAllStaff_ReturnsEmptyList_WhenRepositoryIsNull()
+    {
+        var salaryRepo = new Mock<SalaryRepository>("fake");
+        var service = new SalaryComputationService(salaryRepo.Object);
+
+        var result = service.GetAllStaff();
+
+        Assert.Empty(result);
+    }
+
+    [Fact]
+    public void GetAllShifts_ReturnsShiftsFromRepository()
+    {
+        var staff = new Doctor { StaffID = 1, FirstName = "A", LastName = "B" };
+        var shift = CreateShift(10, staff, new DateTime(2026, 5, 1, 8, 0, 0), new DateTime(2026, 5, 1, 16, 0, 0));
+        var salaryRepo = new Mock<SalaryRepository>("fake");
+        var shiftRepo = new Mock<IShiftManagementShiftRepository>();
+        shiftRepo.Setup(r => r.GetShifts()).Returns(new List<Shift> { shift });
+
+        var service = new SalaryComputationService(salaryRepo.Object, null, shiftRepo.Object);
+
+        var result = service.GetAllShifts();
+
+        Assert.Single(result);
+        Assert.Equal(10, result[0].Id);
+    }
+
+    [Fact]
+    public void GetAllShifts_ReturnsEmptyList_WhenRepositoryIsNull()
+    {
+        var salaryRepo = new Mock<SalaryRepository>("fake");
+        var service = new SalaryComputationService(salaryRepo.Object);
+
+        var result = service.GetAllShifts();
+
+        Assert.Empty(result);
+    }
+
     private static Shift CreateShift(int id, IStaff staff, DateTime start, DateTime end)
     {
         return new Shift(id, staff, "Ward A", start, end, ShiftStatus.SCHEDULED);

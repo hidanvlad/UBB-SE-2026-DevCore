@@ -5,18 +5,15 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Windows.Input;
 using DevCoreHospital.Models;
-using DevCoreHospital.Repositories;
 using DevCoreHospital.Services;
 using DevCoreHospital.ViewModels;
 using DevCoreHospital.ViewModels.Base;
-using DoctorModel = DevCoreHospital.Models.Doctor;
 
 namespace DevCoreHospital.ViewModels.Doctor
 {
     public sealed class MyScheduleViewModel : INotifyPropertyChanged
     {
         private readonly IShiftSwapService staffAndShiftService;
-        private readonly IStaffRepository staffRepository;
 
         public ObservableCollection<DoctorOptionViewModel> Doctors { get; } = new ObservableCollection<DoctorOptionViewModel>();
         public ObservableCollection<DoctorShiftItemViewModel> FutureShifts { get; } = new ObservableCollection<DoctorShiftItemViewModel>();
@@ -74,12 +71,9 @@ namespace DevCoreHospital.ViewModels.Doctor
 
         public ICommand RequestSwapCommand { get; }
 
-        public MyScheduleViewModel(
-            IShiftSwapService staffAndShiftService,
-            IStaffRepository staffRepository)
+        public MyScheduleViewModel(IShiftSwapService staffAndShiftService)
         {
             this.staffAndShiftService = staffAndShiftService;
-            this.staffRepository = staffRepository;
 
             RequestSwapCommand = new RelayCommand(RequestSwap, CanRequestSwap);
 
@@ -90,9 +84,8 @@ namespace DevCoreHospital.ViewModels.Doctor
         {
             Doctors.Clear();
 
-            var doctors = staffRepository
-                .LoadAllStaff()
-                .OfType<DoctorModel>()
+            var doctors = staffAndShiftService
+                .GetAllDoctors()
                 .OrderBy(doctor => doctor.FirstName)
                 .ThenBy(doctor => doctor.LastName)
                 .Select(doctor => new DoctorOptionViewModel

@@ -6,7 +6,7 @@ using Microsoft.Data.SqlClient;
 
 namespace DevCoreHospital.Repositories
 {
-    public sealed class FatigueAuditRepository : IFatigueAuditRepository
+    public class FatigueAuditRepository : IFatigueAuditRepository
     {
         private readonly string connectionString;
 

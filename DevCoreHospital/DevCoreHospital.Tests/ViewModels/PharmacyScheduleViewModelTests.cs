@@ -1,10 +1,8 @@
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Reflection;
 using System.Threading.Tasks;
 using DevCoreHospital.Models;
-using DevCoreHospital.Repositories;
 using DevCoreHospital.Services;
 using DevCoreHospital.ViewModels.Pharmacy;
 using Moq;
@@ -30,7 +28,7 @@ namespace DevCoreHospital.Tests.ViewModels
         }
 
         private PharmacyScheduleViewModel CreateViewModel()
-            => new PharmacyScheduleViewModel(userMock.Object, serviceMock.Object, null!);
+            => new PharmacyScheduleViewModel(userMock.Object, serviceMock.Object);
 
         private static void SetSelectedPharmacist(PharmacyScheduleViewModel vm, PharmacyScheduleViewModel.PharmacistOption? pharmacist)
         {

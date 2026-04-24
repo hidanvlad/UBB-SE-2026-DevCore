@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using DevCoreHospital.Models;
 using DevCoreHospital.Repositories;
@@ -10,12 +11,14 @@ namespace DevCoreHospital.Tests.Services
     public class DoctorAppointmentServiceTests
     {
         private readonly Mock<IAppointmentRepository> mockDataSource;
+        private readonly Mock<IShiftRepository> mockShiftRepository;
         private readonly DoctorAppointmentService service;
 
         public DoctorAppointmentServiceTests()
         {
             mockDataSource = new Mock<IAppointmentRepository>();
-            service = new DoctorAppointmentService(mockDataSource.Object);
+            mockShiftRepository = new Mock<IShiftRepository>();
+            service = new DoctorAppointmentService(mockDataSource.Object, mockShiftRepository.Object);
         }
 
 
@@ -306,6 +309,75 @@ namespace DevCoreHospital.Tests.Services
             var result = await service.GetAppointmentsInRangeAsync(1, from, to);
 
             Assert.Empty(result);
+        }
+
+
+        [Fact]
+        public async Task GetShiftsForStaffInRangeAsync_ReturnsShifts_ExcludingCancelled()
+        {
+            var from = new DateTime(2025, 6, 11);
+            var to = from.AddDays(1);
+            var staff = new Pharmacyst(1, "Test", "Staff", string.Empty, true, "General", 1);
+            var scheduled = new Shift(1, staff, "Ward A", from.AddHours(8), from.AddHours(16), ShiftStatus.SCHEDULED);
+            var cancelled = new Shift(2, staff, "Ward B", from.AddHours(9), from.AddHours(17), ShiftStatus.CANCELLED);
+
+            mockShiftRepository
+                .Setup(r => r.GetShiftsForStaffInRange(1, from, to))
+                .Returns(new List<Shift> { scheduled, cancelled });
+
+            var result = await service.GetShiftsForStaffInRangeAsync(1, from, to);
+
+            Assert.Single(result);
+            Assert.Equal(1, result[0].Id);
+        }
+
+        [Fact]
+        public async Task GetShiftsForStaffInRangeAsync_ReturnsShiftsOrderedByStartTime()
+        {
+            var from = new DateTime(2025, 6, 11);
+            var to = from.AddDays(1);
+            var staff = new Pharmacyst(1, "Test", "Staff", string.Empty, true, "General", 1);
+            var later = new Shift(1, staff, "Ward A", from.AddHours(14), from.AddHours(22), ShiftStatus.SCHEDULED);
+            var earlier = new Shift(2, staff, "Ward B", from.AddHours(6), from.AddHours(14), ShiftStatus.SCHEDULED);
+
+            mockShiftRepository
+                .Setup(r => r.GetShiftsForStaffInRange(1, from, to))
+                .Returns(new List<Shift> { later, earlier });
+
+            var result = await service.GetShiftsForStaffInRangeAsync(1, from, to);
+
+            Assert.Equal(2, result[0].Id);
+            Assert.Equal(1, result[1].Id);
+        }
+
+        [Fact]
+        public async Task GetShiftsForStaffInRangeAsync_ReturnsEmpty_WhenRepositoryReturnsNoShifts()
+        {
+            var from = new DateTime(2025, 6, 11);
+            var to = from.AddDays(1);
+
+            mockShiftRepository
+                .Setup(r => r.GetShiftsForStaffInRange(It.IsAny<int>(), It.IsAny<DateTime>(), It.IsAny<DateTime>()))
+                .Returns(new List<Shift>());
+
+            var result = await service.GetShiftsForStaffInRangeAsync(1, from, to);
+
+            Assert.Empty(result);
+        }
+
+        [Fact]
+        public async Task GetShiftsForStaffInRangeAsync_PassesCorrectRangeToRepository()
+        {
+            var from = new DateTime(2025, 6, 9);
+            var to = new DateTime(2025, 6, 16);
+
+            mockShiftRepository
+                .Setup(r => r.GetShiftsForStaffInRange(It.IsAny<int>(), It.IsAny<DateTime>(), It.IsAny<DateTime>()))
+                .Returns(new List<Shift>());
+
+            await service.GetShiftsForStaffInRangeAsync(7, from, to);
+
+            mockShiftRepository.Verify(r => r.GetShiftsForStaffInRange(7, from, to), Times.Once);
         }
     }
 }

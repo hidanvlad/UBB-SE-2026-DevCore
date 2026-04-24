@@ -56,22 +56,34 @@ namespace DevCoreHospital.Repositories
 
         public void SaveEvaluation(MedicalEvaluation record)
         {
-            string sql = @"INSERT INTO Medical_Evaluations 
-                           (doctor_id, patient_id, diagnosis, doctor_notes, medications, source, assumed_risk)
-                           VALUES (@DocId, @PatId, @Diag, @Notes, @Meds, @Source, @Risk)";
-
             int patientId = int.TryParse(record.PatientId, out var parsedPatientId) ? parsedPatientId : 0;
             bool assumedRisk = (record.Symptoms ?? string.Empty).IndexOf("[RISK]", StringComparison.OrdinalIgnoreCase) >= 0;
+            int doctorId = record.Evaluator?.StaffID ?? AppSettings.DefaultDoctorId;
+
+            ExecuteSaveEvaluation(
+                doctorId,
+                patientId,
+                record.Symptoms ?? string.Empty,
+                record.Notes ?? string.Empty,
+                record.MedsList ?? string.Empty,
+                assumedRisk);
+        }
+
+        protected virtual void ExecuteSaveEvaluation(int doctorId, int patientId, string diagnosis, string notes, string meds, bool assumedRisk)
+        {
+            string sql = @"INSERT INTO Medical_Evaluations
+                           (doctor_id, patient_id, diagnosis, doctor_notes, medications, source, assumed_risk)
+                           VALUES (@DocId, @PatId, @Diag, @Notes, @Meds, @Source, @Risk)";
 
             using (SqlConnection conn = new SqlConnection(connectionString))
             {
                 using (SqlCommand cmd = new SqlCommand(sql, conn))
                 {
-                    cmd.Parameters.AddWithValue("@DocId", record.Evaluator?.StaffID ?? AppSettings.DefaultDoctorId);
+                    cmd.Parameters.AddWithValue("@DocId", doctorId);
                     cmd.Parameters.AddWithValue("@PatId", patientId);
-                    cmd.Parameters.AddWithValue("@Diag", record.Symptoms ?? string.Empty);
-                    cmd.Parameters.AddWithValue("@Notes", record.Notes ?? string.Empty);
-                    cmd.Parameters.AddWithValue("@Meds", record.MedsList ?? string.Empty);
+                    cmd.Parameters.AddWithValue("@Diag", diagnosis);
+                    cmd.Parameters.AddWithValue("@Notes", notes);
+                    cmd.Parameters.AddWithValue("@Meds", meds);
                     cmd.Parameters.AddWithValue("@Source", "PATIENT");
                     cmd.Parameters.AddWithValue("@Risk", assumedRisk);
 
@@ -83,16 +95,21 @@ namespace DevCoreHospital.Repositories
 
         public List<MedicalEvaluation> GetEvaluationsByDoctor(string doctorId)
         {
+            if (!int.TryParse(doctorId, out var parsedDoctorId))
+            {
+                return new List<MedicalEvaluation>();
+            }
+
+            return ExecuteFetchEvaluationsByDoctor(parsedDoctorId);
+        }
+
+        protected virtual List<MedicalEvaluation> ExecuteFetchEvaluationsByDoctor(int parsedDoctorId)
+        {
             var results = new List<MedicalEvaluation>();
             string sql = @"SELECT evaluation_id, patient_id, diagnosis, doctor_notes, medications
                            FROM Medical_Evaluations
                            WHERE doctor_id = @DocId
                            ORDER BY evaluation_id DESC";
-
-            if (!int.TryParse(doctorId, out var parsedDoctorId))
-            {
-                return results;
-            }
 
             using (SqlConnection conn = new SqlConnection(connectionString))
             {
@@ -109,6 +126,7 @@ namespace DevCoreHospital.Repositories
                     }
                 }
             }
+
             return results;
         }
 
@@ -139,10 +157,10 @@ namespace DevCoreHospital.Repositories
             }
         }
 
-        public double GetDoctorFatigueHours(string doctorId)
+        public virtual double GetDoctorFatigueHours(string doctorId)
         {
-            string sql = @"SELECT SUM(DATEDIFF(MINUTE, start_time, end_time)) / 60.0 
-                           FROM Shifts 
+            string sql = @"SELECT SUM(DATEDIFF(MINUTE, start_time, end_time)) / 60.0
+                           FROM Shifts
                            WHERE staff_id = @DocId AND end_time >= DATEADD(day, -1, GETDATE())";
 
             using (SqlConnection conn = new SqlConnection(connectionString))
@@ -234,7 +252,7 @@ namespace DevCoreHospital.Repositories
             return CheckPatientHistoryForRisk(patientId, meds);
         }
 
-        public string? GetHighRiskMedicineWarning(string medicineName)
+        public virtual string? GetHighRiskMedicineWarning(string medicineName)
         {
             using (SqlConnection conn = new SqlConnection(connectionString))
             {
@@ -246,15 +264,15 @@ namespace DevCoreHospital.Repositories
             }
         }
 
-        public string? CheckPatientHistoryForRisk(string patientId, string currentMeds)
+        public virtual string? CheckPatientHistoryForRisk(string patientId, string currentMeds)
         {
             using (SqlConnection conn = new SqlConnection(connectionString))
             {
-                string sql = @"SELECT diagnosis, medications FROM Medical_Evaluations 
-                       WHERE patient_id = @PatId 
-                       AND (diagnosis LIKE '%Allergy%' 
-                            OR diagnosis LIKE '%Adverse%' 
-                            OR doctor_notes LIKE '%Allergy%' 
+                string sql = @"SELECT diagnosis, medications FROM Medical_Evaluations
+                       WHERE patient_id = @PatId
+                       AND (diagnosis LIKE '%Allergy%'
+                            OR diagnosis LIKE '%Adverse%'
+                            OR doctor_notes LIKE '%Allergy%'
                             OR doctor_notes LIKE '%Adverse%')";
 
                 conn.Open();
@@ -275,6 +293,7 @@ namespace DevCoreHospital.Repositories
                     }
                 }
             }
+
             return null;
         }
     }

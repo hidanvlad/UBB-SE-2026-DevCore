@@ -2,12 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using DevCoreHospital.Models;
-using DevCoreHospital.Repositories;
 using DevCoreHospital.Tests.Fakes;
 using DevCoreHospital.ViewModels;
 using DevCoreHospital.ViewModels.Base;
 using DevCoreHospital.ViewModels.Doctor;
-using Moq;
 using Xunit;
 using MDoctor = DevCoreHospital.Models.Doctor;
 
@@ -22,16 +20,16 @@ public class MyScheduleViewModelTests
         var b = new MDoctor(2, "B", "B", string.Empty, string.Empty, true, "Card", "L", DoctorStatus.AVAILABLE, 1);
         var t = DateTime.UtcNow.AddDays(3);
         var s1a = new Shift(10, a, "ER", t, t.AddHours(4), ShiftStatus.SCHEDULED);
-        var staff = new Mock<IStaffRepository>();
-        staff.Setup(staffRepository => staffRepository.LoadAllStaff()).Returns(new List<IStaff> { a, b });
         var service = new FakeShiftSwapService();
+        service.AllDoctors.Add(a);
+        service.AllDoctors.Add(b);
         service.FutureShiftsByStaffId[1] = new List<Shift> { s1a };
         service.FutureShiftsByStaffId[2] = new List<Shift>
         {
             s1a,
             new Shift(11, b, "ER", t.AddDays(1), t.AddDays(1).AddHours(4), ShiftStatus.SCHEDULED)
         };
-        var vm = new MyScheduleViewModel(service, staff.Object);
+        var vm = new MyScheduleViewModel(service);
 
         vm.SelectedDoctor = vm.Doctors[1];
 
@@ -45,15 +43,15 @@ public class MyScheduleViewModelTests
         var c = new MDoctor(2, "C", "C", string.Empty, string.Empty, true, "Neuro", "L", DoctorStatus.AVAILABLE, 1);
         var t = DateTime.UtcNow.AddDays(4);
         var shift1 = new Shift(10, a, "W", t, t.AddHours(5), ShiftStatus.SCHEDULED);
-        var staff = new Mock<IStaffRepository>();
-        staff.Setup(staffRepository => staffRepository.LoadAllStaff()).Returns(new List<IStaff> { a, c });
         var service = new FakeShiftSwapService
         {
             EligibleError = string.Empty
         };
+        service.AllDoctors.Add(a);
+        service.AllDoctors.Add(c);
         service.FutureShiftsByStaffId[1] = new List<Shift> { shift1 };
         service.EligibleColleagues.Add(c);
-        var vm = new MyScheduleViewModel(service, staff.Object);
+        var vm = new MyScheduleViewModel(service);
 
         vm.SelectedShift = vm.FutureShifts.FirstOrDefault();
 
@@ -66,11 +64,10 @@ public class MyScheduleViewModelTests
         var a = new MDoctor(1, "A", "A", string.Empty, string.Empty, true, "E", "L", DoctorStatus.AVAILABLE, 1);
         var t = DateTime.UtcNow.AddDays(5);
         var sh1 = new Shift(10, a, "W", t, t.AddHours(3), ShiftStatus.SCHEDULED);
-        var staff = new Mock<IStaffRepository>();
-        staff.Setup(staffRepository => staffRepository.LoadAllStaff()).Returns(new List<IStaff> { a });
         var service = new FakeShiftSwapService { EligibleError = string.Empty };
+        service.AllDoctors.Add(a);
         service.FutureShiftsByStaffId[1] = new List<Shift> { sh1 };
-        var vm = new MyScheduleViewModel(service, staff.Object);
+        var vm = new MyScheduleViewModel(service);
         vm.SelectedColleague = null;
         vm.SelectedShift = vm.FutureShifts[0];
 
@@ -85,15 +82,14 @@ public class MyScheduleViewModelTests
         var a = new MDoctor(1, "A", "A", string.Empty, string.Empty, true, "E", "L", DoctorStatus.AVAILABLE, 1);
         var t = DateTime.UtcNow.AddDays(6);
         var sh1 = new Shift(10, a, "W", t, t.AddHours(2), ShiftStatus.SCHEDULED);
-        var staff = new Mock<IStaffRepository>();
-        staff.Setup(staffRepository => staffRepository.LoadAllStaff()).Returns(new List<IStaff> { a });
         var service = new FakeShiftSwapService
         {
             RequestResult = true,
             RequestMessage = "Shift swap request sent successfully."
         };
+        service.AllDoctors.Add(a);
         service.FutureShiftsByStaffId[1] = new List<Shift> { sh1 };
-        var vm = new MyScheduleViewModel(service, staff.Object);
+        var vm = new MyScheduleViewModel(service);
         vm.SelectedColleague = new StaffOptionViewModel { StaffId = 2, DisplayName = "Col" };
         vm.SelectedShift = vm.FutureShifts[0];
 
@@ -105,10 +101,8 @@ public class MyScheduleViewModelTests
     [Fact]
     public void LoadDoctors_WhenStaffHasNoDoctors_SetsNoDoctorsMessage()
     {
-        var staff = new Mock<IStaffRepository>();
-        staff.Setup(staffRepository => staffRepository.LoadAllStaff()).Returns(new List<IStaff>());
         var service = new FakeShiftSwapService();
-        var vm = new MyScheduleViewModel(service, staff.Object);
+        var vm = new MyScheduleViewModel(service);
 
         Assert.Equal("No doctors found in database.", vm.StatusMessage);
     }
@@ -118,11 +112,10 @@ public class MyScheduleViewModelTests
     {
         var doc = new MDoctor(1, "A", "A", string.Empty, string.Empty, true, "S", "L", DoctorStatus.AVAILABLE, 1);
         var past = new Shift(1, doc, "W", DateTime.UtcNow.AddDays(-2), DateTime.UtcNow.AddDays(-2).AddHours(1), ShiftStatus.SCHEDULED);
-        var staff = new Mock<IStaffRepository>();
-        staff.Setup(staffRepository => staffRepository.LoadAllStaff()).Returns(new List<IStaff> { doc });
         var service = new FakeShiftSwapService();
+        service.AllDoctors.Add(doc);
         service.FutureShiftsByStaffId[1] = new List<Shift> { past };
-        var vm = new MyScheduleViewModel(service, staff.Object);
+        var vm = new MyScheduleViewModel(service);
 
         Assert.Equal("Selected doctor has no future shifts available for swap requests.", vm.StatusMessage);
     }
@@ -133,11 +126,10 @@ public class MyScheduleViewModelTests
         var doc = new MDoctor(1, "A", "A", string.Empty, string.Empty, true, "S", "L", DoctorStatus.AVAILABLE, 1);
         var when = DateTime.UtcNow.AddDays(2);
         var one = new Shift(8, doc, "W", when, when.AddHours(1), ShiftStatus.SCHEDULED);
-        var staff = new Mock<IStaffRepository>();
-        staff.Setup(staffRepository => staffRepository.LoadAllStaff()).Returns(new List<IStaff> { doc });
         var service = new FakeShiftSwapService { EligibleError = "Shift not found." };
+        service.AllDoctors.Add(doc);
         service.FutureShiftsByStaffId[1] = new List<Shift> { one };
-        var vm = new MyScheduleViewModel(service, staff.Object);
+        var vm = new MyScheduleViewModel(service);
 
         vm.SelectedShift = vm.FutureShifts[0];
 
@@ -150,11 +142,10 @@ public class MyScheduleViewModelTests
         var doc = new MDoctor(1, "A", "A", string.Empty, string.Empty, true, "S", "L", DoctorStatus.AVAILABLE, 1);
         var when = DateTime.UtcNow.AddDays(2);
         var one = new Shift(8, doc, "W", when, when.AddHours(1), ShiftStatus.SCHEDULED);
-        var staff = new Mock<IStaffRepository>();
-        staff.Setup(staffRepository => staffRepository.LoadAllStaff()).Returns(new List<IStaff> { doc });
         var service = new FakeShiftSwapService { EligibleError = string.Empty };
+        service.AllDoctors.Add(doc);
         service.FutureShiftsByStaffId[1] = new List<Shift> { one };
-        var vm = new MyScheduleViewModel(service, staff.Object);
+        var vm = new MyScheduleViewModel(service);
 
         vm.SelectedShift = vm.FutureShifts[0];
 
@@ -167,11 +158,10 @@ public class MyScheduleViewModelTests
         var doc = new MDoctor(1, "A", "A", string.Empty, string.Empty, true, "E", "L", DoctorStatus.AVAILABLE, 1);
         var when = DateTime.UtcNow.AddDays(3);
         var sh1 = new Shift(10, doc, "W", when, when.AddHours(2), ShiftStatus.SCHEDULED);
-        var staff = new Mock<IStaffRepository>();
-        staff.Setup(staffRepository => staffRepository.LoadAllStaff()).Returns(new List<IStaff> { doc });
         var service = new FakeShiftSwapService { EligibleError = string.Empty };
+        service.AllDoctors.Add(doc);
         service.FutureShiftsByStaffId[1] = new List<Shift> { sh1 };
-        var vm = new MyScheduleViewModel(service, staff.Object);
+        var vm = new MyScheduleViewModel(service);
         vm.SelectedColleague = new StaffOptionViewModel { StaffId = 2, DisplayName = "B" };
         vm.SelectedShift = null;
 
@@ -186,15 +176,14 @@ public class MyScheduleViewModelTests
         var a = new MDoctor(1, "A", "A", string.Empty, string.Empty, true, "E", "L", DoctorStatus.AVAILABLE, 1);
         var t = DateTime.UtcNow.AddDays(6);
         var sh1 = new Shift(10, a, "W", t, t.AddHours(2), ShiftStatus.SCHEDULED);
-        var staff = new Mock<IStaffRepository>();
-        staff.Setup(staffRepository => staffRepository.LoadAllStaff()).Returns(new List<IStaff> { a });
         var service = new FakeShiftSwapService
         {
             RequestResult = true,
             RequestMessage = "Shift swap request sent successfully."
         };
+        service.AllDoctors.Add(a);
         service.FutureShiftsByStaffId[1] = new List<Shift> { sh1 };
-        var vm = new MyScheduleViewModel(service, staff.Object);
+        var vm = new MyScheduleViewModel(service);
         vm.SelectedColleague = new StaffOptionViewModel { StaffId = 2, DisplayName = "Col" };
         vm.SelectedShift = vm.FutureShifts[0];
 
@@ -209,11 +198,10 @@ public class MyScheduleViewModelTests
         var doc = new MDoctor(1, "A", "A", string.Empty, string.Empty, true, "E", "L", DoctorStatus.AVAILABLE, 1);
         var when = DateTime.UtcNow.AddDays(3);
         var sh1 = new Shift(10, doc, "W", when, when.AddHours(2), ShiftStatus.SCHEDULED);
-        var staff = new Mock<IStaffRepository>();
-        staff.Setup(staffRepository => staffRepository.LoadAllStaff()).Returns(new List<IStaff> { doc });
         var service = new FakeShiftSwapService();
+        service.AllDoctors.Add(doc);
         service.FutureShiftsByStaffId[1] = new List<Shift> { sh1 };
-        var vm = new MyScheduleViewModel(service, staff.Object);
+        var vm = new MyScheduleViewModel(service);
         vm.SelectedColleague = new StaffOptionViewModel { StaffId = 1, DisplayName = "X" };
         vm.SelectedShift = null;
 

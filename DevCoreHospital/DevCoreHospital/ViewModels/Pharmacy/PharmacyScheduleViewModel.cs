@@ -3,7 +3,6 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
 using DevCoreHospital.Models;
-using DevCoreHospital.Repositories;
 using DevCoreHospital.Services;
 using DevCoreHospital.ViewModels.Base;
 
@@ -13,7 +12,6 @@ public class PharmacyScheduleViewModel : ObservableObject
 {
     private readonly ICurrentUserService currentUser;
     private readonly IPharmacyScheduleService scheduleService;
-    private readonly IPharmacyStaffRepository staffRepository;
     private bool isInitializing;
 
     public ObservableCollection<PharmacyShiftItemViewModel> Shifts { get; } = new ObservableCollection<PharmacyShiftItemViewModel>();
@@ -99,12 +97,10 @@ public class PharmacyScheduleViewModel : ObservableObject
 
     public PharmacyScheduleViewModel(
         ICurrentUserService currentUser,
-        IPharmacyScheduleService scheduleService,
-        IPharmacyStaffRepository staffRepository)
+        IPharmacyScheduleService scheduleService)
     {
         this.currentUser = currentUser;
         this.scheduleService = scheduleService;
-        this.staffRepository = staffRepository;
 
         RefreshCommand = new AsyncRelayCommand(LoadAsync, () => IsPharmacist);
         TodayCommand = new RelayCommand(() => AnchorDate = DateTime.Today, () => IsPharmacist);
@@ -190,7 +186,7 @@ public class PharmacyScheduleViewModel : ObservableObject
     private async Task LoadPharmacistsAsync()
     {
         Pharmacists.Clear();
-        var allPharmacists = await Task.Run(() => staffRepository.GetPharmacists());
+        var allPharmacists = await Task.Run(() => scheduleService.GetPharmacists());
 
         foreach (var pharmacist in allPharmacists
             .OrderBy(pharmacist => pharmacist.FirstName)

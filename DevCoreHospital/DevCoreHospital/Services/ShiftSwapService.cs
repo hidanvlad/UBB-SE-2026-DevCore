@@ -193,6 +193,9 @@ namespace DevCoreHospital.Services
             return true;
         }
 
+        public List<Doctor> GetAllDoctors() =>
+            staffRepository.LoadAllStaff().OfType<Doctor>().ToList();
+
         public bool RejectSwapRequest(int swapId, int colleagueId, out string message)
         {
             message = string.Empty;
