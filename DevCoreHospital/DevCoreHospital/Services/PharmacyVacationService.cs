@@ -38,15 +38,16 @@ namespace DevCoreHospital.Services
                 throw new ArgumentException("End date must be on or after start date.");
             }
 
+            bool HasMatchingStaffId(Pharmacyst existingPharmacist) => existingPharmacist.StaffID == pharmacistStaffId;
             var pharmacist = staffRepository
                 .GetPharmacists()
-                .FirstOrDefault(existingPharmacist => existingPharmacist.StaffID == pharmacistStaffId)
+                .FirstOrDefault(HasMatchingStaffId)
                 ?? throw new ArgumentException("Pharmacist not found.");
 
             var pharmacistShifts = shiftRepository.GetShiftsByStaffID(pharmacistStaffId);
 
-            var overlappingShift = pharmacistShifts.FirstOrDefault(shift =>
-                start < shift.EndTime && endExclusive > shift.StartTime);
+            bool OverlapsVacationPeriod(Shift shift) => start < shift.EndTime && endExclusive > shift.StartTime;
+            var overlappingShift = pharmacistShifts.FirstOrDefault(OverlapsVacationPeriod);
 
             if (overlappingShift is not null)
             {
@@ -82,14 +83,18 @@ namespace DevCoreHospital.Services
         {
             var daysByMonth = new Dictionary<(int Year, int Month), HashSet<DateTime>>();
 
-            foreach (var shift in staffShifts.Where(existingShift => existingShift.Status == ShiftStatus.VACATION))
+            bool IsVacationShift(Shift existingShift) => existingShift.Status == ShiftStatus.VACATION;
+
+            foreach (var shift in staffShifts.Where(IsVacationShift))
             {
                 AddShiftDaysToBuckets(daysByMonth, shift.StartTime.Date, shift.EndTime.Date);
             }
 
             AddShiftDaysToBuckets(daysByMonth, newStartInclusive.Date, newEndExclusive.Date);
 
-            return daysByMonth.Values.Any(daysInMonth => daysInMonth.Count > maxDaysPerMonth);
+            bool ExceedsLimit(HashSet<DateTime> daysInMonth) => daysInMonth.Count > maxDaysPerMonth;
+
+            return daysByMonth.Values.Any(ExceedsLimit);
         }
 
         private static void AddShiftDaysToBuckets(

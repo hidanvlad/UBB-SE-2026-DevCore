@@ -20,7 +20,7 @@ namespace DevCoreHospital.Views.Admin
             WeekStartPicker.Date = new System.DateTimeOffset(System.DateTime.Today);
         }
 
-        private void WeekStartPicker_DateChanged(CalendarDatePicker sender, CalendarDatePickerDateChangedEventArgs args)
+        private void WeekStartPicker_DateChanged(CalendarDatePicker sender, CalendarDatePickerDateChangedEventArgs eventArgs)
         {
             if (sender.Date.HasValue)
             {
@@ -28,25 +28,25 @@ namespace DevCoreHospital.Views.Admin
             }
         }
 
-        private void RunAutoAudit_Click(object sender, RoutedEventArgs e)
+        private void RunAutoAudit_Click(object sender, RoutedEventArgs eventArgs)
         {
             try
             {
                 viewModel.RunAutoAudit();
             }
-            catch (System.Exception ex)
+            catch (System.Exception exception)
             {
-                viewModel.StatusMessage = $"Error during audit: {ex.Message}";
+                viewModel.StatusMessage = $"Error during audit: {exception.Message}";
             }
         }
 
-        private void Refresh_Click(object sender, RoutedEventArgs e)
+        private void Refresh_Click(object sender, RoutedEventArgs eventArgs)
         {
             viewModel.Violations.Clear();
             viewModel.Suggestions.Clear();
         }
 
-        private async void ApplyReassignment_Click(object sender, RoutedEventArgs e)
+        private async void ApplyReassignment_Click(object sender, RoutedEventArgs eventArgs)
         {
             if (sender is Button button && button.Tag is int shiftId)
             {
@@ -63,7 +63,7 @@ namespace DevCoreHospital.Views.Admin
             }
         }
 
-        private void PublishRoster_Click(object sender, RoutedEventArgs e)
+        private void PublishRoster_Click(object sender, RoutedEventArgs eventArgs)
         {
             if (viewModel.CanPublish)
             {

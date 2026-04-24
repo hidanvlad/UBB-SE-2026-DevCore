@@ -19,36 +19,36 @@ namespace DevCoreHospital.Tests.ViewModels
             userMock = new Mock<ICurrentUserService>();
             serviceMock = new Mock<IPharmacyScheduleService>();
 
-            userMock.Setup(u => u.Role).Returns("Pharmacist");
-            userMock.Setup(u => u.UserId).Returns(1);
+            userMock.Setup(currentUser => currentUser.Role).Returns("Pharmacist");
+            userMock.Setup(currentUser => currentUser.UserId).Returns(1);
 
             serviceMock
-                .Setup(s => s.GetShiftsAsync(It.IsAny<int>(), It.IsAny<DateTime>(), It.IsAny<DateTime>()))
+                .Setup(scheduleService => scheduleService.GetShiftsAsync(It.IsAny<int>(), It.IsAny<DateTime>(), It.IsAny<DateTime>()))
                 .ReturnsAsync(new List<Shift>());
         }
 
         private PharmacyScheduleViewModel CreateViewModel()
             => new PharmacyScheduleViewModel(userMock.Object, serviceMock.Object);
 
-        private static void SetSelectedPharmacist(PharmacyScheduleViewModel vm, PharmacyScheduleViewModel.PharmacistOption? pharmacist)
+        private static void SetSelectedPharmacist(PharmacyScheduleViewModel viewModel, PharmacyScheduleViewModel.PharmacistOption? pharmacist)
         {
             var field = typeof(PharmacyScheduleViewModel)
                 .GetField("selectedPharmacist", BindingFlags.NonPublic | BindingFlags.Instance);
-            field!.SetValue(vm, pharmacist);
+            field!.SetValue(viewModel, pharmacist);
         }
 
-        private static void SetIsWeeklyView(PharmacyScheduleViewModel vm, bool value)
+        private static void SetIsWeeklyView(PharmacyScheduleViewModel viewModel, bool value)
         {
             var field = typeof(PharmacyScheduleViewModel)
                 .GetField("isWeeklyView", BindingFlags.NonPublic | BindingFlags.Instance);
-            field!.SetValue(vm, value);
+            field!.SetValue(viewModel, value);
         }
 
-        private static void SetAnchorDate(PharmacyScheduleViewModel vm, DateTime date)
+        private static void SetAnchorDate(PharmacyScheduleViewModel viewModel, DateTime date)
         {
             var field = typeof(PharmacyScheduleViewModel)
                 .GetField("anchorDate", BindingFlags.NonPublic | BindingFlags.Instance);
-            field!.SetValue(vm, date);
+            field!.SetValue(viewModel, date);
         }
 
         private static PharmacyScheduleViewModel.PharmacistOption MakePharmacist(int id = 1, string name = "Alice Smith")
@@ -57,56 +57,56 @@ namespace DevCoreHospital.Tests.ViewModels
         [Fact]
         public void IsAccessDenied_IsTrue_WhenRoleIsNotPharmacistOrAdmin()
         {
-            userMock.Setup(u => u.Role).Returns("Doctor");
-            var vm = CreateViewModel();
+            userMock.Setup(currentUser => currentUser.Role).Returns("Doctor");
+            var viewModel = CreateViewModel();
 
-            Assert.True(vm.IsAccessDenied);
-            Assert.False(vm.IsPharmacist);
+            Assert.True(viewModel.IsAccessDenied);
+            Assert.False(viewModel.IsPharmacist);
         }
 
         [Fact]
         public void IsPharmacist_IsTrue_WhenRoleIsPharmacist()
         {
-            userMock.Setup(u => u.Role).Returns("Pharmacist");
-            var vm = CreateViewModel();
+            userMock.Setup(currentUser => currentUser.Role).Returns("Pharmacist");
+            var viewModel = CreateViewModel();
 
-            Assert.True(vm.IsPharmacist);
+            Assert.True(viewModel.IsPharmacist);
         }
 
         [Fact]
         public void IsPharmacist_IsTrue_WhenRoleIsAdmin()
         {
-            userMock.Setup(u => u.Role).Returns("Admin");
-            var vm = CreateViewModel();
+            userMock.Setup(currentUser => currentUser.Role).Returns("Admin");
+            var viewModel = CreateViewModel();
 
-            Assert.True(vm.IsPharmacist);
+            Assert.True(viewModel.IsPharmacist);
         }
 
         [Fact]
         public async Task LoadAsync_ClearsShifts_AndDoesNotCallService_WhenAccessDenied()
         {
-            userMock.Setup(u => u.Role).Returns("Doctor");
-            var vm = CreateViewModel();
+            userMock.Setup(currentUser => currentUser.Role).Returns("Doctor");
+            var viewModel = CreateViewModel();
 
-            await vm.LoadAsync();
+            await viewModel.LoadAsync();
 
-            Assert.Empty(vm.Shifts);
+            Assert.Empty(viewModel.Shifts);
             serviceMock.Verify(
-                s => s.GetShiftsAsync(It.IsAny<int>(), It.IsAny<DateTime>(), It.IsAny<DateTime>()),
+                scheduleService => scheduleService.GetShiftsAsync(It.IsAny<int>(), It.IsAny<DateTime>(), It.IsAny<DateTime>()),
                 Times.Never);
         }
 
         [Fact]
         public async Task LoadAsync_ReturnsEarly_WhenNoPharmacistSelected()
         {
-            var vm = CreateViewModel();
-            SetSelectedPharmacist(vm, null);
+            var viewModel = CreateViewModel();
+            SetSelectedPharmacist(viewModel, null);
 
-            await vm.LoadAsync();
+            await viewModel.LoadAsync();
 
-            Assert.Empty(vm.Shifts);
+            Assert.Empty(viewModel.Shifts);
             serviceMock.Verify(
-                s => s.GetShiftsAsync(It.IsAny<int>(), It.IsAny<DateTime>(), It.IsAny<DateTime>()),
+                scheduleService => scheduleService.GetShiftsAsync(It.IsAny<int>(), It.IsAny<DateTime>(), It.IsAny<DateTime>()),
                 Times.Never);
         }
 
@@ -114,17 +114,17 @@ namespace DevCoreHospital.Tests.ViewModels
         public async Task LoadAsync_UsesCorrectDailyRange_WhenIsDailyView()
         {
             var anchor = new DateTime(2025, 4, 16); // Wednesday
-            var vm = CreateViewModel();
-            SetAnchorDate(vm, anchor);
-            SetIsWeeklyView(vm, false);
-            SetSelectedPharmacist(vm, MakePharmacist(id: 1));
+            var viewModel = CreateViewModel();
+            SetAnchorDate(viewModel, anchor);
+            SetIsWeeklyView(viewModel, false);
+            SetSelectedPharmacist(viewModel, MakePharmacist(id: 1));
 
-            await vm.LoadAsync();
+            await viewModel.LoadAsync();
 
             var expectedStart = anchor.Date;
             var expectedEnd = anchor.Date.AddDays(1);
             serviceMock.Verify(
-                s => s.GetShiftsAsync(1, expectedStart, expectedEnd),
+                scheduleService => scheduleService.GetShiftsAsync(1, expectedStart, expectedEnd),
                 Times.Once);
         }
 
@@ -132,17 +132,17 @@ namespace DevCoreHospital.Tests.ViewModels
         public async Task LoadAsync_UsesCorrectWeeklyRange_WhenIsWeeklyView()
         {
             var anchor = new DateTime(2025, 4, 16);
-            var vm = CreateViewModel();
-            SetAnchorDate(vm, anchor);
-            SetIsWeeklyView(vm, true);
-            SetSelectedPharmacist(vm, MakePharmacist(id: 1));
+            var viewModel = CreateViewModel();
+            SetAnchorDate(viewModel, anchor);
+            SetIsWeeklyView(viewModel, true);
+            SetSelectedPharmacist(viewModel, MakePharmacist(id: 1));
 
-            await vm.LoadAsync();
+            await viewModel.LoadAsync();
 
             var expectedStart = new DateTime(2025, 4, 14);
             var expectedEnd = new DateTime(2025, 4, 21);   // +7 days
             serviceMock.Verify(
-                s => s.GetShiftsAsync(1, expectedStart, expectedEnd),
+                scheduleService => scheduleService.GetShiftsAsync(1, expectedStart, expectedEnd),
                 Times.Once);
         }
 
@@ -155,41 +155,41 @@ namespace DevCoreHospital.Tests.ViewModels
             var shift = new Shift(1, staff, "Pharmacy A", start, end, ShiftStatus.SCHEDULED);
 
             serviceMock
-                .Setup(s => s.GetShiftsAsync(It.IsAny<int>(), It.IsAny<DateTime>(), It.IsAny<DateTime>()))
+                .Setup(scheduleService => scheduleService.GetShiftsAsync(It.IsAny<int>(), It.IsAny<DateTime>(), It.IsAny<DateTime>()))
                 .ReturnsAsync(new List<Shift> { shift });
 
-            var vm = CreateViewModel();
-            SetSelectedPharmacist(vm, MakePharmacist(id: 1));
+            var viewModel = CreateViewModel();
+            SetSelectedPharmacist(viewModel, MakePharmacist(id: 1));
 
-            await vm.LoadAsync();
+            await viewModel.LoadAsync();
 
-            Assert.Single(vm.Shifts);
+            Assert.Single(viewModel.Shifts);
         }
 
         [Fact]
         public async Task LoadAsync_SetsErrorMessage_WhenServiceThrows()
         {
             serviceMock
-                .Setup(s => s.GetShiftsAsync(It.IsAny<int>(), It.IsAny<DateTime>(), It.IsAny<DateTime>()))
+                .Setup(scheduleService => scheduleService.GetShiftsAsync(It.IsAny<int>(), It.IsAny<DateTime>(), It.IsAny<DateTime>()))
                 .ThrowsAsync(new InvalidOperationException("DB error"));
 
-            var vm = CreateViewModel();
-            SetSelectedPharmacist(vm, MakePharmacist());
+            var viewModel = CreateViewModel();
+            SetSelectedPharmacist(viewModel, MakePharmacist());
 
-            await vm.LoadAsync();
+            await viewModel.LoadAsync();
 
-            Assert.Contains("Failed to load pharmacy schedule", vm.ErrorMessage);
+            Assert.Contains("Failed to load pharmacy schedule", viewModel.ErrorMessage);
         }
 
         [Fact]
         public void HeaderSubtitle_ShowsWeekRange_WhenIsWeeklyView()
         {
             var anchor = new DateTime(2025, 4, 16);
-            var vm = CreateViewModel();
-            SetAnchorDate(vm, anchor);
-            SetIsWeeklyView(vm, true);
+            var viewModel = CreateViewModel();
+            SetAnchorDate(viewModel, anchor);
+            SetIsWeeklyView(viewModel, true);
 
-            var subtitle = vm.HeaderSubtitle;
+            var subtitle = viewModel.HeaderSubtitle;
 
             Assert.Contains("14 Apr 2025", subtitle);
             Assert.Contains("20 Apr 2025", subtitle);
@@ -199,150 +199,150 @@ namespace DevCoreHospital.Tests.ViewModels
         public void HeaderSubtitle_ShowsDayName_WhenIsDailyView()
         {
             var anchor = new DateTime(2025, 4, 16);
-            var vm = CreateViewModel();
-            SetAnchorDate(vm, anchor);
-            SetIsWeeklyView(vm, false);
+            var viewModel = CreateViewModel();
+            SetAnchorDate(viewModel, anchor);
+            SetIsWeeklyView(viewModel, false);
 
-            Assert.Contains("Wednesday", vm.HeaderSubtitle);
-            Assert.Contains("16 Apr 2025", vm.HeaderSubtitle);
+            Assert.Contains("Wednesday", viewModel.HeaderSubtitle);
+            Assert.Contains("16 Apr 2025", viewModel.HeaderSubtitle);
         }
 
         [Fact]
         public void SelectedDateText_ShowsWeekOf_WhenIsWeeklyView()
         {
             var anchor = new DateTime(2025, 4, 16);
-            var vm = CreateViewModel();
-            SetAnchorDate(vm, anchor);
-            SetIsWeeklyView(vm, true);
+            var viewModel = CreateViewModel();
+            SetAnchorDate(viewModel, anchor);
+            SetIsWeeklyView(viewModel, true);
 
-            Assert.StartsWith("Week of ", vm.SelectedDateText);
-            Assert.Contains("14 Apr 2025", vm.SelectedDateText);
+            Assert.StartsWith("Week of ", viewModel.SelectedDateText);
+            Assert.Contains("14 Apr 2025", viewModel.SelectedDateText);
         }
 
         [Fact]
         public void SelectedDateText_ShowsDayDate_WhenIsDailyView()
         {
             var anchor = new DateTime(2025, 4, 16);
-            var vm = CreateViewModel();
-            SetAnchorDate(vm, anchor);
-            SetIsWeeklyView(vm, false);
+            var viewModel = CreateViewModel();
+            SetAnchorDate(viewModel, anchor);
+            SetIsWeeklyView(viewModel, false);
 
-            Assert.Contains("Wednesday", vm.SelectedDateText);
+            Assert.Contains("Wednesday", viewModel.SelectedDateText);
         }
 
         [Fact]
         public void IsDailyView_IsOppositeOfIsWeeklyView()
         {
-            var vm = CreateViewModel();
-            SetIsWeeklyView(vm, true);
+            var viewModel = CreateViewModel();
+            SetIsWeeklyView(viewModel, true);
 
-            Assert.False(vm.IsDailyView);
+            Assert.False(viewModel.IsDailyView);
 
-            SetIsWeeklyView(vm, false);
+            SetIsWeeklyView(viewModel, false);
 
-            Assert.True(vm.IsDailyView);
+            Assert.True(viewModel.IsDailyView);
         }
 
         [Fact]
         public void NextPeriodCommand_AdvancesAnchorByOneWeek_WhenIsWeeklyView()
         {
             var anchor = new DateTime(2025, 4, 14);
-            var vm = CreateViewModel();
-            SetAnchorDate(vm, anchor);
-            SetIsWeeklyView(vm, true);
+            var viewModel = CreateViewModel();
+            SetAnchorDate(viewModel, anchor);
+            SetIsWeeklyView(viewModel, true);
 
-            vm.NextPeriodCommand.Execute(null);
+            viewModel.NextPeriodCommand.Execute(null);
 
-            Assert.Equal(anchor.AddDays(7), vm.AnchorDate);
+            Assert.Equal(anchor.AddDays(7), viewModel.AnchorDate);
         }
 
         [Fact]
         public void NextPeriodCommand_AdvancesAnchorByOneDay_WhenIsDailyView()
         {
             var anchor = new DateTime(2025, 4, 14);
-            var vm = CreateViewModel();
-            SetAnchorDate(vm, anchor);
-            SetIsWeeklyView(vm, false);
+            var viewModel = CreateViewModel();
+            SetAnchorDate(viewModel, anchor);
+            SetIsWeeklyView(viewModel, false);
 
-            vm.NextPeriodCommand.Execute(null);
+            viewModel.NextPeriodCommand.Execute(null);
 
-            Assert.Equal(anchor.AddDays(1), vm.AnchorDate);
+            Assert.Equal(anchor.AddDays(1), viewModel.AnchorDate);
         }
 
         [Fact]
         public void PreviousPeriodCommand_GoesBackOneWeek_WhenIsWeeklyView()
         {
             var anchor = new DateTime(2025, 4, 14);
-            var vm = CreateViewModel();
-            SetAnchorDate(vm, anchor);
-            SetIsWeeklyView(vm, true);
+            var viewModel = CreateViewModel();
+            SetAnchorDate(viewModel, anchor);
+            SetIsWeeklyView(viewModel, true);
 
-            vm.PreviousPeriodCommand.Execute(null);
+            viewModel.PreviousPeriodCommand.Execute(null);
 
-            Assert.Equal(anchor.AddDays(-7), vm.AnchorDate);
+            Assert.Equal(anchor.AddDays(-7), viewModel.AnchorDate);
         }
 
         [Fact]
         public void PreviousPeriodCommand_GoesBackOneDay_WhenIsDailyView()
         {
             var anchor = new DateTime(2025, 4, 14);
-            var vm = CreateViewModel();
-            SetAnchorDate(vm, anchor);
-            SetIsWeeklyView(vm, false);
+            var viewModel = CreateViewModel();
+            SetAnchorDate(viewModel, anchor);
+            SetIsWeeklyView(viewModel, false);
 
-            vm.PreviousPeriodCommand.Execute(null);
+            viewModel.PreviousPeriodCommand.Execute(null);
 
-            Assert.Equal(anchor.AddDays(-1), vm.AnchorDate);
+            Assert.Equal(anchor.AddDays(-1), viewModel.AnchorDate);
         }
 
         [Fact]
         public void ShowDailyCommand_SetsIsDailyViewTrue()
         {
-            var vm = CreateViewModel();
-            SetIsWeeklyView(vm, true);
+            var viewModel = CreateViewModel();
+            SetIsWeeklyView(viewModel, true);
 
-            vm.ShowDailyCommand.Execute(null);
+            viewModel.ShowDailyCommand.Execute(null);
 
-            Assert.True(vm.IsDailyView);
-            Assert.False(vm.IsWeeklyView);
+            Assert.True(viewModel.IsDailyView);
+            Assert.False(viewModel.IsWeeklyView);
         }
 
         [Fact]
         public void ShowWeeklyCommand_SetsIsWeeklyViewTrue()
         {
-            var vm = CreateViewModel();
-            SetIsWeeklyView(vm, false);
+            var viewModel = CreateViewModel();
+            SetIsWeeklyView(viewModel, false);
 
-            vm.ShowWeeklyCommand.Execute(null);
+            viewModel.ShowWeeklyCommand.Execute(null);
 
-            Assert.True(vm.IsWeeklyView);
-            Assert.False(vm.IsDailyView);
+            Assert.True(viewModel.IsWeeklyView);
+            Assert.False(viewModel.IsDailyView);
         }
 
         [Fact]
         public void TodayCommand_SetsAnchorDateToToday()
         {
-            var vm = CreateViewModel();
-                SetAnchorDate(vm, new DateTime(2020, 1, 1));
+            var viewModel = CreateViewModel();
+                SetAnchorDate(viewModel, new DateTime(2020, 1, 1));
 
-            vm.TodayCommand.Execute(null);
+            viewModel.TodayCommand.Execute(null);
 
-            Assert.Equal(DateTime.Today, vm.AnchorDate);
+            Assert.Equal(DateTime.Today, viewModel.AnchorDate);
         }
 
         [Fact]
         public async Task IsEmpty_IsTrue_WhenNoShiftsLoadedAndNoError()
         {
             serviceMock
-                .Setup(s => s.GetShiftsAsync(It.IsAny<int>(), It.IsAny<DateTime>(), It.IsAny<DateTime>()))
+                .Setup(scheduleService => scheduleService.GetShiftsAsync(It.IsAny<int>(), It.IsAny<DateTime>(), It.IsAny<DateTime>()))
                 .ReturnsAsync(new List<Shift>());
 
-            var vm = CreateViewModel();
-            SetSelectedPharmacist(vm, MakePharmacist());
+            var viewModel = CreateViewModel();
+            SetSelectedPharmacist(viewModel, MakePharmacist());
 
-            await vm.LoadAsync();
+            await viewModel.LoadAsync();
 
-            Assert.True(vm.IsEmpty);
+            Assert.True(viewModel.IsEmpty);
         }
 
         [Fact]
@@ -351,75 +351,75 @@ namespace DevCoreHospital.Tests.ViewModels
             var staff = new Doctor { StaffID = 1, FirstName = "T", LastName = "D" };
             var shift = new Shift(1, staff, "X", DateTime.Today, DateTime.Today.AddHours(8), ShiftStatus.SCHEDULED);
             serviceMock
-                .Setup(s => s.GetShiftsAsync(It.IsAny<int>(), It.IsAny<DateTime>(), It.IsAny<DateTime>()))
+                .Setup(scheduleService => scheduleService.GetShiftsAsync(It.IsAny<int>(), It.IsAny<DateTime>(), It.IsAny<DateTime>()))
                 .ReturnsAsync(new List<Shift> { shift });
 
-            var vm = CreateViewModel();
-            SetSelectedPharmacist(vm, MakePharmacist());
+            var viewModel = CreateViewModel();
+            SetSelectedPharmacist(viewModel, MakePharmacist());
 
-            await vm.LoadAsync();
+            await viewModel.LoadAsync();
 
-            Assert.False(vm.IsEmpty);
+            Assert.False(viewModel.IsEmpty);
         }
 
         [Fact]
         public async Task IsLoading_IsFalseAfterLoadCompletes()
         {
-            var vm = CreateViewModel();
-            SetSelectedPharmacist(vm, MakePharmacist());
+            var viewModel = CreateViewModel();
+            SetSelectedPharmacist(viewModel, MakePharmacist());
 
-            await vm.LoadAsync();
+            await viewModel.LoadAsync();
 
-            Assert.False(vm.IsLoading);
+            Assert.False(viewModel.IsLoading);
         }
 
         [Fact]
         public async Task IsLoading_IsFalse_EvenAfterServiceThrows()
         {
             serviceMock
-                .Setup(s => s.GetShiftsAsync(It.IsAny<int>(), It.IsAny<DateTime>(), It.IsAny<DateTime>()))
+                .Setup(scheduleService => scheduleService.GetShiftsAsync(It.IsAny<int>(), It.IsAny<DateTime>(), It.IsAny<DateTime>()))
                 .ThrowsAsync(new Exception("test error"));
 
-            var vm = CreateViewModel();
-            SetSelectedPharmacist(vm, MakePharmacist());
+            var viewModel = CreateViewModel();
+            SetSelectedPharmacist(viewModel, MakePharmacist());
 
-            await vm.LoadAsync();
+            await viewModel.LoadAsync();
 
-            Assert.False(vm.IsLoading);
+            Assert.False(viewModel.IsLoading);
         }
 
         [Fact]
         public async Task ErrorMessage_IsEmpty_AfterSuccessfulLoad()
         {
-            var vm = CreateViewModel();
-            SetSelectedPharmacist(vm, MakePharmacist());
+            var viewModel = CreateViewModel();
+            SetSelectedPharmacist(viewModel, MakePharmacist());
 
-            await vm.LoadAsync();
+            await viewModel.LoadAsync();
 
-            Assert.Empty(vm.ErrorMessage);
+            Assert.Empty(viewModel.ErrorMessage);
         }
 
         [Fact]
         public void SelectedPharmacist_Setter_UpdatesPropertyValue()
         {
-            var vm = CreateViewModel();
+            var viewModel = CreateViewModel();
             var pharmacist = MakePharmacist(id: 5, name: "Charlie");
 
-            vm.SelectedPharmacist = pharmacist;
+            viewModel.SelectedPharmacist = pharmacist;
 
-            Assert.Equal(pharmacist, vm.SelectedPharmacist);
+            Assert.Equal(pharmacist, viewModel.SelectedPharmacist);
         }
 
         [Fact]
         public void IsDailyView_Setter_SetsIsWeeklyViewToOpposite()
         {
-            var vm = CreateViewModel();
-            SetIsWeeklyView(vm, true);
+            var viewModel = CreateViewModel();
+            SetIsWeeklyView(viewModel, true);
 
-            vm.IsDailyView = true;
+            viewModel.IsDailyView = true;
 
-            Assert.False(vm.IsWeeklyView);
-            Assert.True(vm.IsDailyView);
+            Assert.False(viewModel.IsWeeklyView);
+            Assert.True(viewModel.IsDailyView);
         }
     }
 }

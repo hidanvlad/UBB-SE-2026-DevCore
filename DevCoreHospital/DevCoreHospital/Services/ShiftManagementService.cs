@@ -39,9 +39,11 @@ namespace DevCoreHospital.Services
 
         public bool ValidateNoOverlap(int staffId, DateTime start, DateTime end)
         {
-            return !shiftRepository.GetShifts().Any(shift =>
+            bool OverlapsWithStaff(Shift shift) =>
                 (shift.AppointedStaff.StaffID == staffId) &&
-                ((start >= shift.StartTime && start < shift.EndTime) || (end > shift.StartTime && end <= shift.EndTime)));
+                ((start >= shift.StartTime && start < shift.EndTime) || (end > shift.StartTime && end <= shift.EndTime));
+
+            return !shiftRepository.GetShifts().Any(OverlapsWithStaff);
         }
 
         public void AddShift(Shift shift) => shiftRepository.AddShift(shift);
@@ -61,13 +63,18 @@ namespace DevCoreHospital.Services
         public bool ValidateShiftTimes(TimeSpan start, TimeSpan end) => end > start;
 
         public List<Shift> GetDailyShifts(DateTime date)
-            => shiftRepository.GetShifts().Where(shift => shift.StartTime.Date == date.Date).ToList();
+        {
+            bool IsOnDate(Shift shift) => shift.StartTime.Date == date.Date;
+            return shiftRepository.GetShifts().Where(IsOnDate).ToList();
+        }
 
         public List<Shift> GetWeeklyShifts(DateTime date)
         {
             var weekStart = date.AddDays(-(int)DateTime.Now.DayOfWeek + (int)DayOfWeek.Monday);
             var weekEnd = weekStart.AddDays(7);
-            return shiftRepository.GetShifts().Where(shift => shift.StartTime >= weekStart && shift.StartTime < weekEnd).ToList();
+
+            bool IsInWeek(Shift shift) => shift.StartTime >= weekStart && shift.StartTime < weekEnd;
+            return shiftRepository.GetShifts().Where(IsInWeek).ToList();
         }
 
         public bool ReassignShift(Shift shift, IStaff newStaff)
@@ -110,11 +117,12 @@ namespace DevCoreHospital.Services
             var currentStaff = shift.AppointedStaff;
             var allStaff = staffRepository.LoadAllStaff();
 
-            return allStaff.Where(staffMember =>
+            bool IsEligibleReplacement(IStaff staffMember) =>
                 staffMember.GetType() == currentStaff.GetType() &&
                 staffMember.StaffID != currentStaff.StaffID &&
-                ValidateNoOverlap(staffMember.StaffID, shift.StartTime, shift.EndTime))
-                .ToList();
+                ValidateNoOverlap(staffMember.StaffID, shift.StartTime, shift.EndTime);
+
+            return allStaff.Where(IsEligibleReplacement).ToList();
         }
 
         public List<string> GetSpecializationsAndCertificationsForLocation(string location)
@@ -146,19 +154,29 @@ namespace DevCoreHospital.Services
             var weekStart = now.Date.AddDays(-daysFromMonday);
             var weekEnd = weekStart.AddDays(daysInWeek);
 
+            bool IsForStaffInWeek(Shift shift) => shift.AppointedStaff.StaffID == staffId && shift.StartTime >= weekStart && shift.StartTime < weekEnd;
+            float ToShiftHours(Shift shift) => (float)(shift.EndTime - shift.StartTime).TotalHours;
+
             return shiftRepository.GetShifts()
-                .Where(s => s.AppointedStaff.StaffID == staffId && s.StartTime >= weekStart && s.StartTime < weekEnd)
-                .Sum(s => (float)(s.EndTime - s.StartTime).TotalHours);
+                .Where(IsForStaffInWeek)
+                .Sum(ToShiftHours);
         }
 
         public List<Shift> GetActiveShifts()
-            => shiftRepository.GetShifts().Where(s => s.Status == ShiftStatus.ACTIVE).ToList();
+        {
+            bool IsActiveShift(Shift shift) => shift.Status == ShiftStatus.ACTIVE;
+            return shiftRepository.GetShifts().Where(IsActiveShift).ToList();
+        }
 
         public bool IsStaffWorkingDuring(int staffId, DateTime startTime, DateTime endTime)
-            => shiftRepository.GetShifts().Any(s =>
-                s.AppointedStaff.StaffID == staffId &&
-                s.StartTime < endTime &&
-                s.EndTime > startTime &&
-                (s.Status == ShiftStatus.SCHEDULED || s.Status == ShiftStatus.ACTIVE));
+        {
+            bool IsWorkingDuring(Shift shift) =>
+                shift.AppointedStaff.StaffID == staffId &&
+                shift.StartTime < endTime &&
+                shift.EndTime > startTime &&
+                (shift.Status == ShiftStatus.SCHEDULED || shift.Status == ShiftStatus.ACTIVE);
+
+            return shiftRepository.GetShifts().Any(IsWorkingDuring);
+        }
     }
 }

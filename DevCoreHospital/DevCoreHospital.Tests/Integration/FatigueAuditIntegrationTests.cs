@@ -39,7 +39,7 @@ namespace DevCoreHospital.Tests.Integration
 
         private static RosterShift MakeShift(
             int id, int staffId, string staffName,
-            string role, string spec,
+            string role, string specialization,
             DateTime start, DateTime end,
             string? status = null)
             => new RosterShift
@@ -48,19 +48,19 @@ namespace DevCoreHospital.Tests.Integration
                 StaffId = staffId,
                 StaffName = staffName,
                 Role = role,
-                Specialization = spec,
+                Specialization = specialization,
                 Start = start,
                 End = end,
                 Status = status,
             };
 
-        private static StaffProfile MakeProfile(int staffId, string fullName, string role, string spec)
+        private static StaffProfile MakeProfile(int staffId, string fullName, string role, string specialization)
             => new StaffProfile
             {
                 StaffId = staffId,
                 FullName = fullName,
                 Role = role,
-                Specialization = spec,
+                Specialization = specialization,
                 IsAvailable = true,
                 IsActive = true,
             };
@@ -98,7 +98,8 @@ namespace DevCoreHospital.Tests.Integration
             Assert.True(vm.HasConflicts);
             Assert.False(vm.CanPublish);
             Assert.NotEmpty(vm.Violations);
-            Assert.All(vm.Violations, v => Assert.Equal("MAX_60H_PER_WEEK", v.Rule));
+            void HasMaxWeeklyHoursRule(FatigueShiftAuditViewModel.AuditViolationRow violation) => Assert.Equal("MAX_60H_PER_WEEK", violation.Rule);
+            Assert.All(vm.Violations, HasMaxWeeklyHoursRule);
         }
 
         [Fact]
@@ -113,7 +114,8 @@ namespace DevCoreHospital.Tests.Integration
             var vm = CreateViewModel();
 
             Assert.True(vm.HasConflicts);
-            Assert.Contains(vm.Violations, v => v.Rule == "MIN_12H_REST");
+            bool IsMinRestViolation(FatigueShiftAuditViewModel.AuditViolationRow violation) => violation.Rule == "MIN_12H_REST";
+            Assert.Contains(vm.Violations, IsMinRestViolation);
         }
 
         [Fact]

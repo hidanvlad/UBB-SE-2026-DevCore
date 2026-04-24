@@ -20,11 +20,11 @@ namespace DevCoreHospital.Views
             service = App.Services.GetRequiredService<IDoctorAppointmentService>();
         }
 
-        protected override void OnNavigatedTo(NavigationEventArgs e)
+        protected override void OnNavigatedTo(NavigationEventArgs eventArgs)
         {
-            base.OnNavigatedTo(e);
+            base.OnNavigatedTo(eventArgs);
 
-            if (e.Parameter is Appointment appt)
+            if (eventArgs.Parameter is Appointment appt)
             {
                 currentAppointment = appt;
                 PopulateData();
@@ -45,7 +45,7 @@ namespace DevCoreHospital.Views
             StatusText.Text = currentAppointment.Status;
         }
 
-        private async void FinishBtn_Click(object sender, RoutedEventArgs e)
+        private async void FinishBtn_Click(object sender, RoutedEventArgs eventArgs)
         {
             if (currentAppointment == null)
             {
@@ -60,13 +60,13 @@ namespace DevCoreHospital.Views
                 PopulateData();
                 ShowMessage("Appointment finished successfully! Doctor status updated.", InfoBarSeverity.Success);
             }
-            catch (Exception ex)
+            catch (Exception exception)
             {
-                ShowMessage($"Error: {ex.Message}", InfoBarSeverity.Error);
+                ShowMessage($"Error: {exception.Message}", InfoBarSeverity.Error);
             }
         }
 
-        private void GoBack_Click(object sender, RoutedEventArgs e)
+        private void GoBack_Click(object sender, RoutedEventArgs eventArgs)
         {
             if (this.Frame.CanGoBack)
             {

@@ -21,7 +21,7 @@ namespace DevCoreHospital.Views
             Loaded += AppointmentsPage_Loaded;
         }
 
-        private async void AppointmentsPage_Loaded(object sender, RoutedEventArgs e)
+        private async void AppointmentsPage_Loaded(object sender, RoutedEventArgs eventArgs)
         {
             await ViewModel.LoadDoctorsAsync();
 
@@ -32,7 +32,7 @@ namespace DevCoreHospital.Views
             }
         }
 
-        private async void BookAppointment_Click(object sender, RoutedEventArgs e)
+        private async void BookAppointment_Click(object sender, RoutedEventArgs eventArgs)
         {
             string patientId = PatientIdTextBox.Text;
 
@@ -62,13 +62,13 @@ namespace DevCoreHospital.Views
                     await ViewModel.LoadAppointmentsForDoctorAsync(filterDocId);
                 }
             }
-            catch (System.Exception ex)
+            catch (System.Exception exception)
             {
-                ShowMessage($"Error booking appointment: {ex.Message}", InfoBarSeverity.Error);
+                ShowMessage($"Error booking appointment: {exception.Message}", InfoBarSeverity.Error);
             }
         }
 
-        private async void FilterDoctorComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private async void FilterDoctorComboBox_SelectionChanged(object sender, SelectionChangedEventArgs eventArgs)
         {
             if (FilterDoctorComboBox.SelectedValue is int doctorId)
             {
@@ -76,7 +76,7 @@ namespace DevCoreHospital.Views
             }
         }
 
-        private void ViewDetails_Click(object sender, RoutedEventArgs e)
+        private void ViewDetails_Click(object sender, RoutedEventArgs eventArgs)
         {
             if (sender is Button btn && btn.Tag is Appointment appt)
             {
@@ -84,7 +84,7 @@ namespace DevCoreHospital.Views
             }
         }
 
-        private async void CancelAppointment_Click(object sender, RoutedEventArgs e)
+        private async void CancelAppointment_Click(object sender, RoutedEventArgs eventArgs)
         {
             if (sender is Button btn && btn.Tag is Appointment appt)
             {
@@ -98,9 +98,9 @@ namespace DevCoreHospital.Views
                         await ViewModel.LoadAppointmentsForDoctorAsync(doctorId);
                     }
                 }
-                catch (System.InvalidOperationException ex)
+                catch (System.InvalidOperationException exception)
                 {
-                    ShowMessage(ex.Message, InfoBarSeverity.Error);
+                    ShowMessage(exception.Message, InfoBarSeverity.Error);
                 }
             }
         }

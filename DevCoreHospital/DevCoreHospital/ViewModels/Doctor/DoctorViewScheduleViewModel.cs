@@ -137,19 +137,23 @@ namespace DevCoreHospital.ViewModels.Doctor
             this.appointmentService = appointmentService;
             this.dialogService = dialogService;
 
-            RefreshCommand = new AsyncRelayCommand(LoadAsync, () => IsDoctor);
-            TodayCommand = new RelayCommand(() => SelectedDate = DateTime.Today, () => IsDoctor);
+            bool CanExecuteAsDoctor() => IsDoctor;
+            RefreshCommand = new AsyncRelayCommand(LoadAsync, CanExecuteAsDoctor);
 
-            NextDayCommand = new RelayCommand(
-                () => SelectedDate = IsWeekly ? SelectedDate.AddDays(7) : SelectedDate.AddDays(1),
-                () => IsDoctor);
+            void SetToday() => SelectedDate = DateTime.Today;
+            TodayCommand = new RelayCommand(SetToday, CanExecuteAsDoctor);
 
-            PreviousDayCommand = new RelayCommand(
-                () => SelectedDate = IsWeekly ? SelectedDate.AddDays(-7) : SelectedDate.AddDays(-1),
-                () => IsDoctor);
+            void GoToNextDay() => SelectedDate = IsWeekly ? SelectedDate.AddDays(7) : SelectedDate.AddDays(1);
+            NextDayCommand = new RelayCommand(GoToNextDay, CanExecuteAsDoctor);
 
-            DailyModeCommand = new RelayCommand(() => ViewMode = ScheduleViewMode.Daily, () => IsDoctor);
-            WeeklyModeCommand = new RelayCommand(() => ViewMode = ScheduleViewMode.Weekly, () => IsDoctor);
+            void GoToPreviousDay() => SelectedDate = IsWeekly ? SelectedDate.AddDays(-7) : SelectedDate.AddDays(-1);
+            PreviousDayCommand = new RelayCommand(GoToPreviousDay, CanExecuteAsDoctor);
+
+            void SetDailyMode() => ViewMode = ScheduleViewMode.Daily;
+            DailyModeCommand = new RelayCommand(SetDailyMode, CanExecuteAsDoctor);
+
+            void SetWeeklyMode() => ViewMode = ScheduleViewMode.Weekly;
+            WeeklyModeCommand = new RelayCommand(SetWeeklyMode, CanExecuteAsDoctor);
         }
 
         public async Task InitializeAsync()
@@ -164,9 +168,9 @@ namespace DevCoreHospital.ViewModels.Doctor
             {
                 await LoadDoctorsAsync();
             }
-            catch (Exception ex)
+            catch (Exception exception)
             {
-                ErrorMessage = $"Failed to initialize: {ex.Message}";
+                ErrorMessage = $"Failed to initialize: {exception.Message}";
             }
             finally
             {
@@ -184,7 +188,8 @@ namespace DevCoreHospital.ViewModels.Doctor
             {
                 var allDoctors = await appointmentService.GetAllDoctorsAsync();
 
-                foreach (var doctor in allDoctors.OrderBy(doctor => doctor.DoctorName))
+                string GetDoctorName((int DoctorId, string DoctorName) doctor) => doctor.DoctorName;
+                foreach (var doctor in allDoctors.OrderBy(GetDoctorName))
                 {
                     Doctors.Add(new DoctorOption
                     {
@@ -200,11 +205,12 @@ namespace DevCoreHospital.ViewModels.Doctor
                     return;
                 }
 
-                SelectedDoctor = Doctors.FirstOrDefault(doctor => doctor.DoctorId == currentUser.UserId) ?? Doctors.First();
+                bool IsCurrentUserDoctor(DoctorOption doctor) => doctor.DoctorId == currentUser.UserId;
+                SelectedDoctor = Doctors.FirstOrDefault(IsCurrentUserDoctor) ?? Doctors.First();
             }
-            catch (Exception ex)
+            catch (Exception exception)
             {
-                ErrorMessage = $"Failed to load doctors: {ex.Message}";
+                ErrorMessage = $"Failed to load doctors: {exception.Message}";
                 SelectedDoctor = null;
             }
         }
@@ -263,11 +269,11 @@ namespace DevCoreHospital.ViewModels.Doctor
                     Shifts.Add(new DoctorShiftItemViewModel(shift));
                 }
             }
-            catch (Exception ex)
+            catch (Exception exception)
             {
                 if (capturedLoadVersion == loadVersion)
                 {
-                    ErrorMessage = $"Failed to load schedule: {ex.Message}";
+                    ErrorMessage = $"Failed to load schedule: {exception.Message}";
                 }
             }
             finally
@@ -306,9 +312,9 @@ namespace DevCoreHospital.ViewModels.Doctor
 
                 await dialogService.ShowMessageAsync("Appointment Details", text);
             }
-            catch (Exception ex)
+            catch (Exception exception)
             {
-                await dialogService.ShowMessageAsync("Details", $"Failed to load details: {ex.Message}");
+                await dialogService.ShowMessageAsync("Details", $"Failed to load details: {exception.Message}");
             }
         }
 
@@ -326,8 +332,14 @@ namespace DevCoreHospital.ViewModels.Doctor
             public string FirstName { get; set; } = string.Empty;
             public string LastName { get; set; } = string.Empty;
 
-            public string DisplayName =>
-                string.Join(" ", new[] { FirstName?.Trim(), LastName?.Trim() }.Where(namePart => !string.IsNullOrWhiteSpace(namePart)));
+            public string DisplayName
+            {
+                get
+                {
+                    bool IsNonEmpty(string? namePart) => !string.IsNullOrWhiteSpace(namePart);
+                    return string.Join(" ", new[] { FirstName?.Trim(), LastName?.Trim() }.Where(IsNonEmpty));
+                }
+            }
 
             public static (string FirstName, string LastName) SplitFirstLast(string? fullName)
             {

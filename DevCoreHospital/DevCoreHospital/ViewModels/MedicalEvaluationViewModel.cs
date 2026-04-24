@@ -248,8 +248,9 @@ namespace DevCoreHospital.ViewModels
             this.evaluationService = evaluationService;
             this.currentUserService = currentUserService;
 
+            bool CanDelete() => IsEditing;
             SaveDiagnosisCommand = new RelayCommand(SaveDiagnosis, CanSaveDiagnosis);
-            DeleteEvaluationCommand = new RelayCommand(ExecuteDeletion, () => IsEditing);
+            DeleteEvaluationCommand = new RelayCommand(ExecuteDeletion, CanDelete);
 
             LoadDoctorList();
             InitializeSession();
@@ -271,7 +272,8 @@ namespace DevCoreHospital.ViewModels
                 AllDoctors.Add(doctor);
             }
 
-            selectedDoctor = AllDoctors.FirstOrDefault(doctor => doctor.StaffID == currentUserService.UserId);
+            bool IsCurrentUser(DevCoreHospital.Models.Doctor doctor) => doctor.StaffID == currentUserService.UserId;
+            selectedDoctor = AllDoctors.FirstOrDefault(IsCurrentUser);
             if (selectedDoctor != null)
             {
                 CurrentDoctorName = $"Dr. {selectedDoctor.FirstName} {selectedDoctor.LastName}";
@@ -434,9 +436,13 @@ namespace DevCoreHospital.ViewModels
         private void ApplyFilter()
         {
             PastEvaluations.Clear();
+
+            bool RecordMatchesSearch(MedicalEvaluation record) =>
+                record.PatientId.Contains(SearchText, StringComparison.OrdinalIgnoreCase);
+
             var filteredRecords = string.IsNullOrWhiteSpace(SearchText)
                 ? allRecords
-                : allRecords.Where(record => record.PatientId.Contains(SearchText, StringComparison.OrdinalIgnoreCase));
+                : allRecords.Where(RecordMatchesSearch);
 
             foreach (var record in filteredRecords)
             {

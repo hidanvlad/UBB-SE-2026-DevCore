@@ -41,9 +41,9 @@ namespace DevCoreHospital.Repositories
                 var result = command.ExecuteScalar();
                 return result == null || result == DBNull.Value ? 0 : Convert.ToInt32(result);
             }
-            catch (Exception ex)
+            catch (Exception exception)
             {
-                System.Diagnostics.Debug.WriteLine($"Error CreateShiftSwapRequest: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Error CreateShiftSwapRequest: {exception.Message}");
                 return 0;
             }
         }
@@ -77,9 +77,9 @@ namespace DevCoreHospital.Repositories
                     });
                 }
             }
-            catch (Exception ex)
+            catch (Exception exception)
             {
-                System.Diagnostics.Debug.WriteLine($"Error GetSwapRequestsForColleague: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Error GetSwapRequestsForColleague: {exception.Message}");
             }
             return swapRequests;
         }
@@ -113,9 +113,9 @@ namespace DevCoreHospital.Repositories
                     Status = shiftSwapRequestStatus
                 };
             }
-            catch (Exception ex)
+            catch (Exception exception)
             {
-                System.Diagnostics.Debug.WriteLine($"Error GetShiftSwapRequestById: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Error GetShiftSwapRequestById: {exception.Message}");
                 return null;
             }
         }
@@ -131,9 +131,9 @@ namespace DevCoreHospital.Repositories
                 AddParameter(command, "@SwapId", swapId);
                 return command.ExecuteNonQuery() > 0;
             }
-            catch (Exception ex)
+            catch (Exception exception)
             {
-                System.Diagnostics.Debug.WriteLine($"Error UpdateShiftSwapRequestStatus: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Error UpdateShiftSwapRequestStatus: {exception.Message}");
                 return false;
             }
         }
@@ -153,10 +153,10 @@ namespace DevCoreHospital.Repositories
                 AddParameter(command, "@CreatedAt", DateTime.UtcNow);
                 command.ExecuteNonQuery();
             }
-            catch (Exception ex)
+            catch (Exception exception)
             {
                 System.Diagnostics.Debug.WriteLine($"Notification fallback -> To:{recipientStaffId} | {title} | {message}");
-                System.Diagnostics.Debug.WriteLine($"Error AddNotification: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Error AddNotification: {exception.Message}");
             }
         }
 
@@ -171,9 +171,9 @@ namespace DevCoreHospital.Repositories
                 AddParameter(command, "@ShiftId", shiftId);
                 return command.ExecuteNonQuery() > 0;
             }
-            catch (Exception ex)
+            catch (Exception exception)
             {
-                System.Diagnostics.Debug.WriteLine($"Error ReassignShiftToStaff: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Error ReassignShiftToStaff: {exception.Message}");
                 return false;
             }
         }

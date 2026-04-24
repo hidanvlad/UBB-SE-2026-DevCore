@@ -103,19 +103,19 @@ namespace DevCoreHospital.Repositories
             return appointments;
         }
 
-        public async Task AddAppointmentAsync(Appointment appt)
+        public async Task AddAppointmentAsync(Appointment appointment)
         {
-            string rawPatientInput = appt.PatientName?.Replace("PAT-", string.Empty).Trim() ?? "0";
+            string rawPatientInput = appointment.PatientName?.Replace("PAT-", string.Empty).Trim() ?? "0";
             int.TryParse(rawPatientInput, out int patientId);
 
-            DateTime startTimeDb = appt.Date.Date.Add(appt.StartTime);
-            DateTime endTimeDb = appt.Date.Date.Add(appt.EndTime);
+            DateTime startTimeDb = appointment.Date.Date.Add(appointment.StartTime);
+            DateTime endTimeDb = appointment.Date.Date.Add(appointment.EndTime);
 
             using var connection = GetConnection();
             await connection.OpenAsync();
             using var command = new SqlCommand("INSERT INTO Appointments (patient_id, doctor_id, start_time, end_time, status) VALUES (@PatId, @DocId, @Start, @End, 'Scheduled');", connection);
             AddParameter(command, "@PatId", patientId);
-            AddParameter(command, "@DocId", appt.DoctorId);
+            AddParameter(command, "@DocId", appointment.DoctorId);
             AddParameter(command, "@Start", startTimeDb);
             AddParameter(command, "@End", endTimeDb);
             await command.ExecuteNonQueryAsync();

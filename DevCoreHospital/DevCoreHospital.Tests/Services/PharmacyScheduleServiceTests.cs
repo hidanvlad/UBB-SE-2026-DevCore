@@ -10,15 +10,15 @@ namespace DevCoreHospital.Tests.Services
 {
     public class PharmacyScheduleServiceTests
     {
-        private readonly Mock<IShiftRepository> shiftRepoMock;
-        private readonly Mock<IPharmacyStaffRepository> staffRepoMock;
+        private readonly Mock<IShiftRepository> shiftRepositoryMock;
+        private readonly Mock<IPharmacyStaffRepository> staffRepositoryMock;
         private readonly PharmacyScheduleService sut;
 
         public PharmacyScheduleServiceTests()
         {
-            shiftRepoMock = new Mock<IShiftRepository>();
-            staffRepoMock = new Mock<IPharmacyStaffRepository>();
-            sut = new PharmacyScheduleService(shiftRepoMock.Object, staffRepoMock.Object);
+            shiftRepositoryMock = new Mock<IShiftRepository>();
+            staffRepositoryMock = new Mock<IPharmacyStaffRepository>();
+            sut = new PharmacyScheduleService(shiftRepositoryMock.Object, staffRepositoryMock.Object);
         }
 
         private static Shift MakeShift(int id, DateTime start, DateTime end)
@@ -36,8 +36,8 @@ namespace DevCoreHospital.Tests.Services
             {
                 MakeShift(1, rangeStart.AddHours(8), rangeStart.AddHours(16)),
             };
-            shiftRepoMock
-                .Setup(r => r.GetShiftsForStaffInRange(1, rangeStart, rangeEnd))
+            shiftRepositoryMock
+                .Setup(shiftRepository => shiftRepository.GetShiftsForStaffInRange(1, rangeStart, rangeEnd))
                 .Returns(expected);
 
             var result = await sut.GetShiftsAsync(1, rangeStart, rangeEnd);
@@ -51,8 +51,8 @@ namespace DevCoreHospital.Tests.Services
         {
             var rangeStart = new DateTime(2025, 4, 14);
             var rangeEnd = new DateTime(2025, 4, 15);
-            shiftRepoMock
-                .Setup(r => r.GetShiftsForStaffInRange(It.IsAny<int>(), It.IsAny<DateTime>(), It.IsAny<DateTime>()))
+            shiftRepositoryMock
+                .Setup(shiftRepository => shiftRepository.GetShiftsForStaffInRange(It.IsAny<int>(), It.IsAny<DateTime>(), It.IsAny<DateTime>()))
                 .Returns(new List<Shift>());
 
             var result = await sut.GetShiftsAsync(99, rangeStart, rangeEnd);
@@ -65,13 +65,13 @@ namespace DevCoreHospital.Tests.Services
         {
             var rangeStart = new DateTime(2025, 4, 14);
             var rangeEnd = new DateTime(2025, 4, 21);
-            shiftRepoMock
-                .Setup(r => r.GetShiftsForStaffInRange(It.IsAny<int>(), It.IsAny<DateTime>(), It.IsAny<DateTime>()))
+            shiftRepositoryMock
+                .Setup(shiftRepository => shiftRepository.GetShiftsForStaffInRange(It.IsAny<int>(), It.IsAny<DateTime>(), It.IsAny<DateTime>()))
                 .Returns(new List<Shift>());
 
             await sut.GetShiftsAsync(42, rangeStart, rangeEnd);
 
-            shiftRepoMock.Verify(r => r.GetShiftsForStaffInRange(42, rangeStart, rangeEnd), Times.Once);
+            shiftRepositoryMock.Verify(shiftRepository => shiftRepository.GetShiftsForStaffInRange(42, rangeStart, rangeEnd), Times.Once);
         }
 
         [Fact]
@@ -79,14 +79,14 @@ namespace DevCoreHospital.Tests.Services
         {
             var rangeStart = new DateTime(2025, 4, 14);
             var rangeEnd = new DateTime(2025, 4, 21);
-            shiftRepoMock
-                .Setup(r => r.GetShiftsForStaffInRange(It.IsAny<int>(), It.IsAny<DateTime>(), It.IsAny<DateTime>()))
+            shiftRepositoryMock
+                .Setup(shiftRepository => shiftRepository.GetShiftsForStaffInRange(It.IsAny<int>(), It.IsAny<DateTime>(), It.IsAny<DateTime>()))
                 .Returns(new List<Shift>());
 
             await sut.GetShiftsAsync(1, rangeStart, rangeEnd);
 
-            shiftRepoMock.Verify(
-                r => r.GetShiftsForStaffInRange(It.IsAny<int>(), rangeStart, rangeEnd),
+            shiftRepositoryMock.Verify(
+                shiftRepository => shiftRepository.GetShiftsForStaffInRange(It.IsAny<int>(), rangeStart, rangeEnd),
                 Times.Once);
         }
 
@@ -101,8 +101,8 @@ namespace DevCoreHospital.Tests.Services
                 MakeShift(2, rangeStart.AddDays(1).AddHours(8), rangeStart.AddDays(1).AddHours(16)),
                 MakeShift(3, rangeStart.AddDays(2).AddHours(8), rangeStart.AddDays(2).AddHours(16)),
             };
-            shiftRepoMock
-                .Setup(r => r.GetShiftsForStaffInRange(It.IsAny<int>(), It.IsAny<DateTime>(), It.IsAny<DateTime>()))
+            shiftRepositoryMock
+                .Setup(shiftRepository => shiftRepository.GetShiftsForStaffInRange(It.IsAny<int>(), It.IsAny<DateTime>(), It.IsAny<DateTime>()))
                 .Returns(shifts);
 
             var result = await sut.GetShiftsAsync(1, rangeStart, rangeEnd);
@@ -114,7 +114,7 @@ namespace DevCoreHospital.Tests.Services
         public void GetPharmacists_DelegatesToStaffRepository()
         {
             var pharmacist = new Pharmacyst(1, "Ana", "Pop", string.Empty, true, "General", 2);
-            staffRepoMock.Setup(r => r.GetPharmacists()).Returns(new List<Pharmacyst> { pharmacist });
+            staffRepositoryMock.Setup(staffRepository => staffRepository.GetPharmacists()).Returns(new List<Pharmacyst> { pharmacist });
 
             var result = sut.GetPharmacists();
 
@@ -125,7 +125,7 @@ namespace DevCoreHospital.Tests.Services
         [Fact]
         public void GetPharmacists_ReturnsEmptyList_WhenRepositoryReturnsNoPharmacists()
         {
-            staffRepoMock.Setup(r => r.GetPharmacists()).Returns(new List<Pharmacyst>());
+            staffRepositoryMock.Setup(staffRepository => staffRepository.GetPharmacists()).Returns(new List<Pharmacyst>());
 
             var result = sut.GetPharmacists();
 

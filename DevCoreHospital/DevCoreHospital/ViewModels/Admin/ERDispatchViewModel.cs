@@ -41,7 +41,9 @@ namespace DevCoreHospital.ViewModels
             this.dispatchService = dispatchService;
             RunDispatchCommand = new AsyncRelayCommand(RunDispatchAsync);
             RefreshCommand = new RelayCommand(Refresh);
-            SimulateIncomingCommand = new AsyncRelayCommand(() => SimulateIncomingAsync(DefaultSimulatedRequestCount));
+
+            async Task SimulateDefaultCount() => await SimulateIncomingAsync(DefaultSimulatedRequestCount);
+            SimulateIncomingCommand = new AsyncRelayCommand(SimulateDefaultCount);
 
             Refresh();
         }
@@ -71,9 +73,9 @@ namespace DevCoreHospital.ViewModels
                 StatusMessage = $"Simulated {createdIds.Count} incoming request(s) from Clinical Team. Click Run Dispatch.";
                 ManualInterventionHint = "Incoming ER requests were added as PENDING.";
             }
-            catch (Exception ex)
+            catch (Exception exception)
             {
-                StatusMessage = $"Error: {ex.Message}";
+                StatusMessage = $"Error: {exception.Message}";
             }
         }
 
@@ -105,9 +107,9 @@ namespace DevCoreHospital.ViewModels
                     ManualInterventionHint = "No unmatched requests. Override not needed.";
                 }
             }
-            catch (Exception ex)
+            catch (Exception exception)
             {
-                StatusMessage = $"Error: {ex.Message}";
+                StatusMessage = $"Error: {exception.Message}";
             }
         }
 
@@ -133,14 +135,16 @@ namespace DevCoreHospital.ViewModels
 
         public async Task<bool> ApplyOverrideAsync(int requestId, int doctorId)
         {
-            var unmatchedRequest = UnmatchedRequests.FirstOrDefault(unmatchedRequest => unmatchedRequest.RequestId == requestId);
+            bool IsMatchingRequest(UnmatchedRequestRow row) => row.RequestId == requestId;
+            var unmatchedRequest = UnmatchedRequests.FirstOrDefault(IsMatchingRequest);
             if (unmatchedRequest == null)
             {
                 ManualInterventionHint = "Select an unmatched request first.";
                 return false;
             }
 
-            var overrideCandidate = OverrideCandidates.FirstOrDefault(overrideCandidate => overrideCandidate.DoctorId == doctorId);
+            bool IsMatchingCandidate(OverrideCandidateRow row) => row.DoctorId == doctorId;
+            var overrideCandidate = OverrideCandidates.FirstOrDefault(IsMatchingCandidate);
             if (overrideCandidate == null)
             {
                 ManualInterventionHint = "Select an eligible override doctor first.";

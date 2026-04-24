@@ -16,7 +16,7 @@ namespace DevCoreHospital.Tests.Services
         {
             hangoutRepository = new Mock<IHangoutRepository>();
             hangoutRepository
-                .Setup(r => r.GetAppointmentStatusesForStaffOnDate(It.IsAny<int>(), It.IsAny<DateTime>()))
+                .Setup(repository => repository.GetAppointmentStatusesForStaffOnDate(It.IsAny<int>(), It.IsAny<DateTime>()))
                 .Returns(new List<string>());
             service = new HangoutService(hangoutRepository.Object);
             creator = BuildDoctor(1);
@@ -27,10 +27,10 @@ namespace DevCoreHospital.Tests.Services
         {
             var date = DateTime.Now.AddDays(10);
 
-            var ex = Assert.Throws<ArgumentException>(
+            var exception = Assert.Throws<ArgumentException>(
                 () => service.CreateHangout(null!, "desc", date, 5, creator));
 
-            Assert.Contains("Title must be between", ex.Message);
+            Assert.Contains("Title must be between", exception.Message);
         }
 
         [Fact]
@@ -85,7 +85,7 @@ namespace DevCoreHospital.Tests.Services
 
             service.CreateHangout(title, "desc", date, 5, creator);
 
-            hangoutRepository.Verify(r => r.AddHangout(It.IsAny<Hangout>()), Times.Once);
+            hangoutRepository.Verify(repository => repository.AddHangout(It.IsAny<Hangout>()), Times.Once);
         }
 
         [Fact]
@@ -94,10 +94,10 @@ namespace DevCoreHospital.Tests.Services
             var date = DateTime.Now.AddDays(10);
             var description = new string('x', 101);
 
-            var ex = Assert.Throws<ArgumentException>(
+            var exception = Assert.Throws<ArgumentException>(
                 () => service.CreateHangout("Valid title", description, date, 5, creator));
 
-            Assert.Contains("Description must be at most", ex.Message);
+            Assert.Contains("Description must be at most", exception.Message);
         }
 
         [Fact]
@@ -108,7 +108,7 @@ namespace DevCoreHospital.Tests.Services
 
             service.CreateHangout("Valid title", description, date, 5, creator);
 
-            hangoutRepository.Verify(r => r.AddHangout(It.IsAny<Hangout>()), Times.Once);
+            hangoutRepository.Verify(repository => repository.AddHangout(It.IsAny<Hangout>()), Times.Once);
         }
 
         [Fact]
@@ -118,7 +118,7 @@ namespace DevCoreHospital.Tests.Services
 
             service.CreateHangout("Valid title", null!, date, 5, creator);
 
-            hangoutRepository.Verify(r => r.AddHangout(It.IsAny<Hangout>()), Times.Once);
+            hangoutRepository.Verify(repository => repository.AddHangout(It.IsAny<Hangout>()), Times.Once);
         }
 
         [Fact]
@@ -126,10 +126,10 @@ namespace DevCoreHospital.Tests.Services
         {
             var date = DateTime.Now.AddDays(-1);
 
-            var ex = Assert.Throws<ArgumentException>(
+            var exception = Assert.Throws<ArgumentException>(
                 () => service.CreateHangout("Valid title", "desc", date, 5, creator));
 
-            Assert.Contains("at least 1 week away", ex.Message);
+            Assert.Contains("at least 1 week away", exception.Message);
         }
 
         [Fact]
@@ -159,7 +159,7 @@ namespace DevCoreHospital.Tests.Services
 
             service.CreateHangout("Valid title", "desc", date, 5, creator);
 
-            hangoutRepository.Verify(r => r.AddHangout(It.IsAny<Hangout>()), Times.Once);
+            hangoutRepository.Verify(repository => repository.AddHangout(It.IsAny<Hangout>()), Times.Once);
         }
 
         [Fact]
@@ -169,7 +169,7 @@ namespace DevCoreHospital.Tests.Services
 
             service.CreateHangout("Valid title", "desc", date, 5, creator);
 
-            hangoutRepository.Verify(r => r.AddHangout(It.IsAny<Hangout>()), Times.Once);
+            hangoutRepository.Verify(repository => repository.AddHangout(It.IsAny<Hangout>()), Times.Once);
         }
 
         [Fact]
@@ -177,13 +177,13 @@ namespace DevCoreHospital.Tests.Services
         {
             var date = DateTime.Now.AddDays(10);
             hangoutRepository
-                .Setup(r => r.GetAppointmentStatusesForStaffOnDate(creator.StaffID, date))
+                .Setup(repository => repository.GetAppointmentStatusesForStaffOnDate(creator.StaffID, date))
                 .Returns(new List<string> { "Scheduled" });
 
-            var ex = Assert.Throws<InvalidOperationException>(
+            var exception = Assert.Throws<InvalidOperationException>(
                 () => service.CreateHangout("Valid title", "desc", date, 5, creator));
 
-            Assert.Contains("active scheduled appointments", ex.Message);
+            Assert.Contains("active scheduled appointments", exception.Message);
         }
 
         [Fact]
@@ -191,13 +191,13 @@ namespace DevCoreHospital.Tests.Services
         {
             var date = DateTime.Now.AddDays(10);
             hangoutRepository
-                .Setup(r => r.GetAppointmentStatusesForStaffOnDate(creator.StaffID, date))
+                .Setup(repository => repository.GetAppointmentStatusesForStaffOnDate(creator.StaffID, date))
                 .Returns(new List<string> { "Scheduled" });
 
             Assert.Throws<InvalidOperationException>(
                 () => service.CreateHangout("Valid title", "desc", date, 5, creator));
 
-            hangoutRepository.Verify(r => r.AddHangout(It.IsAny<Hangout>()), Times.Never);
+            hangoutRepository.Verify(repository => repository.AddHangout(It.IsAny<Hangout>()), Times.Never);
         }
 
         [Fact]
@@ -207,7 +207,7 @@ namespace DevCoreHospital.Tests.Services
 
             service.CreateHangout("Valid title", "desc", date, 5, creator);
 
-            hangoutRepository.Verify(r => r.AddHangout(It.IsAny<Hangout>()), Times.Once);
+            hangoutRepository.Verify(repository => repository.AddHangout(It.IsAny<Hangout>()), Times.Once);
         }
 
         [Fact]
@@ -215,8 +215,11 @@ namespace DevCoreHospital.Tests.Services
         {
             var date = DateTime.Now.AddDays(10);
             Hangout? captured = null;
-            hangoutRepository.Setup(r => r.AddHangout(It.IsAny<Hangout>()))
-                .Callback<Hangout>(h => captured = h);
+
+            void CaptureHangout(Hangout hangout) { captured = hangout; }
+
+            hangoutRepository.Setup(repository => repository.AddHangout(It.IsAny<Hangout>()))
+                .Callback<Hangout>(CaptureHangout);
 
             service.CreateHangout("Valid title", "desc", date, 5, creator);
 
@@ -228,12 +231,12 @@ namespace DevCoreHospital.Tests.Services
         [Fact]
         public void JoinHangout_WhenHangoutNotFound_ThrowsArgumentException()
         {
-            hangoutRepository.Setup(r => r.GetHangoutById(99)).Returns((Hangout?)null);
+            hangoutRepository.Setup(repository => repository.GetHangoutById(99)).Returns((Hangout?)null);
             var staff = BuildDoctor(2);
 
-            var ex = Assert.Throws<ArgumentException>(() => service.JoinHangout(99, staff));
+            var exception = Assert.Throws<ArgumentException>(() => service.JoinHangout(99, staff));
 
-            Assert.Equal("Hangout not found.", ex.Message);
+            Assert.Equal("Hangout not found.", exception.Message);
         }
 
         [Fact]
@@ -242,12 +245,12 @@ namespace DevCoreHospital.Tests.Services
             var hangout = new Hangout(5, "Some title", "d", DateTime.Now.AddDays(10), 2);
             hangout.ParticipantList.Add(BuildDoctor(10));
             hangout.ParticipantList.Add(BuildDoctor(11));
-            hangoutRepository.Setup(r => r.GetHangoutById(5)).Returns(hangout);
+            hangoutRepository.Setup(repository => repository.GetHangoutById(5)).Returns(hangout);
             var staff = BuildDoctor(2);
 
-            var ex = Assert.Throws<InvalidOperationException>(() => service.JoinHangout(5, staff));
+            var exception = Assert.Throws<InvalidOperationException>(() => service.JoinHangout(5, staff));
 
-            Assert.Equal("This hangout is already full.", ex.Message);
+            Assert.Equal("This hangout is already full.", exception.Message);
         }
 
         [Fact]
@@ -255,12 +258,12 @@ namespace DevCoreHospital.Tests.Services
         {
             var hangout = new Hangout(5, "Some title", "d", DateTime.Now.AddDays(10), 1);
             hangout.ParticipantList.Add(BuildDoctor(10));
-            hangoutRepository.Setup(r => r.GetHangoutById(5)).Returns(hangout);
+            hangoutRepository.Setup(repository => repository.GetHangoutById(5)).Returns(hangout);
             var staff = BuildDoctor(2);
 
             Assert.Throws<InvalidOperationException>(() => service.JoinHangout(5, staff));
 
-            hangoutRepository.Verify(r => r.AddParticipant(It.IsAny<int>(), It.IsAny<int>()), Times.Never);
+            hangoutRepository.Verify(repository => repository.AddParticipant(It.IsAny<int>(), It.IsAny<int>()), Times.Never);
         }
 
         [Fact]
@@ -269,11 +272,11 @@ namespace DevCoreHospital.Tests.Services
             var staff = BuildDoctor(2);
             var hangout = new Hangout(5, "Some title", "d", DateTime.Now.AddDays(10), 5);
             hangout.ParticipantList.Add(staff);
-            hangoutRepository.Setup(r => r.GetHangoutById(5)).Returns(hangout);
+            hangoutRepository.Setup(repository => repository.GetHangoutById(5)).Returns(hangout);
 
-            var ex = Assert.Throws<InvalidOperationException>(() => service.JoinHangout(5, staff));
+            var exception = Assert.Throws<InvalidOperationException>(() => service.JoinHangout(5, staff));
 
-            Assert.Equal("You have already joined this hangout.", ex.Message);
+            Assert.Equal("You have already joined this hangout.", exception.Message);
         }
 
         [Fact]
@@ -282,15 +285,15 @@ namespace DevCoreHospital.Tests.Services
             var date = DateTime.Now.AddDays(10);
             var hangout = new Hangout(5, "Some title", "d", date, 5);
             hangout.ParticipantList.Add(BuildDoctor(10));
-            hangoutRepository.Setup(r => r.GetHangoutById(5)).Returns(hangout);
+            hangoutRepository.Setup(repository => repository.GetHangoutById(5)).Returns(hangout);
             hangoutRepository
-                .Setup(r => r.GetAppointmentStatusesForStaffOnDate(2, date))
+                .Setup(repository => repository.GetAppointmentStatusesForStaffOnDate(2, date))
                 .Returns(new List<string> { "Scheduled" });
             var staff = BuildDoctor(2);
 
-            var ex = Assert.Throws<InvalidOperationException>(() => service.JoinHangout(5, staff));
+            var exception = Assert.Throws<InvalidOperationException>(() => service.JoinHangout(5, staff));
 
-            Assert.Contains("active scheduled appointments", ex.Message);
+            Assert.Contains("active scheduled appointments", exception.Message);
         }
 
         [Fact]
@@ -298,12 +301,12 @@ namespace DevCoreHospital.Tests.Services
         {
             var hangout = new Hangout(5, "Some title", "d", DateTime.Now.AddDays(10), 5);
             hangout.ParticipantList.Add(BuildDoctor(10));
-            hangoutRepository.Setup(r => r.GetHangoutById(5)).Returns(hangout);
+            hangoutRepository.Setup(repository => repository.GetHangoutById(5)).Returns(hangout);
             var staff = BuildDoctor(2);
 
             service.JoinHangout(5, staff);
 
-            hangoutRepository.Verify(r => r.AddParticipant(5, 2), Times.Once);
+            hangoutRepository.Verify(repository => repository.AddParticipant(5, 2), Times.Once);
         }
 
         [Fact]
@@ -314,18 +317,18 @@ namespace DevCoreHospital.Tests.Services
                 new Hangout(1, "Team Lunch", "desc", DateTime.Now.AddDays(10), 5),
                 new Hangout(2, "Coffee Chat", "desc2", DateTime.Now.AddDays(14), 3),
             };
-            hangoutRepository.Setup(r => r.GetAllHangouts()).Returns(expected);
+            hangoutRepository.Setup(repository => repository.GetAllHangouts()).Returns(expected);
 
             var result = service.GetAllHangouts();
 
             Assert.Same(expected, result);
-            hangoutRepository.Verify(r => r.GetAllHangouts(), Times.Once);
+            hangoutRepository.Verify(repository => repository.GetAllHangouts(), Times.Once);
         }
 
         [Fact]
         public void GetAllHangouts_WhenRepositoryReturnsEmpty_ReturnsEmptyList()
         {
-            hangoutRepository.Setup(r => r.GetAllHangouts()).Returns(new List<Hangout>());
+            hangoutRepository.Setup(repository => repository.GetAllHangouts()).Returns(new List<Hangout>());
 
             var result = service.GetAllHangouts();
 

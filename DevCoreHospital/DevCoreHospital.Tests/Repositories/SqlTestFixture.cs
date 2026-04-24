@@ -21,153 +21,153 @@ public class SqlTestFixture : IDisposable
 
     public SqlConnection OpenConnection()
     {
-        var conn = new SqlConnection(ConnectionString);
-        conn.Open();
-        return conn;
+        var connection = new SqlConnection(ConnectionString);
+        connection.Open();
+        return connection;
     }
 
-    public int InsertStaff(SqlConnection conn, string role, string firstName, string lastName,
+    public int InsertStaff(SqlConnection connection, string role, string firstName, string lastName,
         string specialization = "", string status = "Available", bool isAvailable = true,
         string certification = "", int yearsExp = 1)
     {
-        using var cmd = new SqlCommand(@"
+        using var command = new SqlCommand(@"
             INSERT INTO Staff ([role], department, first_name, last_name, contact_info, is_available,
                 specialization, [status], license_number, years_of_experience, certification)
             OUTPUT INSERTED.staff_id
-            VALUES (@Role, @Dept, @First, @Last, @Contact, @Avail, @Spec, @Status, @Lic, @Exp, @Cert)", conn);
-        cmd.Parameters.AddWithValue("@Role", role);
-        cmd.Parameters.AddWithValue("@Dept", role == "Doctor" ? "Test Dept" : "Pharmacy");
-        cmd.Parameters.AddWithValue("@First", firstName);
-        cmd.Parameters.AddWithValue("@Last", lastName);
-        cmd.Parameters.AddWithValue("@Contact", $"{firstName.ToLower()}@test.local");
-        cmd.Parameters.AddWithValue("@Avail", isAvailable);
-        cmd.Parameters.AddWithValue("@Spec", string.IsNullOrEmpty(specialization) ? DBNull.Value : (object)specialization);
-        cmd.Parameters.AddWithValue("@Status", status);
-        cmd.Parameters.AddWithValue("@Lic", $"LIC-{Guid.NewGuid():N}");
-        cmd.Parameters.AddWithValue("@Exp", yearsExp);
-        cmd.Parameters.AddWithValue("@Cert", string.IsNullOrEmpty(certification) ? DBNull.Value : (object)certification);
-        return (int)cmd.ExecuteScalar()!;
+            VALUES (@Role, @Dept, @First, @Last, @Contact, @Avail, @Spec, @Status, @Lic, @Exp, @Cert)", connection);
+        command.Parameters.AddWithValue("@Role", role);
+        command.Parameters.AddWithValue("@Dept", role == "Doctor" ? "Test Dept" : "Pharmacy");
+        command.Parameters.AddWithValue("@First", firstName);
+        command.Parameters.AddWithValue("@Last", lastName);
+        command.Parameters.AddWithValue("@Contact", $"{firstName.ToLower()}@test.local");
+        command.Parameters.AddWithValue("@Avail", isAvailable);
+        command.Parameters.AddWithValue("@Spec", string.IsNullOrEmpty(specialization) ? DBNull.Value : (object)specialization);
+        command.Parameters.AddWithValue("@Status", status);
+        command.Parameters.AddWithValue("@Lic", $"LIC-{Guid.NewGuid():N}");
+        command.Parameters.AddWithValue("@Exp", yearsExp);
+        command.Parameters.AddWithValue("@Cert", string.IsNullOrEmpty(certification) ? DBNull.Value : (object)certification);
+        return (int)command.ExecuteScalar()!;
     }
 
-    public int InsertShift(SqlConnection conn, int staffId, string location, DateTime start, DateTime end, string status = "SCHEDULED")
+    public int InsertShift(SqlConnection connection, int staffId, string location, DateTime start, DateTime end, string status = "SCHEDULED")
     {
-        using var cmd = new SqlCommand(@"
+        using var command = new SqlCommand(@"
             INSERT INTO Shifts (staff_id, [location], start_time, end_time, [status], is_active)
             OUTPUT INSERTED.shift_id
-            VALUES (@StaffId, @Location, @Start, @End, @Status, 1)", conn);
-        cmd.Parameters.AddWithValue("@StaffId", staffId);
-        cmd.Parameters.AddWithValue("@Location", location);
-        cmd.Parameters.AddWithValue("@Start", start);
-        cmd.Parameters.AddWithValue("@End", end);
-        cmd.Parameters.AddWithValue("@Status", status);
-        return (int)cmd.ExecuteScalar()!;
+            VALUES (@StaffId, @Location, @Start, @End, @Status, 1)", connection);
+        command.Parameters.AddWithValue("@StaffId", staffId);
+        command.Parameters.AddWithValue("@Location", location);
+        command.Parameters.AddWithValue("@Start", start);
+        command.Parameters.AddWithValue("@End", end);
+        command.Parameters.AddWithValue("@Status", status);
+        return (int)command.ExecuteScalar()!;
     }
 
-    public int InsertAppointment(SqlConnection conn, int patientId, int doctorId, DateTime start, DateTime end, string status = "Scheduled")
+    public int InsertAppointment(SqlConnection connection, int patientId, int doctorId, DateTime start, DateTime end, string status = "Scheduled")
     {
-        using var cmd = new SqlCommand(@"
+        using var command = new SqlCommand(@"
             INSERT INTO Appointments (patient_id, doctor_id, start_time, end_time, [status])
             OUTPUT INSERTED.appointment_id
-            VALUES (@PatId, @DocId, @Start, @End, @Status)", conn);
-        cmd.Parameters.AddWithValue("@PatId", patientId);
-        cmd.Parameters.AddWithValue("@DocId", doctorId);
-        cmd.Parameters.AddWithValue("@Start", start);
-        cmd.Parameters.AddWithValue("@End", end);
-        cmd.Parameters.AddWithValue("@Status", status);
-        return (int)cmd.ExecuteScalar()!;
+            VALUES (@PatId, @DocId, @Start, @End, @Status)", connection);
+        command.Parameters.AddWithValue("@PatId", patientId);
+        command.Parameters.AddWithValue("@DocId", doctorId);
+        command.Parameters.AddWithValue("@Start", start);
+        command.Parameters.AddWithValue("@End", end);
+        command.Parameters.AddWithValue("@Status", status);
+        return (int)command.ExecuteScalar()!;
     }
 
-    public int InsertHangout(SqlConnection conn, string title, DateTime date)
+    public int InsertHangout(SqlConnection connection, string title, DateTime date)
     {
-        using var cmd = new SqlCommand(@"
+        using var command = new SqlCommand(@"
             INSERT INTO Hangouts (title, description, date_time, max_staff)
             OUTPUT INSERTED.hangout_id
-            VALUES (@Title, @Desc, @Date, @Max)", conn);
-        cmd.Parameters.AddWithValue("@Title", title);
-        cmd.Parameters.AddWithValue("@Desc", "Test hangout");
-        cmd.Parameters.AddWithValue("@Date", date);
-        cmd.Parameters.AddWithValue("@Max", 10);
-        return (int)cmd.ExecuteScalar()!;
+            VALUES (@Title, @Desc, @Date, @Max)", connection);
+        command.Parameters.AddWithValue("@Title", title);
+        command.Parameters.AddWithValue("@Desc", "Test hangout");
+        command.Parameters.AddWithValue("@Date", date);
+        command.Parameters.AddWithValue("@Max", 10);
+        return (int)command.ExecuteScalar()!;
     }
 
-    public void InsertHangoutParticipant(SqlConnection conn, int hangoutId, int staffId)
+    public void InsertHangoutParticipant(SqlConnection connection, int hangoutId, int staffId)
     {
-        using var cmd = new SqlCommand("INSERT INTO Hangout_Participants (hangout_id, staff_id) VALUES (@HId, @SId)", conn);
-        cmd.Parameters.AddWithValue("@HId", hangoutId);
-        cmd.Parameters.AddWithValue("@SId", staffId);
-        cmd.ExecuteNonQuery();
+        using var command = new SqlCommand("INSERT INTO Hangout_Participants (hangout_id, staff_id) VALUES (@HId, @SId)", connection);
+        command.Parameters.AddWithValue("@HId", hangoutId);
+        command.Parameters.AddWithValue("@SId", staffId);
+        command.ExecuteNonQuery();
     }
 
-    public int CountNotificationsForStaff(SqlConnection conn, int staffId, string title)
+    public int CountNotificationsForStaff(SqlConnection connection, int staffId, string title)
     {
-        using var cmd = new SqlCommand("SELECT COUNT(*) FROM Notifications WHERE recipient_staff_id = @Id AND title = @Title", conn);
-        cmd.Parameters.AddWithValue("@Id", staffId);
-        cmd.Parameters.AddWithValue("@Title", title);
-        return (int)cmd.ExecuteScalar()!;
+        using var command = new SqlCommand("SELECT COUNT(*) FROM Notifications WHERE recipient_staff_id = @Id AND title = @Title", connection);
+        command.Parameters.AddWithValue("@Id", staffId);
+        command.Parameters.AddWithValue("@Title", title);
+        return (int)command.ExecuteScalar()!;
     }
 
-    public string? GetShiftStatus(SqlConnection conn, int shiftId)
+    public string? GetShiftStatus(SqlConnection connection, int shiftId)
     {
-        using var cmd = new SqlCommand("SELECT [status] FROM Shifts WHERE shift_id = @Id", conn);
-        cmd.Parameters.AddWithValue("@Id", shiftId);
-        var result = cmd.ExecuteScalar();
+        using var command = new SqlCommand("SELECT [status] FROM Shifts WHERE shift_id = @Id", connection);
+        command.Parameters.AddWithValue("@Id", shiftId);
+        var result = command.ExecuteScalar();
         return result == null || result == DBNull.Value ? null : result.ToString();
     }
 
-    public int? GetShiftStaffId(SqlConnection conn, int shiftId)
+    public int? GetShiftStaffId(SqlConnection connection, int shiftId)
     {
-        using var cmd = new SqlCommand("SELECT staff_id FROM Shifts WHERE shift_id = @Id", conn);
-        cmd.Parameters.AddWithValue("@Id", shiftId);
-        var result = cmd.ExecuteScalar();
+        using var command = new SqlCommand("SELECT staff_id FROM Shifts WHERE shift_id = @Id", connection);
+        command.Parameters.AddWithValue("@Id", shiftId);
+        var result = command.ExecuteScalar();
         return result == null || result == DBNull.Value ? null : (int?)Convert.ToInt32(result);
     }
 
-    public string? GetAppointmentStatus(SqlConnection conn, int appointmentId)
+    public string? GetAppointmentStatus(SqlConnection connection, int appointmentId)
     {
-        using var cmd = new SqlCommand("SELECT [status] FROM Appointments WHERE appointment_id = @Id", conn);
-        cmd.Parameters.AddWithValue("@Id", appointmentId);
-        var result = cmd.ExecuteScalar();
+        using var command = new SqlCommand("SELECT [status] FROM Appointments WHERE appointment_id = @Id", connection);
+        command.Parameters.AddWithValue("@Id", appointmentId);
+        var result = command.ExecuteScalar();
         return result == null || result == DBNull.Value ? null : result.ToString();
     }
 
-    public string? GetStaffStatus(SqlConnection conn, int staffId)
+    public string? GetStaffStatus(SqlConnection connection, int staffId)
     {
-        using var cmd = new SqlCommand("SELECT [status] FROM Staff WHERE staff_id = @Id", conn);
-        cmd.Parameters.AddWithValue("@Id", staffId);
-        var result = cmd.ExecuteScalar();
+        using var command = new SqlCommand("SELECT [status] FROM Staff WHERE staff_id = @Id", connection);
+        command.Parameters.AddWithValue("@Id", staffId);
+        var result = command.ExecuteScalar();
         return result == null || result == DBNull.Value ? null : result.ToString();
     }
 
-    public void DeleteNotificationsByStaff(SqlConnection conn, int staffId)
-        => Execute(conn, "DELETE FROM Notifications WHERE recipient_staff_id = @Id", staffId);
+    public void DeleteNotificationsByStaff(SqlConnection connection, int staffId)
+        => Execute(connection, "DELETE FROM Notifications WHERE recipient_staff_id = @Id", staffId);
 
-    public void DeleteSwapRequestsByShift(SqlConnection conn, int shiftId)
-        => Execute(conn, "DELETE FROM ShiftSwapRequests WHERE shift_id = @Id", shiftId);
+    public void DeleteSwapRequestsByShift(SqlConnection connection, int shiftId)
+        => Execute(connection, "DELETE FROM ShiftSwapRequests WHERE shift_id = @Id", shiftId);
 
-    public void DeleteSwapRequest(SqlConnection conn, int swapId)
-        => Execute(conn, "DELETE FROM ShiftSwapRequests WHERE swap_id = @Id", swapId);
+    public void DeleteSwapRequest(SqlConnection connection, int swapRequestId)
+        => Execute(connection, "DELETE FROM ShiftSwapRequests WHERE swap_id = @Id", swapRequestId);
 
-    public void DeleteShift(SqlConnection conn, int shiftId)
-        => Execute(conn, "DELETE FROM Shifts WHERE shift_id = @Id", shiftId);
+    public void DeleteShift(SqlConnection connection, int shiftId)
+        => Execute(connection, "DELETE FROM Shifts WHERE shift_id = @Id", shiftId);
 
-    public void DeleteAppointment(SqlConnection conn, int appointmentId)
-        => Execute(conn, "DELETE FROM Appointments WHERE appointment_id = @Id", appointmentId);
+    public void DeleteAppointment(SqlConnection connection, int appointmentId)
+        => Execute(connection, "DELETE FROM Appointments WHERE appointment_id = @Id", appointmentId);
 
-    public void DeleteAppointmentsByDoctor(SqlConnection conn, int doctorId)
-        => Execute(conn, "DELETE FROM Appointments WHERE doctor_id = @Id", doctorId);
+    public void DeleteAppointmentsByDoctor(SqlConnection connection, int doctorId)
+        => Execute(connection, "DELETE FROM Appointments WHERE doctor_id = @Id", doctorId);
 
-    public void DeleteHangoutParticipants(SqlConnection conn, int hangoutId)
-        => Execute(conn, "DELETE FROM Hangout_Participants WHERE hangout_id = @Id", hangoutId);
+    public void DeleteHangoutParticipants(SqlConnection connection, int hangoutId)
+        => Execute(connection, "DELETE FROM Hangout_Participants WHERE hangout_id = @Id", hangoutId);
 
-    public void DeleteHangout(SqlConnection conn, int hangoutId)
-        => Execute(conn, "DELETE FROM Hangouts WHERE hangout_id = @Id", hangoutId);
+    public void DeleteHangout(SqlConnection connection, int hangoutId)
+        => Execute(connection, "DELETE FROM Hangouts WHERE hangout_id = @Id", hangoutId);
 
-    public void DeleteStaff(SqlConnection conn, int staffId)
-        => Execute(conn, "DELETE FROM Staff WHERE staff_id = @Id", staffId);
+    public void DeleteStaff(SqlConnection connection, int staffId)
+        => Execute(connection, "DELETE FROM Staff WHERE staff_id = @Id", staffId);
 
 
     public int InsertMedicalEvaluation(
-        SqlConnection conn,
+        SqlConnection connection,
         int doctorId,
         int patientId,
         string diagnosis = "Test diagnosis",
@@ -175,35 +175,35 @@ public class SqlTestFixture : IDisposable
         string meds = "TestMed",
         bool assumedRisk = false)
     {
-        using var cmd = new SqlCommand(@"
+        using var command = new SqlCommand(@"
             INSERT INTO Medical_Evaluations
                 (doctor_id, patient_id, diagnosis, doctor_notes, medications, source, assumed_risk)
             OUTPUT INSERTED.evaluation_id
-            VALUES (@DocId, @PatId, @Diag, @Notes, @Meds, @Source, @Risk)", conn);
-        cmd.Parameters.AddWithValue("@DocId", doctorId);
-        cmd.Parameters.AddWithValue("@PatId", patientId);
-        cmd.Parameters.AddWithValue("@Diag", diagnosis);
-        cmd.Parameters.AddWithValue("@Notes", notes);
-        cmd.Parameters.AddWithValue("@Meds", meds);
-        cmd.Parameters.AddWithValue("@Source", "TEST");
-        cmd.Parameters.AddWithValue("@Risk", assumedRisk);
-        return (int)cmd.ExecuteScalar()!;
+            VALUES (@DocId, @PatId, @Diag, @Notes, @Meds, @Source, @Risk)", connection);
+        command.Parameters.AddWithValue("@DocId", doctorId);
+        command.Parameters.AddWithValue("@PatId", patientId);
+        command.Parameters.AddWithValue("@Diag", diagnosis);
+        command.Parameters.AddWithValue("@Notes", notes);
+        command.Parameters.AddWithValue("@Meds", meds);
+        command.Parameters.AddWithValue("@Source", "TEST");
+        command.Parameters.AddWithValue("@Risk", assumedRisk);
+        return (int)command.ExecuteScalar()!;
     }
 
-    public void DeleteMedicalEvaluation(SqlConnection conn, int evaluationId)
-        => Execute(conn, "DELETE FROM Medical_Evaluations WHERE evaluation_id = @Id", evaluationId);
+    public void DeleteMedicalEvaluation(SqlConnection connection, int evaluationId)
+        => Execute(connection, "DELETE FROM Medical_Evaluations WHERE evaluation_id = @Id", evaluationId);
 
-    public void DeleteMedicalEvaluationsByDoctor(SqlConnection conn, int doctorId)
-        => Execute(conn, "DELETE FROM Medical_Evaluations WHERE doctor_id = @Id", doctorId);
+    public void DeleteMedicalEvaluationsByDoctor(SqlConnection connection, int doctorId)
+        => Execute(connection, "DELETE FROM Medical_Evaluations WHERE doctor_id = @Id", doctorId);
 
-    public int InsertAppointmentWithStatus(SqlConnection conn, int patientId, int doctorId, DateTime start, DateTime end, string status)
-        => InsertAppointment(conn, patientId, doctorId, start, end, status);
+    public int InsertAppointmentWithStatus(SqlConnection connection, int patientId, int doctorId, DateTime start, DateTime end, string status)
+        => InsertAppointment(connection, patientId, doctorId, start, end, status);
 
-    private static void Execute(SqlConnection conn, string sql, int id)
+    private static void Execute(SqlConnection connection, string sql, int id)
     {
-        using var cmd = new SqlCommand(sql, conn);
-        cmd.Parameters.AddWithValue("@Id", id);
-        cmd.ExecuteNonQuery();
+        using var command = new SqlCommand(sql, connection);
+        command.Parameters.AddWithValue("@Id", id);
+        command.ExecuteNonQuery();
     }
 
     public void Dispose() { }

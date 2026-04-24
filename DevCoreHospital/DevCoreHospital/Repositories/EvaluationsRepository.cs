@@ -23,18 +23,18 @@ namespace DevCoreHospital.Repositories
         public List<Appointment> GetAppointmentsByDoctor(int doctorId)
         {
             var results = new List<Appointment>();
-            string sql = @"SELECT appointment_id, patient_id, start_time, status 
-                           FROM Appointments 
+            string sql = @"SELECT appointment_id, patient_id, start_time, status
+                           FROM Appointments
                            WHERE doctor_id = @DocId AND status = 'Confirmed'
                            ORDER BY start_time ASC";
 
-            using (SqlConnection conn = new SqlConnection(connectionString))
+            using (SqlConnection connection = new SqlConnection(connectionString))
             {
-                using (SqlCommand cmd = new SqlCommand(sql, conn))
+                using (SqlCommand command = new SqlCommand(sql, connection))
                 {
-                    cmd.Parameters.AddWithValue("@DocId", doctorId);
-                    conn.Open();
-                    using (SqlDataReader reader = cmd.ExecuteReader())
+                    command.Parameters.AddWithValue("@DocId", doctorId);
+                    connection.Open();
+                    using (SqlDataReader reader = command.ExecuteReader())
                     {
                         while (reader.Read())
                         {
@@ -75,20 +75,20 @@ namespace DevCoreHospital.Repositories
                            (doctor_id, patient_id, diagnosis, doctor_notes, medications, source, assumed_risk)
                            VALUES (@DocId, @PatId, @Diag, @Notes, @Meds, @Source, @Risk)";
 
-            using (SqlConnection conn = new SqlConnection(connectionString))
+            using (SqlConnection connection = new SqlConnection(connectionString))
             {
-                using (SqlCommand cmd = new SqlCommand(sql, conn))
+                using (SqlCommand command = new SqlCommand(sql, connection))
                 {
-                    cmd.Parameters.AddWithValue("@DocId", doctorId);
-                    cmd.Parameters.AddWithValue("@PatId", patientId);
-                    cmd.Parameters.AddWithValue("@Diag", diagnosis);
-                    cmd.Parameters.AddWithValue("@Notes", notes);
-                    cmd.Parameters.AddWithValue("@Meds", meds);
-                    cmd.Parameters.AddWithValue("@Source", "PATIENT");
-                    cmd.Parameters.AddWithValue("@Risk", assumedRisk);
+                    command.Parameters.AddWithValue("@DocId", doctorId);
+                    command.Parameters.AddWithValue("@PatId", patientId);
+                    command.Parameters.AddWithValue("@Diag", diagnosis);
+                    command.Parameters.AddWithValue("@Notes", notes);
+                    command.Parameters.AddWithValue("@Meds", meds);
+                    command.Parameters.AddWithValue("@Source", "PATIENT");
+                    command.Parameters.AddWithValue("@Risk", assumedRisk);
 
-                    conn.Open();
-                    cmd.ExecuteNonQuery();
+                    connection.Open();
+                    command.ExecuteNonQuery();
                 }
             }
         }
@@ -111,13 +111,13 @@ namespace DevCoreHospital.Repositories
                            WHERE doctor_id = @DocId
                            ORDER BY evaluation_id DESC";
 
-            using (SqlConnection conn = new SqlConnection(connectionString))
+            using (SqlConnection connection = new SqlConnection(connectionString))
             {
-                using (SqlCommand cmd = new SqlCommand(sql, conn))
+                using (SqlCommand command = new SqlCommand(sql, connection))
                 {
-                    cmd.Parameters.AddWithValue("@DocId", parsedDoctorId);
-                    conn.Open();
-                    using (SqlDataReader reader = cmd.ExecuteReader())
+                    command.Parameters.AddWithValue("@DocId", parsedDoctorId);
+                    connection.Open();
+                    using (SqlDataReader reader = command.ExecuteReader())
                     {
                         while (reader.Read())
                         {
@@ -146,13 +146,13 @@ namespace DevCoreHospital.Repositories
         public void DeleteEvaluation(int evaluationId)
         {
             string sql = "DELETE FROM Medical_Evaluations WHERE evaluation_id = @Id";
-            using (SqlConnection conn = new SqlConnection(connectionString))
+            using (SqlConnection connection = new SqlConnection(connectionString))
             {
-                using (SqlCommand cmd = new SqlCommand(sql, conn))
+                using (SqlCommand command = new SqlCommand(sql, connection))
                 {
-                    cmd.Parameters.AddWithValue("@Id", evaluationId);
-                    conn.Open();
-                    cmd.ExecuteNonQuery();
+                    command.Parameters.AddWithValue("@Id", evaluationId);
+                    connection.Open();
+                    command.ExecuteNonQuery();
                 }
             }
         }
@@ -163,13 +163,13 @@ namespace DevCoreHospital.Repositories
                            FROM Shifts
                            WHERE staff_id = @DocId AND end_time >= DATEADD(day, -1, GETDATE())";
 
-            using (SqlConnection conn = new SqlConnection(connectionString))
+            using (SqlConnection connection = new SqlConnection(connectionString))
             {
-                using (SqlCommand cmd = new SqlCommand(sql, conn))
+                using (SqlCommand command = new SqlCommand(sql, connection))
                 {
-                    cmd.Parameters.AddWithValue("@DocId", doctorId);
-                    conn.Open();
-                    var result = cmd.ExecuteScalar();
+                    command.Parameters.AddWithValue("@DocId", doctorId);
+                    connection.Open();
+                    var result = command.ExecuteScalar();
                     return result != DBNull.Value ? Convert.ToDouble(result) : 0.0;
                 }
             }
@@ -177,11 +177,11 @@ namespace DevCoreHospital.Repositories
 
         public DevCoreHospital.Models.Doctor? GetDoctorById(int id)
         {
-            using var conn = new SqlConnection(connectionString);
-            using var cmd = new SqlCommand("SELECT staff_id, first_name, last_name FROM Staff WHERE staff_id = @Id", conn);
-            cmd.Parameters.AddWithValue("@Id", id);
-            conn.Open();
-            using var reader = cmd.ExecuteReader();
+            using var connection = new SqlConnection(connectionString);
+            using var command = new SqlCommand("SELECT staff_id, first_name, last_name FROM Staff WHERE staff_id = @Id", connection);
+            command.Parameters.AddWithValue("@Id", id);
+            connection.Open();
+            using var reader = command.ExecuteReader();
             if (reader.Read())
             {
                 return new DevCoreHospital.Models.Doctor(
@@ -202,13 +202,13 @@ namespace DevCoreHospital.Repositories
         public List<DevCoreHospital.Models.Doctor> GetAllDoctors()
         {
             var doctors = new List<DevCoreHospital.Models.Doctor>();
-            using (SqlConnection conn = new SqlConnection(connectionString))
+            using (SqlConnection connection = new SqlConnection(connectionString))
             {
                 string sql = "SELECT staff_id, first_name, last_name FROM Staff WHERE role = 'Doctor'";
-                using (SqlCommand cmd = new SqlCommand(sql, conn))
+                using (SqlCommand command = new SqlCommand(sql, connection))
                 {
-                    conn.Open();
-                    using (SqlDataReader reader = cmd.ExecuteReader())
+                    connection.Open();
+                    using (SqlDataReader reader = command.ExecuteReader())
                     {
                         while (reader.Read())
                         {
@@ -254,19 +254,19 @@ namespace DevCoreHospital.Repositories
 
         public virtual string? GetHighRiskMedicineWarning(string medicineName)
         {
-            using (SqlConnection conn = new SqlConnection(connectionString))
+            using (SqlConnection connection = new SqlConnection(connectionString))
             {
-                conn.Open();
-                using var cmd = new SqlCommand("SELECT warning_message FROM High_Risk_Medicines WHERE medicine_name = @Name", conn);
-                cmd.Parameters.AddWithValue("@Name", medicineName.Trim());
-                var result = cmd.ExecuteScalar();
+                connection.Open();
+                using var command = new SqlCommand("SELECT warning_message FROM High_Risk_Medicines WHERE medicine_name = @Name", connection);
+                command.Parameters.AddWithValue("@Name", medicineName.Trim());
+                var result = command.ExecuteScalar();
                 return result?.ToString();
             }
         }
 
         public virtual string? CheckPatientHistoryForRisk(string patientId, string currentMeds)
         {
-            using (SqlConnection conn = new SqlConnection(connectionString))
+            using (SqlConnection connection = new SqlConnection(connectionString))
             {
                 string sql = @"SELECT diagnosis, medications FROM Medical_Evaluations
                        WHERE patient_id = @PatId
@@ -275,11 +275,11 @@ namespace DevCoreHospital.Repositories
                             OR doctor_notes LIKE '%Allergy%'
                             OR doctor_notes LIKE '%Adverse%')";
 
-                conn.Open();
-                using (SqlCommand cmd = new SqlCommand(sql, conn))
+                connection.Open();
+                using (SqlCommand command = new SqlCommand(sql, connection))
                 {
-                    cmd.Parameters.AddWithValue("@PatId", patientId);
-                    using (SqlDataReader reader = cmd.ExecuteReader())
+                    command.Parameters.AddWithValue("@PatId", patientId);
+                    using (SqlDataReader reader = command.ExecuteReader())
                     {
                         while (reader.Read())
                         {

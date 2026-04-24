@@ -23,141 +23,141 @@ namespace DevCoreHospital.Tests.ViewModels
         [Fact]
         public void Constructor_SetsRotationAssignment_FromShiftLocation()
         {
-            var vm = BuildViewModel(location: "ICU");
+            var viewModel = BuildViewModel(location: "ICU");
 
-            Assert.Equal("ICU", vm.RotationAssignment);
+            Assert.Equal("ICU", viewModel.RotationAssignment);
         }
 
         [Fact]
         public void Constructor_SetsShiftStartTime_FromShiftStartTime()
         {
-            var vm = BuildViewModel();
+            var viewModel = BuildViewModel();
 
-            Assert.Equal(DefaultStart, vm.ShiftStartTime);
+            Assert.Equal(DefaultStart, viewModel.ShiftStartTime);
         }
 
         [Fact]
         public void Constructor_SetsShiftEndTime_FromShiftEndTime()
         {
-            var vm = BuildViewModel();
+            var viewModel = BuildViewModel();
 
-            Assert.Equal(DefaultEnd, vm.ShiftEndTime);
+            Assert.Equal(DefaultEnd, viewModel.ShiftEndTime);
         }
 
         [Fact]
         public void ShiftStartTimeText_ReturnsHourMinuteFormat()
         {
-            var vm = BuildViewModel(start: new DateTime(2025, 6, 15, 9, 30, 0));
+            var viewModel = BuildViewModel(start: new DateTime(2025, 6, 15, 9, 30, 0));
 
-            Assert.Equal("09:30", vm.ShiftStartTimeText);
+            Assert.Equal("09:30", viewModel.ShiftStartTimeText);
         }
 
         [Fact]
         public void ShiftEndTimeText_ReturnsHourMinuteFormat_WhenEndTimeIsSet()
         {
-            var vm = BuildViewModel(end: new DateTime(2025, 6, 15, 17, 45, 0));
+            var viewModel = BuildViewModel(end: new DateTime(2025, 6, 15, 17, 45, 0));
 
-            Assert.Equal("17:45", vm.ShiftEndTimeText);
+            Assert.Equal("17:45", viewModel.ShiftEndTimeText);
         }
 
         [Fact]
         public void DayLabel_ReturnsEnglishFormattedDate()
         {
-            var vm = BuildViewModel(start: new DateTime(2025, 6, 15, 8, 0, 0));
+            var viewModel = BuildViewModel(start: new DateTime(2025, 6, 15, 8, 0, 0));
 
-            Assert.Equal("Sun, 15 Jun 2025", vm.DayLabel);
+            Assert.Equal("Sun, 15 Jun 2025", viewModel.DayLabel);
         }
 
         [Fact]
         public void DurationText_ReturnsCorrectHoursAndMinutes()
         {
-            var vm = BuildViewModel(
+            var viewModel = BuildViewModel(
                 start: new DateTime(2025, 6, 15, 8, 0, 0),
                 end: new DateTime(2025, 6, 15, 10, 30, 0));
 
-            Assert.Equal("2h 30m", vm.DurationText);
+            Assert.Equal("2h 30m", viewModel.DurationText);
         }
 
         [Fact]
         public void DurationText_ReturnsZeroHours_WhenShiftIsUnderOneHour()
         {
-            var vm = BuildViewModel(
+            var viewModel = BuildViewModel(
                 start: new DateTime(2025, 6, 15, 8, 0, 0),
                 end: new DateTime(2025, 6, 15, 8, 45, 0));
 
-            Assert.Equal("0h 45m", vm.DurationText);
+            Assert.Equal("0h 45m", viewModel.DurationText);
         }
 
         [Fact]
         public void DurationText_ReturnsEightHours_ForStandardShift()
         {
-            var vm = BuildViewModel(
+            var viewModel = BuildViewModel(
                 start: new DateTime(2025, 6, 15, 8, 0, 0),
                 end: new DateTime(2025, 6, 15, 16, 0, 0));
 
-            Assert.Equal("8h 0m", vm.DurationText);
+            Assert.Equal("8h 0m", viewModel.DurationText);
         }
 
         [Fact]
         public void StatusDisplay_ReturnsScheduled_WhenStatusIsScheduled()
         {
-            var vm = BuildViewModel(status: ShiftStatus.SCHEDULED);
+            var viewModel = BuildViewModel(status: ShiftStatus.SCHEDULED);
 
-            Assert.Equal("Scheduled", vm.StatusDisplay);
+            Assert.Equal("Scheduled", viewModel.StatusDisplay);
         }
 
         [Fact]
         public void StatusDisplay_ReturnsActive_WhenStatusIsActive()
         {
-            var vm = BuildViewModel(status: ShiftStatus.ACTIVE);
+            var viewModel = BuildViewModel(status: ShiftStatus.ACTIVE);
 
-            Assert.Equal("Active", vm.StatusDisplay);
+            Assert.Equal("Active", viewModel.StatusDisplay);
         }
 
         [Fact]
         public void StatusDisplay_ReturnsCompleted_WhenStatusIsCompleted()
         {
-            var vm = BuildViewModel(status: ShiftStatus.COMPLETED);
+            var viewModel = BuildViewModel(status: ShiftStatus.COMPLETED);
 
-            Assert.Equal("Completed", vm.StatusDisplay);
+            Assert.Equal("Completed", viewModel.StatusDisplay);
         }
 
         [Fact]
         public void StatusDisplay_ReturnsCancelled_WhenStatusIsCancelled()
         {
-            var vm = BuildViewModel(status: ShiftStatus.CANCELLED);
+            var viewModel = BuildViewModel(status: ShiftStatus.CANCELLED);
 
-            Assert.Equal("Cancelled", vm.StatusDisplay);
+            Assert.Equal("Cancelled", viewModel.StatusDisplay);
         }
 
         [Fact]
         public void TimeRangeDetail_ContainsStartTimeText()
         {
-            var vm = BuildViewModel(
+            var viewModel = BuildViewModel(
                 start: new DateTime(2025, 6, 15, 8, 0, 0),
                 end: new DateTime(2025, 6, 15, 16, 0, 0));
 
-            Assert.Contains("08:00", vm.TimeRangeDetail);
+            Assert.Contains("08:00", viewModel.TimeRangeDetail);
         }
 
         [Fact]
         public void TimeRangeDetail_ContainsEndTimeText()
         {
-            var vm = BuildViewModel(
+            var viewModel = BuildViewModel(
                 start: new DateTime(2025, 6, 15, 8, 0, 0),
                 end: new DateTime(2025, 6, 15, 16, 0, 0));
 
-            Assert.Contains("16:00", vm.TimeRangeDetail);
+            Assert.Contains("16:00", viewModel.TimeRangeDetail);
         }
 
         [Fact]
         public void TimeRangeDetail_ContainsDurationText()
         {
-            var vm = BuildViewModel(
+            var viewModel = BuildViewModel(
                 start: new DateTime(2025, 6, 15, 8, 0, 0),
                 end: new DateTime(2025, 6, 15, 16, 0, 0));
 
-            Assert.Contains("8h 0m", vm.TimeRangeDetail);
+            Assert.Contains("8h 0m", viewModel.TimeRangeDetail);
         }
     }
 }

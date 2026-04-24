@@ -12,132 +12,140 @@ namespace DevCoreHospital.Tests.ViewModels
 {
     public class AdminShiftViewModelIntegrationTests : IClassFixture<SqlTestFixture>
     {
-        private readonly SqlTestFixture db;
+        private readonly SqlTestFixture database;
 
-        public AdminShiftViewModelIntegrationTests(SqlTestFixture db) => this.db = db;
+        public AdminShiftViewModelIntegrationTests(SqlTestFixture database) => this.database = database;
 
         [Fact]
         public void CreateNewShift_WhenNoOverlap_AddsShiftToRepositoryAndViewModel()
         {
-            using var conn = db.OpenConnection();
-            var staffId = db.InsertStaff(conn, "Doctor", "Create", "ShiftVmTest", "Cardiology");
+            using var connection = database.OpenConnection();
+            var staffId = database.InsertStaff(connection, "Doctor", "Create", "ShiftVmTest", "Cardiology");
             try
             {
-                var staffRepo = new StaffRepository(db.ConnectionString);
-                var shiftRepo = new ShiftRepository(db.ConnectionString, staffRepo);
-                var service = new ShiftManagementService(staffRepo, shiftRepo);
+                var staffRepository = new StaffRepository(database.ConnectionString);
+                var shiftRepository = new ShiftRepository(database.ConnectionString, staffRepository);
+                var service = new ShiftManagementService(staffRepository, shiftRepository);
                 var viewModel = new AdminShiftViewModel(service);
-                var staff = staffRepo.GetStaffById(staffId)!;
+                var staff = staffRepository.GetStaffById(staffId)!;
                 var start = DateTime.Today.AddHours(8);
                 var end = DateTime.Today.AddHours(12);
-                var initialCountForStaff = shiftRepo.GetShiftsByStaffID(staffId).Count;
+                var initialCountForStaff = shiftRepository.GetShiftsByStaffID(staffId).Count;
 
                 viewModel.CreateNewShift(staff, start, end, "ER");
 
-                Assert.Equal(initialCountForStaff + 1, shiftRepo.GetShiftsByStaffID(staffId).Count);
-                var staffShift = Assert.Single(shiftRepo.GetShifts().Where(s => s.AppointedStaff.StaffID == staffId));
+                Assert.Equal(initialCountForStaff + 1, shiftRepository.GetShiftsByStaffID(staffId).Count);
+                bool IsShiftForStaff(Shift shift) => shift.AppointedStaff.StaffID == staffId;
+                var staffShift = Assert.Single(shiftRepository.GetShifts().Where(IsShiftForStaff));
                 Assert.Equal("ER", staffShift.Location);
                 Assert.Equal(ShiftStatus.SCHEDULED, staffShift.Status);
-                Assert.Contains(viewModel.Shifts, s => s.AppointedStaff.StaffID == staffId && s.Location == "ER");
+                bool IsViewModelShiftForStaff(Shift shift) => shift.AppointedStaff.StaffID == staffId && shift.Location == "ER";
+                Assert.Contains(viewModel.Shifts, IsViewModelShiftForStaff);
             }
             finally
             {
-                DeleteShiftsByStaff(conn, staffId);
-                db.DeleteStaff(conn, staffId);
+                DeleteShiftsByStaff(connection, staffId);
+                database.DeleteStaff(connection, staffId);
             }
         }
 
         [Fact]
         public void SetShiftActive_WhenShiftExists_UpdatesStatusInRepositoryAndViewModel()
         {
-            using var conn = db.OpenConnection();
-            var staffId = db.InsertStaff(conn, "Doctor", "SetActiveVm", "ShiftVmTest", "Neurology");
+            using var connection = database.OpenConnection();
+            var staffId = database.InsertStaff(connection, "Doctor", "SetActiveVm", "ShiftVmTest", "Neurology");
             var start = DateTime.Today.AddHours(8);
-            var shiftId = db.InsertShift(conn, staffId, "ER", start, start.AddHours(8), "SCHEDULED");
+            var shiftId = database.InsertShift(connection, staffId, "ER", start, start.AddHours(8), "SCHEDULED");
             try
             {
-                var staffRepo = new StaffRepository(db.ConnectionString);
-                var shiftRepo = new ShiftRepository(db.ConnectionString, staffRepo);
-                var service = new ShiftManagementService(staffRepo, shiftRepo);
+                var staffRepository = new StaffRepository(database.ConnectionString);
+                var shiftRepository = new ShiftRepository(database.ConnectionString, staffRepository);
+                var service = new ShiftManagementService(staffRepository, shiftRepository);
                 var viewModel = new AdminShiftViewModel(service);
 
                 viewModel.SetShiftActive(shiftId);
 
-                var repoShift = Assert.Single(shiftRepo.GetShifts().Where(s => s.Id == shiftId));
+                bool IsShiftById(Shift shift) => shift.Id == shiftId;
+                var repoShift = Assert.Single(shiftRepository.GetShifts().Where(IsShiftById));
                 Assert.Equal(ShiftStatus.ACTIVE, repoShift.Status);
-                var vmShift = Assert.Single(viewModel.Shifts.Where(s => s.Id == shiftId));
+                bool IsViewModelShiftById(Shift shift) => shift.Id == shiftId;
+                var vmShift = Assert.Single(viewModel.Shifts.Where(IsViewModelShiftById));
                 Assert.Equal(ShiftStatus.ACTIVE, vmShift.Status);
             }
             finally
             {
-                db.DeleteShift(conn, shiftId);
-                db.DeleteStaff(conn, staffId);
+                database.DeleteShift(connection, shiftId);
+                database.DeleteStaff(connection, staffId);
             }
         }
 
         [Fact]
         public void CancelShift_WhenShiftExists_UpdatesStatusInRepositoryAndViewModel()
         {
-            using var conn = db.OpenConnection();
-            var staffId = db.InsertStaff(conn, "Doctor", "CancelVm", "ShiftVmTest", "Oncology");
+            using var connection = database.OpenConnection();
+            var staffId = database.InsertStaff(connection, "Doctor", "CancelVm", "ShiftVmTest", "Oncology");
             var start = DateTime.Today.AddHours(9);
-            var shiftId = db.InsertShift(conn, staffId, "ER", start, start.AddHours(8), "SCHEDULED");
+            var shiftId = database.InsertShift(connection, staffId, "ER", start, start.AddHours(8), "SCHEDULED");
             try
             {
-                var staffRepo = new StaffRepository(db.ConnectionString);
-                var shiftRepo = new ShiftRepository(db.ConnectionString, staffRepo);
-                var service = new ShiftManagementService(staffRepo, shiftRepo);
+                var staffRepository = new StaffRepository(database.ConnectionString);
+                var shiftRepository = new ShiftRepository(database.ConnectionString, staffRepository);
+                var service = new ShiftManagementService(staffRepository, shiftRepository);
                 var viewModel = new AdminShiftViewModel(service);
 
                 viewModel.CancelShift(shiftId);
 
-                var repoShift = Assert.Single(shiftRepo.GetShifts().Where(s => s.Id == shiftId));
+                bool IsShiftById(Shift shift) => shift.Id == shiftId;
+                var repoShift = Assert.Single(shiftRepository.GetShifts().Where(IsShiftById));
                 Assert.Equal(ShiftStatus.COMPLETED, repoShift.Status);
-                var vmShift = Assert.Single(viewModel.Shifts.Where(s => s.Id == shiftId));
+                bool IsViewModelShiftById(Shift shift) => shift.Id == shiftId;
+                var vmShift = Assert.Single(viewModel.Shifts.Where(IsViewModelShiftById));
                 Assert.Equal(ShiftStatus.COMPLETED, vmShift.Status);
             }
             finally
             {
-                db.DeleteShift(conn, shiftId);
-                db.DeleteStaff(conn, staffId);
+                database.DeleteShift(connection, shiftId);
+                database.DeleteStaff(connection, staffId);
             }
         }
 
         [Fact]
         public void SelectedDepartment_WhenSet_FiltersShiftsInViewModel()
         {
-            using var conn = db.OpenConnection();
-            var staffId = db.InsertStaff(conn, "Doctor", "FilterVm", "ShiftVmTest", "Cardiology");
+            using var connection = database.OpenConnection();
+            var staffId = database.InsertStaff(connection, "Doctor", "FilterVm", "ShiftVmTest", "Cardiology");
             // Use tomorrow so the shifts fall within the current week regardless of today's day-of-week
             var tomorrow = DateTime.Today.AddDays(1);
-            var erShiftId = db.InsertShift(conn, staffId, "ER", tomorrow.AddHours(8), tomorrow.AddHours(10));
-            var pharmacyShiftId = db.InsertShift(conn, staffId, "Pharmacy", tomorrow.AddHours(11), tomorrow.AddHours(13));
+            var erShiftId = database.InsertShift(connection, staffId, "ER", tomorrow.AddHours(8), tomorrow.AddHours(10));
+            var pharmacyShiftId = database.InsertShift(connection, staffId, "Pharmacy", tomorrow.AddHours(11), tomorrow.AddHours(13));
             try
             {
-                var staffRepo = new StaffRepository(db.ConnectionString);
-                var shiftRepo = new ShiftRepository(db.ConnectionString, staffRepo);
-                var service = new ShiftManagementService(staffRepo, shiftRepo);
+                var staffRepository = new StaffRepository(database.ConnectionString);
+                var shiftRepository = new ShiftRepository(database.ConnectionString, staffRepository);
+                var service = new ShiftManagementService(staffRepository, shiftRepository);
                 var viewModel = new AdminShiftViewModel(service);
 
                 viewModel.IsWeeklyView = true;
                 viewModel.SelectedDepartment = "ER";
 
-                Assert.Contains(viewModel.Shifts, s => s.Id == erShiftId && s.Location == "ER");
-                Assert.DoesNotContain(viewModel.Shifts, s => s.Id == pharmacyShiftId);
+                bool IsErShift(Shift shift) => shift.Id == erShiftId && shift.Location == "ER";
+                Assert.Contains(viewModel.Shifts, IsErShift);
+                bool IsPharmacyShift(Shift shift) => shift.Id == pharmacyShiftId;
+                Assert.DoesNotContain(viewModel.Shifts, IsPharmacyShift);
             }
             finally
             {
-                db.DeleteShift(conn, erShiftId);
-                db.DeleteShift(conn, pharmacyShiftId);
-                db.DeleteStaff(conn, staffId);
+                database.DeleteShift(connection, erShiftId);
+                database.DeleteShift(connection, pharmacyShiftId);
+                database.DeleteStaff(connection, staffId);
             }
         }
 
-        private static void DeleteShiftsByStaff(SqlConnection conn, int staffId)
+        private static void DeleteShiftsByStaff(SqlConnection connection, int staffId)
         {
-            using var cmd = new SqlCommand("DELETE FROM Shifts WHERE staff_id = @Id", conn);
-            cmd.Parameters.AddWithValue("@Id", staffId);
-            cmd.ExecuteNonQuery();
+            using var command = new SqlCommand("DELETE FROM Shifts WHERE staff_id = @Id", connection);
+            command.Parameters.AddWithValue("@Id", staffId);
+            command.ExecuteNonQuery();
         }
     }
 }

@@ -27,7 +27,7 @@ namespace DevCoreHospital.Tests.ViewModels
         public PharmacistVacationViewModelTests()
         {
             mockService = new Mock<IPharmacyVacationService>();
-            mockService.Setup(s => s.GetPharmacists()).Returns(new List<Pharmacyst>());
+            mockService.Setup(vacationService => vacationService.GetPharmacists()).Returns(new List<Pharmacyst>());
             viewModel = new PharmacistVacationViewModel(mockService.Object);
         }
 
@@ -105,7 +105,7 @@ namespace DevCoreHospital.Tests.ViewModels
 
             viewModel.TryRegisterVacation(TestChoice, startWithTime, endWithTime);
 
-            mockService.Verify(s => s.RegisterVacation(
+            mockService.Verify(vacationService => vacationService.RegisterVacation(
                 TestPharmacist.StaffID,
                 startWithTime.Date,
                 endWithTime.Date), Times.Once);
@@ -116,7 +116,7 @@ namespace DevCoreHospital.Tests.ViewModels
         public void TryRegisterVacation_ReturnsErrorStatus_WhenServiceThrowsArgumentException()
         {
             mockService
-                .Setup(s => s.RegisterVacation(It.IsAny<int>(), It.IsAny<DateTime>(), It.IsAny<DateTime>()))
+                .Setup(vacationService => vacationService.RegisterVacation(It.IsAny<int>(), It.IsAny<DateTime>(), It.IsAny<DateTime>()))
                 .Throws(new ArgumentException("End date must be on or after start date."));
 
             var result = viewModel.TryRegisterVacation(TestChoice, StartDate, EndDate);
@@ -129,7 +129,7 @@ namespace DevCoreHospital.Tests.ViewModels
         {
             const string exceptionMessage = "End date must be on or after start date.";
             mockService
-                .Setup(s => s.RegisterVacation(It.IsAny<int>(), It.IsAny<DateTime>(), It.IsAny<DateTime>()))
+                .Setup(vacationService => vacationService.RegisterVacation(It.IsAny<int>(), It.IsAny<DateTime>(), It.IsAny<DateTime>()))
                 .Throws(new ArgumentException(exceptionMessage));
 
             var result = viewModel.TryRegisterVacation(TestChoice, StartDate, EndDate);
@@ -142,7 +142,7 @@ namespace DevCoreHospital.Tests.ViewModels
         public void TryRegisterVacation_ReturnsErrorStatus_WhenServiceThrowsInvalidOperationException()
         {
             mockService
-                .Setup(s => s.RegisterVacation(It.IsAny<int>(), It.IsAny<DateTime>(), It.IsAny<DateTime>()))
+                .Setup(vacationService => vacationService.RegisterVacation(It.IsAny<int>(), It.IsAny<DateTime>(), It.IsAny<DateTime>()))
                 .Throws(new InvalidOperationException("Cannot add vacation: this period overlaps an existing shift."));
 
             var result = viewModel.TryRegisterVacation(TestChoice, StartDate, EndDate);
@@ -155,7 +155,7 @@ namespace DevCoreHospital.Tests.ViewModels
         {
             const string exceptionMessage = "Cannot add vacation: this period overlaps an existing shift.";
             mockService
-                .Setup(s => s.RegisterVacation(It.IsAny<int>(), It.IsAny<DateTime>(), It.IsAny<DateTime>()))
+                .Setup(vacationService => vacationService.RegisterVacation(It.IsAny<int>(), It.IsAny<DateTime>(), It.IsAny<DateTime>()))
                 .Throws(new InvalidOperationException(exceptionMessage));
 
             var result = viewModel.TryRegisterVacation(TestChoice, StartDate, EndDate);
@@ -167,7 +167,7 @@ namespace DevCoreHospital.Tests.ViewModels
         [Fact]
         public void LoadPharmacists_ResultsInEmptyCollection_WhenServiceReturnsNoPharmacists()
         {
-            mockService.Setup(s => s.GetPharmacists()).Returns(new List<Pharmacyst>());
+            mockService.Setup(vacationService => vacationService.GetPharmacists()).Returns(new List<Pharmacyst>());
 
             viewModel.LoadPharmacists();
 
@@ -177,7 +177,7 @@ namespace DevCoreHospital.Tests.ViewModels
         [Fact]
         public void LoadPharmacists_AddsPharmacistToCollection_WhenServiceReturnsOnePharmacist()
         {
-            mockService.Setup(s => s.GetPharmacists()).Returns(new List<Pharmacyst> { TestPharmacist });
+            mockService.Setup(vacationService => vacationService.GetPharmacists()).Returns(new List<Pharmacyst> { TestPharmacist });
 
             viewModel.LoadPharmacists();
 
@@ -187,7 +187,7 @@ namespace DevCoreHospital.Tests.ViewModels
         [Fact]
         public void LoadPharmacists_BuildsDisplayName_FromFirstAndLastName()
         {
-            mockService.Setup(s => s.GetPharmacists()).Returns(new List<Pharmacyst> { TestPharmacist });
+            mockService.Setup(vacationService => vacationService.GetPharmacists()).Returns(new List<Pharmacyst> { TestPharmacist });
 
             viewModel.LoadPharmacists();
 
@@ -198,7 +198,7 @@ namespace DevCoreHospital.Tests.ViewModels
         public void LoadPharmacists_ExcludesWhitespaceParts_WhenLastNameIsWhitespace()
         {
             var pharmacistWithBlankLastName = new Pharmacyst(2, "Ion", "   ", string.Empty, true, "General", 1);
-            mockService.Setup(s => s.GetPharmacists()).Returns(new List<Pharmacyst> { pharmacistWithBlankLastName });
+            mockService.Setup(vacationService => vacationService.GetPharmacists()).Returns(new List<Pharmacyst> { pharmacistWithBlankLastName });
 
             viewModel.LoadPharmacists();
 
@@ -208,7 +208,7 @@ namespace DevCoreHospital.Tests.ViewModels
         [Fact]
         public void LoadPharmacists_ClearsPreviousCollection_WhenCalledASecondTime()
         {
-            mockService.SetupSequence(s => s.GetPharmacists())
+            mockService.SetupSequence(vacationService => vacationService.GetPharmacists())
                 .Returns(new List<Pharmacyst> { TestPharmacist })
                 .Returns(new List<Pharmacyst>());
 

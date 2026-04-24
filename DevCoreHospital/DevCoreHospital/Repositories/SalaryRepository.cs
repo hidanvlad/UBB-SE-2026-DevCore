@@ -40,9 +40,9 @@ namespace DevCoreHospital.Repositories
                     totalHours = (endTime - startTime).TotalHours;
                 }
             }
-            catch (Exception ex)
+            catch (Exception exception)
             {
-                System.Diagnostics.Debug.WriteLine($"Error GetShiftHoursFromDb: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Error GetShiftHoursFromDb: {exception.Message}");
             }
             return totalHours;
         }
@@ -91,9 +91,9 @@ namespace DevCoreHospital.Repositories
                 int hangoutParticipationCount = Convert.ToInt32(command.ExecuteScalar());
                 return hangoutParticipationCount > 0;
             }
-            catch (Exception ex)
+            catch (Exception exception)
             {
-                System.Diagnostics.Debug.WriteLine($"Error checking hangout bonus: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Error checking hangout bonus: {exception.Message}");
                 return false;
             }
         }

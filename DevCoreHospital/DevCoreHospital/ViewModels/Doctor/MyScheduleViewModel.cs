@@ -84,15 +84,19 @@ namespace DevCoreHospital.ViewModels.Doctor
         {
             Doctors.Clear();
 
+            string GetDoctorFirstName(Models.Doctor doctor) => doctor.FirstName;
+            string GetDoctorLastName(Models.Doctor doctor) => doctor.LastName;
+            DoctorOptionViewModel ToDoctorOptionViewModel(Models.Doctor doctor) => new DoctorOptionViewModel
+            {
+                StaffId = doctor.StaffID,
+                DisplayName = $"{doctor.FirstName} {doctor.LastName}".Trim()
+            };
+
             var doctors = staffAndShiftService
                 .GetAllDoctors()
-                .OrderBy(doctor => doctor.FirstName)
-                .ThenBy(doctor => doctor.LastName)
-                .Select(doctor => new DoctorOptionViewModel
-                {
-                    StaffId = doctor.StaffID,
-                    DisplayName = $"{doctor.FirstName} {doctor.LastName}".Trim()
-                });
+                .OrderBy(GetDoctorFirstName)
+                .ThenBy(GetDoctorLastName)
+                .Select(ToDoctorOptionViewModel);
 
             foreach (var doctor in doctors)
             {
@@ -120,10 +124,13 @@ namespace DevCoreHospital.ViewModels.Doctor
                 return;
             }
 
+            DateTime GetShiftStartTime(Shift shift) => shift.StartTime;
+            DoctorShiftItemViewModel ToShiftItemViewModel(Shift shift) => new DoctorShiftItemViewModel(shift);
+
             var futureShiftItems = staffAndShiftService
                 .GetFutureShiftsForStaff(SelectedDoctor.StaffId)
-                .OrderBy(shift => shift.StartTime)
-                .Select(shift => new DoctorShiftItemViewModel(shift));
+                .OrderBy(GetShiftStartTime)
+                .Select(ToShiftItemViewModel);
 
             foreach (var item in futureShiftItems)
             {

@@ -82,10 +82,13 @@ namespace DevCoreHospital.Services
         private bool HasConflictsOnDate(int staffId, DateTime date)
         {
             var statuses = hangoutRepository.GetAppointmentStatusesForStaffOnDate(staffId, date);
-            return statuses.Any(s =>
-                !string.Equals(s, "Finished", StringComparison.OrdinalIgnoreCase) &&
-                !string.Equals(s, "Canceled", StringComparison.OrdinalIgnoreCase) &&
-                !string.Equals(s, "Cancelled", StringComparison.OrdinalIgnoreCase));
+
+            bool IsActiveStatus(string status) =>
+                !string.Equals(status, "Finished", StringComparison.OrdinalIgnoreCase) &&
+                !string.Equals(status, "Canceled", StringComparison.OrdinalIgnoreCase) &&
+                !string.Equals(status, "Cancelled", StringComparison.OrdinalIgnoreCase);
+
+            return statuses.Any(IsActiveStatus);
         }
     }
 }

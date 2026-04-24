@@ -51,14 +51,18 @@ namespace DevCoreHospital.ViewModels.Doctor
 
         private static IEnumerable<DoctorOptionViewModel> LoadDoctorsFromService(IShiftSwapService shiftSwapService)
         {
+            string GetFirstName(Models.Doctor doctorModel) => doctorModel.FirstName;
+            string GetLastName(Models.Doctor doctorModel) => doctorModel.LastName;
+            DoctorOptionViewModel ToDoctorOptionViewModel(Models.Doctor doctorModel) => new DoctorOptionViewModel
+            {
+                StaffId = doctorModel.StaffID,
+                DisplayName = $"{doctorModel.FirstName} {doctorModel.LastName}".Trim(),
+            };
+
             return shiftSwapService.GetAllDoctors()
-                .OrderBy(doctorModel => doctorModel.FirstName)
-                .ThenBy(doctorModel => doctorModel.LastName)
-                .Select(doctorModel => new DoctorOptionViewModel
-                {
-                    StaffId = doctorModel.StaffID,
-                    DisplayName = $"{doctorModel.FirstName} {doctorModel.LastName}".Trim(),
-                });
+                .OrderBy(GetFirstName)
+                .ThenBy(GetLastName)
+                .Select(ToDoctorOptionViewModel);
         }
 
         public IncomingSwapRequestsViewModel(IShiftSwapService service, IEnumerable<DoctorOptionViewModel> doctors)
@@ -75,7 +79,8 @@ namespace DevCoreHospital.ViewModels.Doctor
                 SelectedDoctor = Doctors[0];
             }
 
-            RefreshCommand = new RelayCommand(LoadRequests, () => SelectedDoctor != null);
+            bool CanRefresh() => SelectedDoctor != null;
+            RefreshCommand = new RelayCommand(LoadRequests, CanRefresh);
             AcceptCommand = new RelayCommand(AcceptSelected, CanProcessSelected);
             RejectCommand = new RelayCommand(RejectSelected, CanProcessSelected);
         }

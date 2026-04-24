@@ -35,52 +35,52 @@ namespace DevCoreHospital.Tests.ViewModels
         [Fact]
         public void DateText_ReturnsFormattedDate()
         {
-            var vm = new AppointmentItemViewModel(BuildAppointment(date: new DateTime(2025, 6, 15)));
+            var viewModel = new AppointmentItemViewModel(BuildAppointment(date: new DateTime(2025, 6, 15)));
 
-            Assert.Equal("15 Jun 2025", vm.DateText);
+            Assert.Equal("15 Jun 2025", viewModel.DateText);
         }
 
         [Fact]
         public void TimeRangeText_ContainsStartAndEndTime()
         {
-            var vm = new AppointmentItemViewModel(BuildAppointment(
+            var viewModel = new AppointmentItemViewModel(BuildAppointment(
                 startTime: new TimeSpan(9, 30, 0),
                 endTime: new TimeSpan(10, 15, 0)));
 
-            Assert.Contains("09:30", vm.TimeRangeText);
-            Assert.Contains("10:15", vm.TimeRangeText);
+            Assert.Contains("09:30", viewModel.TimeRangeText);
+            Assert.Contains("10:15", viewModel.TimeRangeText);
         }
 
         [Fact]
         public void LocationSafe_ReturnsLocation_WhenLocationIsSet()
         {
-            var vm = new AppointmentItemViewModel(BuildAppointment(location: "Room 5"));
+            var viewModel = new AppointmentItemViewModel(BuildAppointment(location: "Room 5"));
 
-            Assert.Equal("Room 5", vm.LocationSafe);
+            Assert.Equal("Room 5", viewModel.LocationSafe);
         }
 
         [Fact]
         public void LocationSafe_ReturnsLocationTbd_WhenLocationIsEmpty()
         {
-            var vm = new AppointmentItemViewModel(BuildAppointment(location: string.Empty));
+            var viewModel = new AppointmentItemViewModel(BuildAppointment(location: string.Empty));
 
-            Assert.Equal("Location TBD", vm.LocationSafe);
+            Assert.Equal("Location TBD", viewModel.LocationSafe);
         }
 
         [Fact]
         public void LocationSafe_ReturnsLocationTbd_WhenLocationIsWhitespace()
         {
-            var vm = new AppointmentItemViewModel(BuildAppointment(location: "   "));
+            var viewModel = new AppointmentItemViewModel(BuildAppointment(location: "   "));
 
-            Assert.Equal("Location TBD", vm.LocationSafe);
+            Assert.Equal("Location TBD", viewModel.LocationSafe);
         }
 
         [Fact]
         public void ToAppointment_ReturnsAppointmentWithSameId()
         {
-            var vm = new AppointmentItemViewModel(BuildAppointment(id: 42));
+            var viewModel = new AppointmentItemViewModel(BuildAppointment(id: 42));
 
-            var result = vm.ToAppointment();
+            var result = viewModel.ToAppointment();
 
             Assert.Equal(42, result.Id);
         }
@@ -95,9 +95,9 @@ namespace DevCoreHospital.Tests.ViewModels
                 id: 5, patientName: "Alice", doctorName: "Dr. Brown",
                 location: "Ward B", status: "Scheduled", type: "Follow-up",
                 notes: "Bring X-ray", date: date, startTime: start, endTime: end);
-            var vm = new AppointmentItemViewModel(appt);
+            var viewModel = new AppointmentItemViewModel(appt);
 
-            var result = vm.ToAppointment();
+            var result = viewModel.ToAppointment();
 
             Assert.Equal(5, result.Id);
             Assert.Equal("Alice", result.PatientName);
@@ -126,11 +126,11 @@ namespace DevCoreHospital.Tests.ViewModels
                 Date = DateTime.Now,
             };
 
-            var vm = new AppointmentItemViewModel(appt);
+            var viewModel = new AppointmentItemViewModel(appt);
 
-            Assert.Equal(string.Empty, vm.PatientName);
-            Assert.Equal(string.Empty, vm.DoctorName);
-            Assert.Equal(string.Empty, vm.Notes);
+            Assert.Equal(string.Empty, viewModel.PatientName);
+            Assert.Equal(string.Empty, viewModel.DoctorName);
+            Assert.Equal(string.Empty, viewModel.Notes);
         }
     }
 }

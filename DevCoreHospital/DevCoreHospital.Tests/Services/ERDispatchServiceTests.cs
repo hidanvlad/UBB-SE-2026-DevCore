@@ -65,10 +65,15 @@ public class ERDispatchServiceTests
         repository
             .Setup(dispatcherRepository => dispatcherRepository.GetDoctorRoster())
             .Returns(Array.Empty<DoctorRosterEntry>());
+
+        void CaptureUpdateRequestStatus(int requestId, string requestStatus, int? assignedDoctorId, string? assignedDoctorName)
+        {
+            lastPersistedRequestStatus = requestStatus;
+        }
+
         repository
             .Setup(dispatcherRepository => dispatcherRepository.UpdateRequestStatus(It.IsAny<int>(), It.IsAny<string>(), It.IsAny<int?>(), It.IsAny<string>()))
-            .Callback(
-                (int requestId, string requestStatus, int? assignedDoctorId, string? assignedDoctorName) => lastPersistedRequestStatus = requestStatus);
+            .Callback<int, string, int?, string?>(CaptureUpdateRequestStatus);
         var service = new ERDispatchService(repository.Object);
 
         await service.DispatchERRequestAsync(1);
@@ -118,9 +123,15 @@ public class ERDispatchServiceTests
         var callCount = 0;
         var repository = new Mock<IERDispatchRepository>();
         repository.Setup(dispatcherRepository => dispatcherRepository.GetDoctorRoster()).Returns(Array.Empty<DoctorRosterEntry>());
+
+        int IncrementAndReturnCallCount()
+        {
+            return ++callCount;
+        }
+
         repository
             .Setup(dispatcherRepository => dispatcherRepository.CreateIncomingRequest(It.IsAny<string>(), It.IsAny<string>()))
-            .Returns(() => ++callCount);
+            .Returns(IncrementAndReturnCallCount);
         var service = new ERDispatchService(repository.Object);
 
         var createdIds = await service.SimulateIncomingRequestsAsync(0);
@@ -131,12 +142,12 @@ public class ERDispatchServiceTests
     [Fact]
     public async Task GetPendingRequestIdsAsync_ReturnsIdFromEachPending()
     {
-        var p1 = new ERRequest { Id = 7, Specialization = "A", Location = "B" };
-        var p2 = new ERRequest { Id = 8, Specialization = "C", Location = "D" };
+        var firstPendingRequest = new ERRequest { Id = 7, Specialization = "A", Location = "B" };
+        var secondPendingRequest = new ERRequest { Id = 8, Specialization = "C", Location = "D" };
         var repository = new Mock<IERDispatchRepository>();
         repository
             .Setup(dispatcherRepository => dispatcherRepository.GetPendingRequests())
-            .Returns(new[] { p1, p2 });
+            .Returns(new[] { firstPendingRequest, secondPendingRequest });
         var service = new ERDispatchService(repository.Object);
 
         var ids = await service.GetPendingRequestIdsAsync();
@@ -166,10 +177,15 @@ public class ERDispatchServiceTests
         repository
             .Setup(dispatcherRepository => dispatcherRepository.GetDoctorRoster())
             .Returns(new[] { rosterEntry });
+
+        void CaptureAssignedDoctorId(int requestId, string state, int? doctorId, string? doctorName)
+        {
+            lastDoctorId = doctorId;
+        }
+
         repository
             .Setup(dispatcherRepository => dispatcherRepository.UpdateRequestStatus(1, "ASSIGNED", 3, It.IsAny<string>()))
-            .Callback<int, string, int?, string?>(
-                (requestId, state, did, dname) => lastDoctorId = did);
+            .Callback<int, string, int?, string?>(CaptureAssignedDoctorId);
         var service = new ERDispatchService(repository.Object);
 
         _ = await service.DispatchERRequestAsync(1);
@@ -209,9 +225,9 @@ public class ERDispatchServiceTests
             .Returns(new[] { near, other });
         var service = new ERDispatchService(repository.Object);
 
-        var res = await service.GetManualOverrideCandidatesAsync(1, 30);
+        var result = await service.GetManualOverrideCandidatesAsync(1, 30);
 
-        Assert.Equal(4, res[0].DoctorId);
+        Assert.Equal(4, result[0].DoctorId);
     }
 
     [Fact]
@@ -237,8 +253,8 @@ public class ERDispatchServiceTests
         repository.Setup(dispatcherRepository => dispatcherRepository.GetDoctorById(4)).Returns(near);
         var service = new ERDispatchService(repository.Object);
 
-        var r = await service.ManualOverrideAsync(1, 4, 30);
+        var result = await service.ManualOverrideAsync(1, 4, 30);
 
-        Assert.True(r.IsSuccess);
+        Assert.True(result.IsSuccess);
     }
 }

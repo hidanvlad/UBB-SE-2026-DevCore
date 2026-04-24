@@ -69,35 +69,50 @@ namespace DevCoreHospital.Repositories
                     }
                 }
             }
-            catch (Exception ex)
+            catch (Exception exception)
             {
-                System.Diagnostics.Debug.WriteLine($"Error FetchAllStaffFromDatabase: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Error FetchAllStaffFromDatabase: {exception.Message}");
             }
             return allStaff;
         }
 
         // ── Read methods ────────────────────────────────────────────────────
         public IStaff? GetStaffById(int staffId)
-            => FetchAllStaffFromDatabase().FirstOrDefault(s => s.StaffID == staffId);
+        {
+            bool HasMatchingId(IStaff staffMember) => staffMember.StaffID == staffId;
+            return FetchAllStaffFromDatabase().FirstOrDefault(HasMatchingId);
+        }
 
         public List<Doctor> GetAvailableDoctors()
-            => FetchAllStaffFromDatabase().OfType<Doctor>().Where(d => d.Available).ToList();
+        {
+            bool IsAvailable(Doctor doctor) => doctor.Available;
+            return FetchAllStaffFromDatabase().OfType<Doctor>().Where(IsAvailable).ToList();
+        }
 
         public List<Pharmacyst> GetPharmacists()
             => FetchAllStaffFromDatabase().OfType<Pharmacyst>().ToList();
 
         private List<Pharmacyst> GetAvailablePharmacists()
-            => FetchAllStaffFromDatabase().OfType<Pharmacyst>().Where(p => p.Available).ToList();
+        {
+            bool IsAvailable(Pharmacyst pharmacist) => pharmacist.Available;
+            return FetchAllStaffFromDatabase().OfType<Pharmacyst>().Where(IsAvailable).ToList();
+        }
 
         public List<Doctor> GetDoctorsBySpecialization(string specialization)
-            => FetchAllStaffFromDatabase().OfType<Doctor>()
-                .Where(d => d.Specialization.Equals(specialization, StringComparison.OrdinalIgnoreCase))
+        {
+            bool HasMatchingSpecialization(Doctor doctor) => doctor.Specialization.Equals(specialization, StringComparison.OrdinalIgnoreCase);
+            return FetchAllStaffFromDatabase().OfType<Doctor>()
+                .Where(HasMatchingSpecialization)
                 .ToList();
+        }
 
         public List<Pharmacyst> GetPharmacystsByCertification(string certification)
-            => FetchAllStaffFromDatabase().OfType<Pharmacyst>()
-                .Where(p => p.Certification.Equals(certification, StringComparison.OrdinalIgnoreCase))
+        {
+            bool HasMatchingCertification(Pharmacyst pharmacist) => pharmacist.Certification.Equals(certification, StringComparison.OrdinalIgnoreCase);
+            return FetchAllStaffFromDatabase().OfType<Pharmacyst>()
+                .Where(HasMatchingCertification)
                 .ToList();
+        }
 
         public async Task<IReadOnlyList<(int DoctorId, string DoctorName)>> GetAllDoctorsAsync()
         {
@@ -133,9 +148,9 @@ namespace DevCoreHospital.Repositories
                 AddParameter(command, "@Id",           staffId);
                 command.ExecuteNonQuery();
             }
-            catch (Exception ex)
+            catch (Exception exception)
             {
-                System.Diagnostics.Debug.WriteLine($"Error UpdateStaffAvailability: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Error UpdateStaffAvailability: {exception.Message}");
             }
         }
 
@@ -182,9 +197,9 @@ namespace DevCoreHospital.Repositories
 
                 command.ExecuteNonQuery();
             }
-            catch (Exception ex)
+            catch (Exception exception)
             {
-                System.Diagnostics.Debug.WriteLine($"Error UpdateStaff: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Error UpdateStaff: {exception.Message}");
             }
         }
 

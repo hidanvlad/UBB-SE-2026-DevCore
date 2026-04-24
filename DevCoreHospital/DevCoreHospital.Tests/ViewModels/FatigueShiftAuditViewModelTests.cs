@@ -18,7 +18,7 @@ namespace DevCoreHospital.Tests.ViewModels
         {
             auditServiceMock = new Mock<IFatigueAuditService>();
             auditServiceMock
-                .Setup(s => s.RunAutoAudit(It.IsAny<DateTime>()))
+                .Setup(auditService => auditService.RunAutoAudit(It.IsAny<DateTime>()))
                 .Returns(CleanResult());
         }
 
@@ -84,7 +84,7 @@ namespace DevCoreHospital.Tests.ViewModels
         {
             CreateViewModel();
 
-            auditServiceMock.Verify(s => s.RunAutoAudit(It.IsAny<DateTime>()), Times.Once);
+            auditServiceMock.Verify(auditService => auditService.RunAutoAudit(It.IsAny<DateTime>()), Times.Once);
         }
 
         [Fact]
@@ -92,28 +92,28 @@ namespace DevCoreHospital.Tests.ViewModels
         {
             var violation = MakeViolation(shiftId: 1);
             auditServiceMock
-                .Setup(s => s.RunAutoAudit(It.IsAny<DateTime>()))
+                .Setup(auditService => auditService.RunAutoAudit(It.IsAny<DateTime>()))
                 .Returns(ResultWithViolations(violation));
-            var vm = CreateViewModel();
+            var viewModel = CreateViewModel();
 
-            Assert.Single(vm.Violations);
-            Assert.Equal(1, vm.Violations[0].ShiftId);
-            Assert.Equal("Alice", vm.Violations[0].Staff);
-            Assert.Equal("MAX_60H_PER_WEEK", vm.Violations[0].Rule);
+            Assert.Single(viewModel.Violations);
+            Assert.Equal(1, viewModel.Violations[0].ShiftId);
+            Assert.Equal("Alice", viewModel.Violations[0].Staff);
+            Assert.Equal("MAX_60H_PER_WEEK", viewModel.Violations[0].Rule);
         }
 
         [Fact]
         public void RunAutoAudit_ClearsViolations_BeforePopulating()
         {
             auditServiceMock
-                .SetupSequence(s => s.RunAutoAudit(It.IsAny<DateTime>()))
+                .SetupSequence(auditService => auditService.RunAutoAudit(It.IsAny<DateTime>()))
                 .Returns(ResultWithViolations(MakeViolation(1), MakeViolation(2)))
                 .Returns(CleanResult());
-            var vm = CreateViewModel();
+            var viewModel = CreateViewModel();
 
-            vm.RunAutoAudit();
+            viewModel.RunAutoAudit();
 
-            Assert.Empty(vm.Violations);
+            Assert.Empty(viewModel.Violations);
         }
 
         [Fact]
@@ -122,140 +122,142 @@ namespace DevCoreHospital.Tests.ViewModels
             var violation = MakeViolation(shiftId: 5);
             var suggestion = MakeSuggestion(shiftId: 5, suggestedStaffId: 99);
             auditServiceMock
-                .Setup(s => s.RunAutoAudit(It.IsAny<DateTime>()))
+                .Setup(auditService => auditService.RunAutoAudit(It.IsAny<DateTime>()))
                 .Returns(ResultWithViolationsAndSuggestions(
                     new[] { violation },
                     new[] { suggestion }));
-            var vm = CreateViewModel();
+            var viewModel = CreateViewModel();
 
-            Assert.Single(vm.Suggestions);
-            Assert.Equal(5, vm.Suggestions[0].ShiftId);
-            Assert.Equal(99, vm.Suggestions[0].SuggestedStaffId);
+            Assert.Single(viewModel.Suggestions);
+            Assert.Equal(5, viewModel.Suggestions[0].ShiftId);
+            Assert.Equal(99, viewModel.Suggestions[0].SuggestedStaffId);
         }
 
         [Fact]
         public void RunAutoAudit_SetsCanPublishTrue_WhenNoConflicts()
         {
             auditServiceMock
-                .Setup(s => s.RunAutoAudit(It.IsAny<DateTime>()))
+                .Setup(auditService => auditService.RunAutoAudit(It.IsAny<DateTime>()))
                 .Returns(CleanResult());
-            var vm = CreateViewModel();
+            var viewModel = CreateViewModel();
 
-            Assert.True(vm.CanPublish);
+            Assert.True(viewModel.CanPublish);
         }
 
         [Fact]
         public void RunAutoAudit_SetsCanPublishFalse_WhenConflictsExist()
         {
             auditServiceMock
-                .Setup(s => s.RunAutoAudit(It.IsAny<DateTime>()))
+                .Setup(auditService => auditService.RunAutoAudit(It.IsAny<DateTime>()))
                 .Returns(ResultWithViolations(MakeViolation()));
-            var vm = CreateViewModel();
+            var viewModel = CreateViewModel();
 
-            Assert.False(vm.CanPublish);
+            Assert.False(viewModel.CanPublish);
         }
 
         [Fact]
         public void HasConflicts_IsFalse_WhenNoViolations()
         {
             auditServiceMock
-                .Setup(s => s.RunAutoAudit(It.IsAny<DateTime>()))
+                .Setup(auditService => auditService.RunAutoAudit(It.IsAny<DateTime>()))
                 .Returns(CleanResult());
-            var vm = CreateViewModel();
+            var viewModel = CreateViewModel();
 
-            Assert.False(vm.HasConflicts);
+            Assert.False(viewModel.HasConflicts);
         }
 
         [Fact]
         public void HasConflicts_IsTrue_WhenViolationsExist()
         {
             auditServiceMock
-                .Setup(s => s.RunAutoAudit(It.IsAny<DateTime>()))
+                .Setup(auditService => auditService.RunAutoAudit(It.IsAny<DateTime>()))
                 .Returns(ResultWithViolations(MakeViolation()));
-            var vm = CreateViewModel();
+            var viewModel = CreateViewModel();
 
-            Assert.True(vm.HasConflicts);
+            Assert.True(viewModel.HasConflicts);
         }
 
         [Fact]
         public void RunAutoAudit_SetsStatusMessage_FromServiceSummary()
         {
             auditServiceMock
-                .Setup(s => s.RunAutoAudit(It.IsAny<DateTime>()))
+                .Setup(auditService => auditService.RunAutoAudit(It.IsAny<DateTime>()))
                 .Returns(CleanResult());
-            var vm = CreateViewModel();
+            var viewModel = CreateViewModel();
 
-            Assert.Equal("No conflicts found. Roster can be published.", vm.StatusMessage);
+            Assert.Equal("No conflicts found. Roster can be published.", viewModel.StatusMessage);
         }
 
         [Fact]
         public void WeekLabel_StartsWithWeekOf()
         {
-            var vm = CreateViewModel();
+            var viewModel = CreateViewModel();
 
-            Assert.StartsWith("Week of ", vm.WeekLabel);
+            Assert.StartsWith("Week of ", viewModel.WeekLabel);
         }
 
         [Fact]
         public void WeekLabel_FormatsDateInEnglish()
         {
-            var vm = CreateViewModel();
+            var viewModel = CreateViewModel();
 
-            var mondayOfCurrentWeek = vm.SelectedWeekStart.Date;
+            var mondayOfCurrentWeek = viewModel.SelectedWeekStart.Date;
             var expected = $"Week of {mondayOfCurrentWeek.ToString("dd MMM yyyy", CultureInfo.GetCultureInfo("en-US"))}";
 
-            Assert.Equal(expected, vm.WeekLabel);
+            Assert.Equal(expected, viewModel.WeekLabel);
         }
 
         [Fact]
         public void SelectedWeekStart_Setter_NormalizesToMonday()
         {
-            var vm = CreateViewModel();
+            var viewModel = CreateViewModel();
             var wednesday = new DateTimeOffset(new DateTime(2025, 4, 16)); // Wednesday
 
-            vm.SelectedWeekStart = wednesday;
+            viewModel.SelectedWeekStart = wednesday;
 
-            Assert.Equal(DayOfWeek.Monday, vm.SelectedWeekStart.DayOfWeek);
-            Assert.Equal(new DateTime(2025, 4, 14), vm.SelectedWeekStart.Date); // Monday
+            Assert.Equal(DayOfWeek.Monday, viewModel.SelectedWeekStart.DayOfWeek);
+            Assert.Equal(new DateTime(2025, 4, 14), viewModel.SelectedWeekStart.Date); // Monday
         }
 
         [Fact]
         public void SelectedWeekStart_Setter_RaisesWeekLabelPropertyChanged()
         {
-            var vm = CreateViewModel();
+            var viewModel = CreateViewModel();
             var raisedProperties = new List<string>();
-            vm.PropertyChanged += (_, e) => raisedProperties.Add(e.PropertyName ?? string.Empty);
+            void OnPropertyChanged(object? sender, PropertyChangedEventArgs eventArgs) => raisedProperties.Add(eventArgs.PropertyName ?? string.Empty);
+            viewModel.PropertyChanged += OnPropertyChanged;
             var wednesday = new DateTimeOffset(new DateTime(2025, 4, 16));
 
-            vm.SelectedWeekStart = wednesday;
+            viewModel.SelectedWeekStart = wednesday;
 
-            Assert.Contains(nameof(vm.WeekLabel), raisedProperties);
+            Assert.Contains(nameof(viewModel.WeekLabel), raisedProperties);
         }
 
         [Fact]
         public void CanPublish_Change_RaisesPropertyChangedForPublishStatus()
         {
             auditServiceMock
-                .SetupSequence(s => s.RunAutoAudit(It.IsAny<DateTime>()))
+                .SetupSequence(auditService => auditService.RunAutoAudit(It.IsAny<DateTime>()))
                 .Returns(ResultWithViolations(MakeViolation()))
                 .Returns(CleanResult());
 
-            var vm = CreateViewModel();
+            var viewModel = CreateViewModel();
             var raisedProperties = new List<string>();
-            vm.PropertyChanged += (_, e) => raisedProperties.Add(e.PropertyName ?? string.Empty);
+            void OnPropertyChanged(object? sender, PropertyChangedEventArgs eventArgs) => raisedProperties.Add(eventArgs.PropertyName ?? string.Empty);
+            viewModel.PropertyChanged += OnPropertyChanged;
 
-            vm.RunAutoAudit();
+            viewModel.RunAutoAudit();
 
-            Assert.Contains(nameof(vm.PublishStatus), raisedProperties);
-            Assert.Contains(nameof(vm.PublishStatusDescription), raisedProperties);
+            Assert.Contains(nameof(viewModel.PublishStatus), raisedProperties);
+            Assert.Contains(nameof(viewModel.PublishStatusDescription), raisedProperties);
         }
 
         [Fact]
         public void ApplyReassignment_ReturnsFailure_WhenNoSuggestionExistsForShift()
         {
-            var vm = CreateViewModel(); // no suggestions
+            var viewModel = CreateViewModel(); // no suggestions
 
-            var result = vm.ApplyReassignment(shiftId: 999);
+            var result = viewModel.ApplyReassignment(shiftId: 999);
 
             Assert.False(result.isSuccess);
             Assert.Equal("Invalid Reassignment", result.title);
@@ -267,17 +269,17 @@ namespace DevCoreHospital.Tests.ViewModels
             var violation = MakeViolation(shiftId: 7);
             var suggestion = MakeSuggestion(shiftId: 7, suggestedStaffId: null); // no candidate
             auditServiceMock
-                .Setup(s => s.RunAutoAudit(It.IsAny<DateTime>()))
+                .Setup(auditService => auditService.RunAutoAudit(It.IsAny<DateTime>()))
                 .Returns(ResultWithViolationsAndSuggestions(
                     new[] { violation },
                     new[] { suggestion }));
 
-            var vm = CreateViewModel();
-            var result = vm.ApplyReassignment(shiftId: 7);
+            var viewModel = CreateViewModel();
+            var result = viewModel.ApplyReassignment(shiftId: 7);
 
             Assert.False(result.isSuccess);
             Assert.Equal("Invalid Reassignment", result.title);
-            auditServiceMock.Verify(s => s.ReassignShift(It.IsAny<int>(), It.IsAny<int>()), Times.Never);
+            auditServiceMock.Verify(auditService => auditService.ReassignShift(It.IsAny<int>(), It.IsAny<int>()), Times.Never);
         }
 
         [Fact]
@@ -286,14 +288,14 @@ namespace DevCoreHospital.Tests.ViewModels
             var violation = MakeViolation(shiftId: 3);
             var suggestion = MakeSuggestion(shiftId: 3, suggestedStaffId: 50, suggestedName: "Bob");
             auditServiceMock
-                .Setup(s => s.RunAutoAudit(It.IsAny<DateTime>()))
+                .Setup(auditService => auditService.RunAutoAudit(It.IsAny<DateTime>()))
                 .Returns(ResultWithViolationsAndSuggestions(
                     new[] { violation },
                     new[] { suggestion }));
-            auditServiceMock.Setup(s => s.ReassignShift(3, 50)).Returns(true);
-            var vm = CreateViewModel();
+            auditServiceMock.Setup(auditService => auditService.ReassignShift(3, 50)).Returns(true);
+            var viewModel = CreateViewModel();
 
-            var result = vm.ApplyReassignment(shiftId: 3);
+            var result = viewModel.ApplyReassignment(shiftId: 3);
 
             Assert.True(result.isSuccess);
             Assert.Equal("Reassignment Applied", result.title);
@@ -306,14 +308,14 @@ namespace DevCoreHospital.Tests.ViewModels
             var violation = MakeViolation(shiftId: 3);
             var suggestion = MakeSuggestion(shiftId: 3, suggestedStaffId: 50);
             auditServiceMock
-                .Setup(s => s.RunAutoAudit(It.IsAny<DateTime>()))
+                .Setup(auditService => auditService.RunAutoAudit(It.IsAny<DateTime>()))
                 .Returns(ResultWithViolationsAndSuggestions(
                     new[] { violation },
                     new[] { suggestion }));
-            auditServiceMock.Setup(s => s.ReassignShift(3, 50)).Returns(false);
-            var vm = CreateViewModel();
+            auditServiceMock.Setup(auditService => auditService.ReassignShift(3, 50)).Returns(false);
+            var viewModel = CreateViewModel();
 
-            var result = vm.ApplyReassignment(shiftId: 3);
+            var result = viewModel.ApplyReassignment(shiftId: 3);
 
             Assert.False(result.isSuccess);
             Assert.Equal("Reassignment Failed", result.title);
@@ -325,16 +327,16 @@ namespace DevCoreHospital.Tests.ViewModels
             var violation = MakeViolation(shiftId: 3);
             var suggestion = MakeSuggestion(shiftId: 3, suggestedStaffId: 50);
             auditServiceMock
-                .Setup(s => s.RunAutoAudit(It.IsAny<DateTime>()))
+                .Setup(auditService => auditService.RunAutoAudit(It.IsAny<DateTime>()))
                 .Returns(ResultWithViolationsAndSuggestions(
                     new[] { violation },
                     new[] { suggestion }));
-            auditServiceMock.Setup(s => s.ReassignShift(3, 50)).Returns(true);
-            var vm = CreateViewModel();
+            auditServiceMock.Setup(auditService => auditService.ReassignShift(3, 50)).Returns(true);
+            var viewModel = CreateViewModel();
 
-            vm.ApplyReassignment(shiftId: 3);
+            viewModel.ApplyReassignment(shiftId: 3);
 
-            auditServiceMock.Verify(s => s.RunAutoAudit(It.IsAny<DateTime>()), Times.Exactly(2));
+            auditServiceMock.Verify(auditService => auditService.RunAutoAudit(It.IsAny<DateTime>()), Times.Exactly(2));
         }
 
         [Fact]
@@ -343,60 +345,60 @@ namespace DevCoreHospital.Tests.ViewModels
             var violation = MakeViolation(shiftId: 3);
             var suggestion = MakeSuggestion(shiftId: 3, suggestedStaffId: 50);
             auditServiceMock
-                .Setup(s => s.RunAutoAudit(It.IsAny<DateTime>()))
+                .Setup(auditService => auditService.RunAutoAudit(It.IsAny<DateTime>()))
                 .Returns(ResultWithViolationsAndSuggestions(
                     new[] { violation },
                     new[] { suggestion }));
-            auditServiceMock.Setup(s => s.ReassignShift(3, 50)).Returns(false);
-            var vm = CreateViewModel();
+            auditServiceMock.Setup(auditService => auditService.ReassignShift(3, 50)).Returns(false);
+            var viewModel = CreateViewModel();
 
-            vm.ApplyReassignment(shiftId: 3);
+            viewModel.ApplyReassignment(shiftId: 3);
 
-            auditServiceMock.Verify(s => s.RunAutoAudit(It.IsAny<DateTime>()), Times.Once);
+            auditServiceMock.Verify(auditService => auditService.RunAutoAudit(It.IsAny<DateTime>()), Times.Once);
         }
 
         [Fact]
         public void PublishStatus_IsReady_WhenCanPublish()
         {
             auditServiceMock
-                .Setup(s => s.RunAutoAudit(It.IsAny<DateTime>()))
+                .Setup(auditService => auditService.RunAutoAudit(It.IsAny<DateTime>()))
                 .Returns(CleanResult());
-            var vm = CreateViewModel();
+            var viewModel = CreateViewModel();
 
-            Assert.Equal("Publish status: READY", vm.PublishStatus);
+            Assert.Equal("Publish status: READY", viewModel.PublishStatus);
         }
 
         [Fact]
         public void PublishStatus_IsBlocked_WhenCannotPublish()
         {
             auditServiceMock
-                .Setup(s => s.RunAutoAudit(It.IsAny<DateTime>()))
+                .Setup(auditService => auditService.RunAutoAudit(It.IsAny<DateTime>()))
                 .Returns(ResultWithViolations(MakeViolation()));
-            var vm = CreateViewModel();
+            var viewModel = CreateViewModel();
 
-            Assert.Equal("Publish status: BLOCKED", vm.PublishStatus);
+            Assert.Equal("Publish status: BLOCKED", viewModel.PublishStatus);
         }
 
         [Fact]
         public void PublishStatusDescription_IsPositive_WhenCanPublish()
         {
             auditServiceMock
-                .Setup(s => s.RunAutoAudit(It.IsAny<DateTime>()))
+                .Setup(auditService => auditService.RunAutoAudit(It.IsAny<DateTime>()))
                 .Returns(CleanResult());
-            var vm = CreateViewModel();
+            var viewModel = CreateViewModel();
 
-            Assert.Contains("No violations", vm.PublishStatusDescription);
+            Assert.Contains("No violations", viewModel.PublishStatusDescription);
         }
 
         [Fact]
         public void PublishStatusDescription_IsNegative_WhenCannotPublish()
         {
             auditServiceMock
-                .Setup(s => s.RunAutoAudit(It.IsAny<DateTime>()))
+                .Setup(auditService => auditService.RunAutoAudit(It.IsAny<DateTime>()))
                 .Returns(ResultWithViolations(MakeViolation()));
-            var vm = CreateViewModel();
+            var viewModel = CreateViewModel();
 
-            Assert.Contains("cannot be published", vm.PublishStatusDescription);
+            Assert.Contains("cannot be published", viewModel.PublishStatusDescription);
         }
     }
 }

@@ -25,7 +25,7 @@ public class ERDispatchRepositoryTests
         public void SetRosterEntriesById(int staffId, IReadOnlyList<DoctorRosterEntry> entries) => rosterEntriesById[staffId] = entries;
         public void SetRequests(IReadOnlyList<ERRequest> reqs) => requests = reqs;
         public void SetRequestById(int id, ERRequest? req) => requestsById[id] = req;
-        public void SetCreateRequestResult(string spec, string location, int id) => createResults[(spec, location)] = id;
+        public void SetCreateRequestResult(string specialization, string location, int id) => createResults[(specialization, location)] = id;
 
         protected override IReadOnlyList<DoctorRosterEntry> FetchRosterEntries() => rosterEntries;
 
@@ -240,7 +240,7 @@ public class ERDispatchRepositoryTests
 
         var result = repository.GetPendingRequests();
 
-        Assert.Equal(new[] { 1, 2, 3 }, result.Select(r => r.Id).ToArray());
+        Assert.Equal(new[] { 1, 2, 3 }, result.Select(request => request.Id).ToArray());
     }
 
     [Fact]

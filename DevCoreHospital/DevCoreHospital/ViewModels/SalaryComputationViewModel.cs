@@ -102,10 +102,13 @@ namespace DevCoreHospital.ViewModels
 
             try
             {
+                bool IsStaffShiftForPeriod(Shift shift) =>
+                    shift.AppointedStaff?.StaffID == SelectedStaff.StaffID
+                    && shift.StartTime.Month == SelectedMonth
+                    && shift.StartTime.Year == SelectedYear;
+
                 var staffShiftsForPeriod = ShiftList
-                    .Where(shift => shift.AppointedStaff?.StaffID == SelectedStaff.StaffID
-                                    && shift.StartTime.Month == SelectedMonth
-                                    && shift.StartTime.Year == SelectedYear)
+                    .Where(IsStaffShiftForPeriod)
                     .ToList();
 
                 double computedSalary = 0;
@@ -125,9 +128,9 @@ namespace DevCoreHospital.ViewModels
 
                 SalaryResult = $"Computed Salary: ${computedSalary:F2}";
             }
-            catch (Exception ex)
+            catch (Exception exception)
             {
-                ErrorMessage = $"Computation failed: {ex.Message}";
+                ErrorMessage = $"Computation failed: {exception.Message}";
             }
             finally
             {

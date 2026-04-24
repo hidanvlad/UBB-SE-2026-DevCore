@@ -22,13 +22,14 @@ namespace DevCoreHospital.ViewModels.Pharmacy
         public void LoadPharmacists()
         {
             Pharmacists.Clear();
-            foreach (var p in service.GetPharmacists())
+            foreach (var pharmacist in service.GetPharmacists())
             {
+                bool IsNonEmpty(string? namePart) => !string.IsNullOrWhiteSpace(namePart);
                 var displayName = string.Join(
                     " ",
-                    new[] { p.FirstName?.Trim(), p.LastName?.Trim() }
-                        .Where(x => !string.IsNullOrWhiteSpace(x)));
-                Pharmacists.Add(new PharmacistChoice(p, displayName));
+                    new[] { pharmacist.FirstName?.Trim(), pharmacist.LastName?.Trim() }
+                        .Where(IsNonEmpty));
+                Pharmacists.Add(new PharmacistChoice(pharmacist, displayName));
             }
         }
 
@@ -55,13 +56,13 @@ namespace DevCoreHospital.ViewModels.Pharmacy
                     endDate.Value.Date);
                 return VacationRegistrationResult.Success("Vacation shift added to repository.");
             }
-            catch (ArgumentException ex)
+            catch (ArgumentException exception)
             {
-                return VacationRegistrationResult.Error(ex.Message);
+                return VacationRegistrationResult.Error(exception.Message);
             }
-            catch (InvalidOperationException ex)
+            catch (InvalidOperationException exception)
             {
-                return VacationRegistrationResult.Error(ex.Message);
+                return VacationRegistrationResult.Error(exception.Message);
             }
         }
 
