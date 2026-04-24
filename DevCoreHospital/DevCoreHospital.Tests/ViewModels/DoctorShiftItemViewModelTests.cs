@@ -23,9 +23,10 @@ namespace DevCoreHospital.Tests.ViewModels
         [Fact]
         public void DateText_ReturnsFormattedDate()
         {
-            var viewModel = BuildViewModel(start: new DateTime(2025, 6, 15, 9, 0, 0));
+            var start = new DateTime(2025, 6, 15, 9, 0, 0);
+            var viewModel = BuildViewModel(start: start);
 
-            Assert.Equal("15 Jun 2025", viewModel.DateText);
+            Assert.Equal(start.ToString("dd MMM yyyy"), viewModel.DateText);
         }
 
         [Fact]

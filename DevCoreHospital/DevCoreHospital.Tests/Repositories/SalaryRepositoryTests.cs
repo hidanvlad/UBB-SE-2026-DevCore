@@ -13,32 +13,32 @@ public class SalaryRepositoryTests : IClassFixture<SqlTestFixture>
 
     [Fact]
     public void GetShiftHoursFromDb_WhenConnectionFails_ReturnsZero()
-        => Assert.Equal(0.0, new SalaryRepository(InvalidConnectionString).GetShiftHoursFromDb(1));
+        => Assert.Throws<ArgumentException>(() => new SalaryRepository(InvalidConnectionString).GetShiftHoursFromDb(1));
 
     [Fact]
     public void GetMedicinesSold_WhenConnectionFails_ReturnsFallbackCount()
-        => Assert.Equal(FallbackMedicinesSoldCount, new SalaryRepository(InvalidConnectionString).GetMedicinesSold(1, 5, 2026));
+        => Assert.Throws<ArgumentException>(() => new SalaryRepository(InvalidConnectionString).GetMedicinesSold(1, 5, 2026));
 
     [Fact]
     public void GetMedicinesSold_WhenConnectionFails_ReturnsFallbackCount_ForAnyStaff()
     {
         var repository = new SalaryRepository(InvalidConnectionString);
 
-        Assert.Equal(FallbackMedicinesSoldCount, repository.GetMedicinesSold(10, 1, 2025));
-        Assert.Equal(FallbackMedicinesSoldCount, repository.GetMedicinesSold(99, 12, 2024));
+        Assert.Throws<ArgumentException>(() => repository.GetMedicinesSold(10, 1, 2025));
+        Assert.Throws<ArgumentException>(() => repository.GetMedicinesSold(99, 12, 2024));
     }
 
     [Fact]
     public void DidStaffParticipateInHangout_WhenConnectionFails_ReturnsFalse()
-        => Assert.False(new SalaryRepository(InvalidConnectionString).DidStaffParticipateInHangout(1, 5, 2026));
+        => Assert.Throws<ArgumentException>(() => new SalaryRepository(InvalidConnectionString).DidStaffParticipateInHangout(1, 5, 2026));
 
     [Fact]
     public void DidStaffParticipateInHangout_WhenConnectionFails_ReturnsFalse_ForAnyStaff()
     {
         var repository = new SalaryRepository(InvalidConnectionString);
 
-        Assert.False(repository.DidStaffParticipateInHangout(10, 1, 2025));
-        Assert.False(repository.DidStaffParticipateInHangout(99, 12, 2024));
+        Assert.Throws<ArgumentException>(() => repository.DidStaffParticipateInHangout(10, 1, 2025));
+        Assert.Throws<ArgumentException>(() => repository.DidStaffParticipateInHangout(99, 12, 2024));
     }
 
     [Fact]

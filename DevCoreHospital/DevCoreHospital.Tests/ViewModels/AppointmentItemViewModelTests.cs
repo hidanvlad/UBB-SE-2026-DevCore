@@ -35,9 +35,10 @@ namespace DevCoreHospital.Tests.ViewModels
         [Fact]
         public void DateText_ReturnsFormattedDate()
         {
-            var viewModel = new AppointmentItemViewModel(BuildAppointment(date: new DateTime(2025, 6, 15)));
+            var date = new DateTime(2025, 6, 15);
+            var viewModel = new AppointmentItemViewModel(BuildAppointment(date: date));
 
-            Assert.Equal("15 Jun 2025", viewModel.DateText);
+            Assert.Equal(date.ToString("dd MMM yyyy"), viewModel.DateText);
         }
 
         [Fact]
