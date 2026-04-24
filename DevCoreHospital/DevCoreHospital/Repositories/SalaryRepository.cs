@@ -25,77 +25,56 @@ namespace DevCoreHospital.Repositories
         public virtual double GetShiftHoursFromDb(int shiftId)
         {
             double totalHours = 0;
-            try
-            {
-                using var connection = GetConnection();
-                connection.Open();
-                using var command = new SqlCommand("SELECT start_time, end_time FROM Shifts WHERE shift_id = @ShiftId", connection);
-                AddParameter(command, "@ShiftId", shiftId);
+            using var connection = GetConnection();
+            connection.Open();
+            using var command = new SqlCommand("SELECT start_time, end_time FROM Shifts WHERE shift_id = @ShiftId", connection);
+            AddParameter(command, "@ShiftId", shiftId);
 
-                using var reader = command.ExecuteReader();
-                if (reader.Read())
-                {
-                    DateTime startTime = reader.GetDateTime(0);
-                    DateTime endTime = reader.GetDateTime(1);
-                    totalHours = (endTime - startTime).TotalHours;
-                }
-            }
-            catch (Exception exception)
+            using var reader = command.ExecuteReader();
+            if (reader.Read())
             {
-                System.Diagnostics.Debug.WriteLine($"Error GetShiftHoursFromDb: {exception.Message}");
+                DateTime startTime = reader.GetDateTime(0);
+                DateTime endTime = reader.GetDateTime(1);
+                totalHours = (endTime - startTime).TotalHours;
             }
+
             return totalHours;
         }
 
         public virtual int GetMedicinesSold(int pharmacistStaffId, int month, int year)
         {
-            try
-            {
-                using var connection = GetConnection();
-                connection.Open();
-                using var command = new SqlCommand(@"
-                    SELECT COUNT(*) FROM PharmacyHandover
-                    WHERE PharmacistID = @staffId AND MONTH(HandoverDate) = @month AND YEAR(HandoverDate) = @year", connection);
+            using var connection = GetConnection();
+            connection.Open();
+            using var command = new SqlCommand(@"
+                SELECT COUNT(*) FROM PharmacyHandover
+                WHERE PharmacistID = @staffId AND MONTH(HandoverDate) = @month AND YEAR(HandoverDate) = @year", connection);
 
-                AddParameter(command, "@staffId", pharmacistStaffId);
-                AddParameter(command, "@month", month);
-                AddParameter(command, "@year", year);
+            AddParameter(command, "@staffId", pharmacistStaffId);
+            AddParameter(command, "@month", month);
+            AddParameter(command, "@year", year);
 
-                var result = command.ExecuteScalar();
-                return result == null || result == DBNull.Value ? 0 : Convert.ToInt32(result);
-            }
-            catch
-            {
-                return FallbackMedicinesSoldCount;
-            }
+            var result = command.ExecuteScalar();
+            return result == null || result == DBNull.Value ? 0 : Convert.ToInt32(result);
         }
 
         public virtual bool DidStaffParticipateInHangout(int staffId, int month, int year)
         {
-            try
-            {
-                using var connection = GetConnection();
-                connection.Open();
-                using var command = new SqlCommand(@"
-                    SELECT COUNT(*)
-                    FROM Hangout_Participants hp
-                    JOIN Hangouts h ON hp.hangout_id = h.hangout_id
-                    WHERE hp.staff_id = @StaffId
-                      AND MONTH(h.date_time) = @Month
-                      AND YEAR(h.date_time) = @Year", connection);
+            using var connection = GetConnection();
+            connection.Open();
+            using var command = new SqlCommand(@"
+                SELECT COUNT(*)
+                FROM Hangout_Participants hp
+                JOIN Hangouts h ON hp.hangout_id = h.hangout_id
+                WHERE hp.staff_id = @StaffId
+                  AND MONTH(h.date_time) = @Month
+                  AND YEAR(h.date_time) = @Year", connection);
 
-                AddParameter(command, "@StaffId", staffId);
-                AddParameter(command, "@Month", month);
-                AddParameter(command, "@Year", year);
+            AddParameter(command, "@StaffId", staffId);
+            AddParameter(command, "@Month", month);
+            AddParameter(command, "@Year", year);
 
-                int hangoutParticipationCount = Convert.ToInt32(command.ExecuteScalar());
-                return hangoutParticipationCount > 0;
-            }
-            catch (Exception exception)
-            {
-                System.Diagnostics.Debug.WriteLine($"Error checking hangout bonus: {exception.Message}");
-                return false;
-            }
+            int hangoutParticipationCount = Convert.ToInt32(command.ExecuteScalar());
+            return hangoutParticipationCount > 0;
         }
     }
 }

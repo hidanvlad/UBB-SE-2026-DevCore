@@ -9,6 +9,7 @@ namespace DevCoreHospital.Services
     {
         private const double DoctorBaseHourlyRate = 85.0;
         private const double PharmacistBaseHourlyRate = 45.0;
+        private const int FallbackMedicinesSoldCount = 150;
 
         private const double SaturdayOvertimeMultiplier = 1.15;
         private const double SundayOvertimeMultiplier = 1.25;
@@ -48,7 +49,15 @@ namespace DevCoreHospital.Services
 
             foreach (var shift in monthlyShifts)
             {
-                double hoursFromDatabase = salaryRepository.GetShiftHoursFromDb(shift.Id);
+                double hoursFromDatabase;
+                try
+                {
+                    hoursFromDatabase = salaryRepository.GetShiftHoursFromDb(shift.Id);
+                }
+                catch
+                {
+                    hoursFromDatabase = 0;
+                }
                 double shiftHours = hoursFromDatabase > 0 ? hoursFromDatabase : (shift.EndTime - shift.StartTime).TotalHours;
 
                 double shiftSalary = shiftHours * DoctorBaseHourlyRate;
@@ -114,7 +123,15 @@ namespace DevCoreHospital.Services
 
             foreach (var shift in monthlyShifts)
             {
-                double hoursFromDatabase = salaryRepository.GetShiftHoursFromDb(shift.Id);
+                double hoursFromDatabase;
+                try
+                {
+                    hoursFromDatabase = salaryRepository.GetShiftHoursFromDb(shift.Id);
+                }
+                catch
+                {
+                    hoursFromDatabase = 0;
+                }
                 double shiftHours = hoursFromDatabase > 0 ? hoursFromDatabase : (shift.EndTime - shift.StartTime).TotalHours;
 
                 double shiftSalary = shiftHours * PharmacistBaseHourlyRate;
@@ -148,7 +165,7 @@ namespace DevCoreHospital.Services
             }
             catch
             {
-                medicinesSold = 0;
+                medicinesSold = FallbackMedicinesSoldCount;
             }
 
             double medicineSalesBonusPercentage = (medicinesSold / MedicinesSoldBonusInterval) * MedicinesSoldBonusPerInterval;
