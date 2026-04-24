@@ -102,16 +102,23 @@ public class PharmacyScheduleViewModel : ObservableObject
         this.currentUser = currentUser;
         this.scheduleService = scheduleService;
 
-        RefreshCommand = new AsyncRelayCommand(LoadAsync, () => IsPharmacist);
-        TodayCommand = new RelayCommand(() => AnchorDate = DateTime.Today, () => IsPharmacist);
-        NextPeriodCommand = new RelayCommand(
-            () => AnchorDate = IsWeeklyView ? AnchorDate.AddDays(7) : AnchorDate.AddDays(1),
-            () => IsPharmacist);
-        PreviousPeriodCommand = new RelayCommand(
-            () => AnchorDate = IsWeeklyView ? AnchorDate.AddDays(-7) : AnchorDate.AddDays(-1),
-            () => IsPharmacist);
-        ShowDailyCommand = new RelayCommand(() => IsWeeklyView = false, () => IsPharmacist);
-        ShowWeeklyCommand = new RelayCommand(() => IsWeeklyView = true, () => IsPharmacist);
+        bool CanExecuteAsPharmacist() => IsPharmacist;
+        RefreshCommand = new AsyncRelayCommand(LoadAsync, CanExecuteAsPharmacist);
+
+        void SetToday() => AnchorDate = DateTime.Today;
+        TodayCommand = new RelayCommand(SetToday, CanExecuteAsPharmacist);
+
+        void GoToNextPeriod() => AnchorDate = IsWeeklyView ? AnchorDate.AddDays(7) : AnchorDate.AddDays(1);
+        NextPeriodCommand = new RelayCommand(GoToNextPeriod, CanExecuteAsPharmacist);
+
+        void GoToPreviousPeriod() => AnchorDate = IsWeeklyView ? AnchorDate.AddDays(-7) : AnchorDate.AddDays(-1);
+        PreviousPeriodCommand = new RelayCommand(GoToPreviousPeriod, CanExecuteAsPharmacist);
+
+        void ShowDaily() => IsWeeklyView = false;
+        ShowDailyCommand = new RelayCommand(ShowDaily, CanExecuteAsPharmacist);
+
+        void ShowWeekly() => IsWeeklyView = true;
+        ShowWeeklyCommand = new RelayCommand(ShowWeekly, CanExecuteAsPharmacist);
     }
 
     public async Task InitializeAsync()
@@ -166,14 +173,15 @@ public class PharmacyScheduleViewModel : ObservableObject
             var staffId = SelectedPharmacist.StaffId;
             var rawShifts = await scheduleService.GetShiftsAsync(staffId, rangeStart, rangeEnd);
 
-            foreach (var shiftViewModel in rawShifts.Select(rawShift => new PharmacyShiftItemViewModel(rawShift)))
+            PharmacyShiftItemViewModel ToShiftViewModel(Shift rawShift) => new PharmacyShiftItemViewModel(rawShift);
+            foreach (var shiftViewModel in rawShifts.Select(ToShiftViewModel))
             {
                 Shifts.Add(shiftViewModel);
             }
         }
-        catch (Exception ex)
+        catch (Exception exception)
         {
-            ErrorMessage = $"Failed to load pharmacy schedule: {ex.Message}";
+            ErrorMessage = $"Failed to load pharmacy schedule: {exception.Message}";
         }
         finally
         {
@@ -188,15 +196,19 @@ public class PharmacyScheduleViewModel : ObservableObject
         Pharmacists.Clear();
         var allPharmacists = await Task.Run(() => scheduleService.GetPharmacists());
 
+        string GetPharmacistFirstName(Pharmacyst pharmacist) => pharmacist.FirstName;
+        string GetPharmacistLastName(Pharmacyst pharmacist) => pharmacist.LastName;
+        bool IsNonEmpty(string? namePart) => !string.IsNullOrWhiteSpace(namePart);
+
         foreach (var pharmacist in allPharmacists
-            .OrderBy(pharmacist => pharmacist.FirstName)
-            .ThenBy(pharmacist => pharmacist.LastName))
+            .OrderBy(GetPharmacistFirstName)
+            .ThenBy(GetPharmacistLastName))
         {
             Pharmacists.Add(new PharmacistOption
             {
                 StaffId = pharmacist.StaffID,
                 PharmacistName = string.Join(" ", new[] { pharmacist.FirstName?.Trim(), pharmacist.LastName?.Trim() }
-                    .Where(namePart => !string.IsNullOrWhiteSpace(namePart))),
+                    .Where(IsNonEmpty)),
             });
         }
 
@@ -207,7 +219,8 @@ public class PharmacyScheduleViewModel : ObservableObject
             return;
         }
 
-        SelectedPharmacist = Pharmacists.FirstOrDefault(pharmacist => pharmacist.StaffId == currentUser.UserId)
+        bool IsCurrentUser(PharmacistOption pharmacist) => pharmacist.StaffId == currentUser.UserId;
+        SelectedPharmacist = Pharmacists.FirstOrDefault(IsCurrentUser)
             ?? Pharmacists.First();
     }
 

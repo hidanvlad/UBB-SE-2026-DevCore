@@ -11,32 +11,32 @@ namespace DevCoreHospital.Tests.Integration;
 
 public class SalaryComputationIntegrationTests : IClassFixture<SqlTestFixture>
 {
-    private readonly SqlTestFixture db;
+    private readonly SqlTestFixture database;
 
-    public SalaryComputationIntegrationTests(SqlTestFixture db) => this.db = db;
+    public SalaryComputationIntegrationTests(SqlTestFixture database) => this.database = database;
 
     [Fact]
     public async Task RepoServiceViewModel_Integration_ComputesSalaryThroughAllLayers()
     {
-        using var conn = db.OpenConnection();
+        using var connection = database.OpenConnection();
 
-        var doctorId = db.InsertStaff(conn, "Doctor", "SalaryDoc", "Integration",
+        var doctorId = database.InsertStaff(connection, "Doctor", "SalaryDoc", "Integration",
             specialization: "Emergency medicine", yearsExp: 6);
 
         var shiftStart = new DateTime(2026, 5, 1, 8, 0, 0);
-        var shiftId    = db.InsertShift(conn, doctorId, "Ward A", shiftStart, shiftStart.AddHours(8));
+        var shiftId    = database.InsertShift(connection, doctorId, "Ward A", shiftStart, shiftStart.AddHours(8));
 
-        var hangoutId = db.InsertHangout(conn, "May Integration Hangout", new DateTime(2026, 5, 10));
-        db.InsertHangoutParticipant(conn, hangoutId, doctorId);
+        var hangoutId = database.InsertHangout(connection, "May Integration Hangout", new DateTime(2026, 5, 10));
+        database.InsertHangoutParticipant(connection, hangoutId, doctorId);
 
         try
         {
             var doctor = new Doctor { StaffID = doctorId, Specialization = "Emergency medicine", YearsOfExperience = 6 };
             var shift  = new Shift(shiftId, doctor, "Ward A", shiftStart, shiftStart.AddHours(8), ShiftStatus.SCHEDULED);
 
-            var repo      = new SalaryRepository(db.ConnectionString);
-            var service   = new SalaryComputationService(repo);
-            var viewModel = new SalaryComputationViewModel(service, new IStaff[] { doctor }, new[] { shift })
+            var repository = new SalaryRepository(database.ConnectionString);
+            var service    = new SalaryComputationService(repository);
+            var viewModel  = new SalaryComputationViewModel(service, new IStaff[] { doctor }, new[] { shift })
             {
                 SelectedStaff = doctor,
                 SelectedMonth = 5,
@@ -50,10 +50,10 @@ public class SalaryComputationIntegrationTests : IClassFixture<SqlTestFixture>
         }
         finally
         {
-            db.DeleteHangoutParticipants(conn, hangoutId);
-            db.DeleteHangout(conn, hangoutId);
-            db.DeleteShift(conn, shiftId);
-            db.DeleteStaff(conn, doctorId);
+            database.DeleteHangoutParticipants(connection, hangoutId);
+            database.DeleteHangout(connection, hangoutId);
+            database.DeleteShift(connection, shiftId);
+            database.DeleteStaff(connection, doctorId);
         }
     }
 

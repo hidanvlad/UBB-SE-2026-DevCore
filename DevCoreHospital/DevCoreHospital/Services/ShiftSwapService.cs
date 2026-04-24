@@ -21,8 +21,9 @@ namespace DevCoreHospital.Services
 
         public List<Shift> GetFutureShiftsForStaff(int staffId)
         {
+            bool IsFutureShift(Shift shift) => shift.StartTime > DateTime.Now;
             return shiftRepository.GetShiftsByStaffID(staffId)
-                .Where(shift => shift.StartTime > DateTime.Now)
+                .Where(IsFutureShift)
                 .ToList();
         }
 
@@ -61,28 +62,40 @@ namespace DevCoreHospital.Services
 
             var colleaguesWithSameProfile = new List<IStaff>();
 
+            bool IsScheduledOrActive(Shift scheduledShift) =>
+                scheduledShift.Status == ShiftStatus.SCHEDULED || scheduledShift.Status == ShiftStatus.ACTIVE;
+
             if (requester is Doctor requestingDoctor)
             {
                 var requesterSpecialization = NormalizeForComparison(requestingDoctor.Specialization);
+                bool HasMatchingSpecialization(Doctor doctor) =>
+                    doctor.StaffID != requesterId && NormalizeForComparison(doctor.Specialization) == requesterSpecialization;
+
                 colleaguesWithSameProfile = allStaff
                     .OfType<Doctor>()
-                    .Where(doctor => doctor.StaffID != requesterId && NormalizeForComparison(doctor.Specialization) == requesterSpecialization)
+                    .Where(HasMatchingSpecialization)
                     .Cast<IStaff>()
                     .ToList();
             }
             else if (requester is Pharmacyst requestingPharmacist)
             {
                 var requesterCertification = NormalizeForComparison(requestingPharmacist.Certification);
+                bool HasMatchingCertification(Pharmacyst pharmacist) =>
+                    pharmacist.StaffID != requesterId && NormalizeForComparison(pharmacist.Certification) == requesterCertification;
+
                 colleaguesWithSameProfile = allStaff
                     .OfType<Pharmacyst>()
-                    .Where(pharmacist => pharmacist.StaffID != requesterId && NormalizeForComparison(pharmacist.Certification) == requesterCertification)
+                    .Where(HasMatchingCertification)
                     .Cast<IStaff>()
                     .ToList();
             }
 
+            bool HasNoOverlappingShifts(IStaff colleague) =>
+                !shiftRepository.GetShiftsForStaffInRange(colleague.StaffID, shift.StartTime, shift.EndTime)
+                    .Any(IsScheduledOrActive);
+
             return colleaguesWithSameProfile
-                .Where(colleague => !shiftRepository.GetShiftsForStaffInRange(colleague.StaffID, shift.StartTime, shift.EndTime)
-                    .Any(s => s.Status == ShiftStatus.SCHEDULED || s.Status == ShiftStatus.ACTIVE))
+                .Where(HasNoOverlappingShifts)
                 .ToList();
         }
 
@@ -97,7 +110,8 @@ namespace DevCoreHospital.Services
                 return false;
             }
 
-            if (!eligibleColleagues.Any(colleague => colleague.StaffID == colleagueId))
+            bool HasMatchingColleagueId(IStaff colleague) => colleague.StaffID == colleagueId;
+            if (!eligibleColleagues.Any(HasMatchingColleagueId))
             {
                 message = "Selected colleague is not eligible (must be same profile and free in interval).";
                 return false;
@@ -138,8 +152,9 @@ namespace DevCoreHospital.Services
 
         public List<ShiftSwapRequest> GetIncomingSwapRequests(int colleagueId)
         {
+            bool IsPendingRequest(ShiftSwapRequest swapRequest) => swapRequest.Status == ShiftSwapRequestStatus.PENDING;
             return shiftSwapRepository.GetSwapRequestsForColleague(colleagueId)
-                .Where(r => r.Status == ShiftSwapRequestStatus.PENDING)
+                .Where(IsPendingRequest)
                 .ToList();
         }
 
@@ -173,8 +188,11 @@ namespace DevCoreHospital.Services
                 return false;
             }
 
+            bool IsScheduledOrActive(Shift scheduledShift) =>
+                scheduledShift.Status == ShiftStatus.SCHEDULED || scheduledShift.Status == ShiftStatus.ACTIVE;
+
             if (shiftRepository.GetShiftsForStaffInRange(colleagueId, shift.StartTime, shift.EndTime)
-                    .Any(s => s.Status == ShiftStatus.SCHEDULED || s.Status == ShiftStatus.ACTIVE))
+                    .Any(IsScheduledOrActive))
             {
                 message = "You are already scheduled to work in that interval.";
                 return false;

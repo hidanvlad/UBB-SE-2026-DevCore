@@ -18,8 +18,11 @@ namespace DevCoreHospital.Services
 
         public Task<IReadOnlyList<int>> SimulateIncomingRequestsAsync(int count)
         {
+            bool HasSpecializationAndLocation(DoctorProfile doctor) =>
+                !string.IsNullOrWhiteSpace(doctor.Specialization) && !string.IsNullOrWhiteSpace(doctor.Location);
+
             var liveTemplates = GetAvailableDoctors(repository.GetDoctorRoster())
-                .Where(doctor => !string.IsNullOrWhiteSpace(doctor.Specialization) && !string.IsNullOrWhiteSpace(doctor.Location))
+                .Where(HasSpecializationAndLocation)
                 .Select(doctor => (Specialization: doctor.Specialization.Trim(), Location: doctor.Location.Trim()))
                 .Distinct()
                 .ToArray();
@@ -59,7 +62,8 @@ namespace DevCoreHospital.Services
 
         public Task<ERDispatchResult> DispatchERRequestAsync(int requestId)
         {
-            var request = repository.GetPendingRequests().FirstOrDefault(pendingRequest => pendingRequest.Id == requestId);
+            bool HasMatchingId(ERRequest pendingRequest) => pendingRequest.Id == requestId;
+            var request = repository.GetPendingRequests().FirstOrDefault(HasMatchingId);
             if (request == null)
             {
                 return Task.FromResult(new ERDispatchResult
@@ -110,19 +114,24 @@ namespace DevCoreHospital.Services
             var now = DateTime.Now;
             var inExaminationDoctors = GetDoctorsInExamination(repository.GetDoctorRoster());
 
+            bool HasScheduleEnd(DoctorProfile doctor) => doctor.ScheduleEnd.HasValue;
+            bool IsNearEnd(DoctorProfile doctor)
+            {
+                var minutesToEnd = (doctor.ScheduleEnd!.Value - now).TotalMinutes;
+                return minutesToEnd >= 0 && minutesToEnd <= nearEndMinutes;
+            }
+
             var nearEndInExamination = inExaminationDoctors
-                .Where(doctor => doctor.ScheduleEnd.HasValue)
-                .Where(doctor =>
-                {
-                    var minutesToEnd = (doctor.ScheduleEnd!.Value - now).TotalMinutes;
-                    return minutesToEnd >= 0 && minutesToEnd <= nearEndMinutes;
-                })
+                .Where(HasScheduleEnd)
+                .Where(IsNearEnd)
                 .ToList();
+
+            bool MatchesRequestSpecialization(DoctorProfile doctor) => IsSameValue(doctor.Specialization, request.Specialization);
 
             var strictCandidates = nearEndInExamination
                 .GroupBy(doctor => doctor.DoctorId)
                 .Select(doctorGroup => doctorGroup.First())
-                .Where(doctor => IsSameValue(doctor.Specialization, request.Specialization))
+                .Where(MatchesRequestSpecialization)
                 .ToList();
 
             var candidates = strictCandidates
@@ -153,7 +162,8 @@ namespace DevCoreHospital.Services
             }
 
             var eligibleCandidates = await GetManualOverrideCandidatesAsync(requestId, nearEndMinutes);
-            if (!eligibleCandidates.Any(overrideCandidate => overrideCandidate.DoctorId == doctorId))
+            bool HasMatchingDoctorId(DoctorProfile overrideCandidate) => overrideCandidate.DoctorId == doctorId;
+            if (!eligibleCandidates.Any(HasMatchingDoctorId))
             {
                 return new ERDispatchResult
                 {
@@ -182,11 +192,13 @@ namespace DevCoreHospital.Services
         {
             var availableDoctors = GetAvailableDoctors(repository.GetDoctorRoster());
 
+            bool IsMatchingAvailableDoctor(DoctorProfile doctor) =>
+                IsSameValue(doctor.Specialization, request.Specialization) &&
+                doctor.Status == DoctorStatus.AVAILABLE &&
+                IsSameValue(doctor.Location, request.Location);
+
             var matches = availableDoctors
-                .Where(doctor =>
-                    IsSameValue(doctor.Specialization, request.Specialization) &&
-                    doctor.Status == DoctorStatus.AVAILABLE &&
-                    IsSameValue(doctor.Location, request.Location))
+                .Where(IsMatchingAvailableDoctor)
                 .OrderBy(doctor => doctor.FullName)
                 .ToList();
 
@@ -215,10 +227,12 @@ namespace DevCoreHospital.Services
 
         private static IReadOnlyList<DoctorProfile> GetDoctorsByStatus(IEnumerable<DoctorRosterEntry> roster, DoctorStatus targetStatus)
         {
+            bool HasTargetStatus(DoctorProfile doctorProfile) => doctorProfile.Status == targetStatus;
+
             return roster
                 .Select(ToDoctorProfile)
                 .Where(IsOnCurrentShift)
-                .Where(doctorProfile => doctorProfile.Status == targetStatus)
+                .Where(HasTargetStatus)
                 .ToList();
         }
 

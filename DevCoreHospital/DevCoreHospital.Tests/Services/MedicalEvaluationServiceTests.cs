@@ -21,38 +21,38 @@ namespace DevCoreHospital.Tests.Services
         public void GetAllDoctors_DelegatesToRepository()
         {
             var doctor = new Doctor(1, "Ana", "Pop", string.Empty, string.Empty, true, "Cardiology", "AVAILABLE", DoctorStatus.AVAILABLE, 3);
-            repositoryMock.Setup(r => r.GetAllDoctors()).Returns(new List<Doctor> { doctor });
+            repositoryMock.Setup(evaluationsRepository => evaluationsRepository.GetAllDoctors()).Returns(new List<Doctor> { doctor });
 
             var result = sut.GetAllDoctors();
 
             Assert.Single(result);
             Assert.Equal(1, result[0].StaffID);
-            repositoryMock.Verify(r => r.GetAllDoctors(), Times.Once);
+            repositoryMock.Verify(evaluationsRepository => evaluationsRepository.GetAllDoctors(), Times.Once);
         }
 
         [Fact]
         public void GetAppointmentsByDoctor_DelegatesToRepository_WithCorrectId()
         {
             var appointment = new Appointment { Id = 5, DoctorId = 10 };
-            repositoryMock.Setup(r => r.GetAppointmentsByDoctor(10)).Returns(new List<Appointment> { appointment });
+            repositoryMock.Setup(evaluationsRepository => evaluationsRepository.GetAppointmentsByDoctor(10)).Returns(new List<Appointment> { appointment });
 
             var result = sut.GetAppointmentsByDoctor(10);
 
             Assert.Single(result);
             Assert.Equal(5, result[0].Id);
-            repositoryMock.Verify(r => r.GetAppointmentsByDoctor(10), Times.Once);
+            repositoryMock.Verify(evaluationsRepository => evaluationsRepository.GetAppointmentsByDoctor(10), Times.Once);
         }
 
         [Fact]
         public void GetEvaluationsByDoctor_DelegatesToRepository_WithCorrectDoctorId()
         {
             var evaluation = new MedicalEvaluation { PatientId = "P1" };
-            repositoryMock.Setup(r => r.GetEvaluationsByDoctor("10")).Returns(new List<MedicalEvaluation> { evaluation });
+            repositoryMock.Setup(evaluationsRepository => evaluationsRepository.GetEvaluationsByDoctor("10")).Returns(new List<MedicalEvaluation> { evaluation });
 
             var result = sut.GetEvaluationsByDoctor("10");
 
             Assert.Single(result);
-            repositoryMock.Verify(r => r.GetEvaluationsByDoctor("10"), Times.Once);
+            repositoryMock.Verify(evaluationsRepository => evaluationsRepository.GetEvaluationsByDoctor("10"), Times.Once);
         }
 
         [Fact]
@@ -62,7 +62,7 @@ namespace DevCoreHospital.Tests.Services
 
             sut.SaveEvaluation(evaluation);
 
-            repositoryMock.Verify(r => r.SaveEvaluation(evaluation), Times.Once);
+            repositoryMock.Verify(evaluationsRepository => evaluationsRepository.SaveEvaluation(evaluation), Times.Once);
         }
 
         [Fact]
@@ -70,24 +70,24 @@ namespace DevCoreHospital.Tests.Services
         {
             sut.DeleteEvaluation(42);
 
-            repositoryMock.Verify(r => r.DeleteEvaluation(42), Times.Once);
+            repositoryMock.Verify(evaluationsRepository => evaluationsRepository.DeleteEvaluation(42), Times.Once);
         }
 
         [Fact]
         public void IsDoctorFatigued_ReturnsTrue_WhenRepositoryReturnsTrue()
         {
-            repositoryMock.Setup(r => r.IsDoctorFatigued("5")).Returns(true);
+            repositoryMock.Setup(evaluationsRepository => evaluationsRepository.IsDoctorFatigued("5")).Returns(true);
 
             var result = sut.IsDoctorFatigued("5");
 
             Assert.True(result);
-            repositoryMock.Verify(r => r.IsDoctorFatigued("5"), Times.Once);
+            repositoryMock.Verify(evaluationsRepository => evaluationsRepository.IsDoctorFatigued("5"), Times.Once);
         }
 
         [Fact]
         public void IsDoctorFatigued_ReturnsFalse_WhenRepositoryReturnsFalse()
         {
-            repositoryMock.Setup(r => r.IsDoctorFatigued("3")).Returns(false);
+            repositoryMock.Setup(evaluationsRepository => evaluationsRepository.IsDoctorFatigued("3")).Returns(false);
 
             var result = sut.IsDoctorFatigued("3");
 
@@ -97,18 +97,18 @@ namespace DevCoreHospital.Tests.Services
         [Fact]
         public void CheckMedicineConflict_ReturnsWarning_WhenConflictExists()
         {
-            repositoryMock.Setup(r => r.CheckMedicineConflict("P1", "Aspirin")).Returns("Risk: bleeding");
+            repositoryMock.Setup(evaluationsRepository => evaluationsRepository.CheckMedicineConflict("P1", "Aspirin")).Returns("Risk: bleeding");
 
             var result = sut.CheckMedicineConflict("P1", "Aspirin");
 
             Assert.Equal("Risk: bleeding", result);
-            repositoryMock.Verify(r => r.CheckMedicineConflict("P1", "Aspirin"), Times.Once);
+            repositoryMock.Verify(evaluationsRepository => evaluationsRepository.CheckMedicineConflict("P1", "Aspirin"), Times.Once);
         }
 
         [Fact]
         public void CheckMedicineConflict_ReturnsNull_WhenNoConflict()
         {
-            repositoryMock.Setup(r => r.CheckMedicineConflict("P2", "Ibuprofen")).Returns((string?)null);
+            repositoryMock.Setup(evaluationsRepository => evaluationsRepository.CheckMedicineConflict("P2", "Ibuprofen")).Returns((string?)null);
 
             var result = sut.CheckMedicineConflict("P2", "Ibuprofen");
 

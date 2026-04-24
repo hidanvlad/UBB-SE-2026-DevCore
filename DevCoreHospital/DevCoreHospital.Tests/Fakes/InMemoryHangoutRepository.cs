@@ -26,7 +26,8 @@ namespace DevCoreHospital.Tests.Fakes
 
         public void AddParticipant(int hangoutId, int staffId)
         {
-            var hangout = hangouts.FirstOrDefault(h => h.HangoutID == hangoutId);
+            bool HasMatchingId(Hangout hangout) => hangout.HangoutID == hangoutId;
+            var hangout = hangouts.FirstOrDefault(HasMatchingId);
             if (hangout != null)
             {
                 hangout.ParticipantList.Add(new Doctor { StaffID = staffId });
@@ -35,7 +36,11 @@ namespace DevCoreHospital.Tests.Fakes
 
         public List<Hangout> GetAllHangouts() => hangouts.ToList();
 
-        public Hangout? GetHangoutById(int id) => hangouts.FirstOrDefault(h => h.HangoutID == id);
+        public Hangout? GetHangoutById(int id)
+        {
+            bool HasMatchingId(Hangout hangout) => hangout.HangoutID == id;
+            return hangouts.FirstOrDefault(HasMatchingId);
+        }
 
         public IReadOnlyList<string> GetAppointmentStatusesForStaffOnDate(int staffId, DateTime date)
             => conflicts.Contains((staffId, date.Date))

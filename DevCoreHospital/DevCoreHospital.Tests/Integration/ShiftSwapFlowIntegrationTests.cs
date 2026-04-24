@@ -13,20 +13,20 @@ namespace DevCoreHospital.Tests.Integration;
 
 public class ShiftSwapFlowIntegrationTests : IClassFixture<SqlTestFixture>
 {
-    private readonly SqlTestFixture db;
+    private readonly SqlTestFixture database;
 
-    public ShiftSwapFlowIntegrationTests(SqlTestFixture db) => this.db = db;
+    public ShiftSwapFlowIntegrationTests(SqlTestFixture database) => this.database = database;
 
     [Fact]
     public void IncomingRequests_WhenNoSwapRequestsExistForColleague_InboxIsEmpty()
     {
-        using var conn = db.OpenConnection();
-        var colleagueId = db.InsertStaff(conn, "Doctor", "InbEmpty", "Colleague", "Cardiology");
+        using var connection = database.OpenConnection();
+        var colleagueId = database.InsertStaff(connection, "Doctor", "InbEmpty", "Colleague", "Cardiology");
         try
         {
-            var staffRepo = new StaffRepository(db.ConnectionString);
-            var shiftRepo = new ShiftRepository(db.ConnectionString, staffRepo);
-            var swapRepo  = new ShiftSwapRepository(db.ConnectionString);
+            var staffRepo = new StaffRepository(database.ConnectionString);
+            var shiftRepo = new ShiftRepository(database.ConnectionString, staffRepo);
+            var swapRepo  = new ShiftSwapRepository(database.ConnectionString);
             var service   = new ShiftSwapService(staffRepo, shiftRepo, swapRepo);
 
             var incoming = new IncomingSwapRequestsViewModel(
@@ -37,26 +37,26 @@ public class ShiftSwapFlowIntegrationTests : IClassFixture<SqlTestFixture>
         }
         finally
         {
-            db.DeleteStaff(conn, colleagueId);
+            database.DeleteStaff(connection, colleagueId);
         }
     }
 
     [Fact]
     public void IncomingRequests_WhenOnePendingRequestExists_InboxHasSingleItem()
     {
-        using var conn = db.OpenConnection();
-        var requesterId = db.InsertStaff(conn, "Doctor", "InbOne", "Requester", "Cardiology");
-        var colleagueId = db.InsertStaff(conn, "Doctor", "InbOne", "Colleague", "Cardiology");
-        var start   = DateTime.Today.AddDays(30).AddHours(9);
-        var shiftId = db.InsertShift(conn, requesterId, "ER", start, start.AddHours(8));
-        var swapId  = 0;
+        using var connection = database.OpenConnection();
+        var requesterId = database.InsertStaff(connection, "Doctor", "InbOne", "Requester", "Cardiology");
+        var colleagueId = database.InsertStaff(connection, "Doctor", "InbOne", "Colleague", "Cardiology");
+        var start          = DateTime.Today.AddDays(30).AddHours(9);
+        var shiftId        = database.InsertShift(connection, requesterId, "ER", start, start.AddHours(8));
+        var swapRequestId  = 0;
         try
         {
-            swapId = InsertSwapRequest(conn, shiftId, requesterId, colleagueId);
+            swapRequestId = InsertSwapRequest(connection, shiftId, requesterId, colleagueId);
 
-            var staffRepo = new StaffRepository(db.ConnectionString);
-            var shiftRepo = new ShiftRepository(db.ConnectionString, staffRepo);
-            var swapRepo  = new ShiftSwapRepository(db.ConnectionString);
+            var staffRepo = new StaffRepository(database.ConnectionString);
+            var shiftRepo = new ShiftRepository(database.ConnectionString, staffRepo);
+            var swapRepo  = new ShiftSwapRepository(database.ConnectionString);
             var service   = new ShiftSwapService(staffRepo, shiftRepo, swapRepo);
 
             var incoming = new IncomingSwapRequestsViewModel(
@@ -67,45 +67,49 @@ public class ShiftSwapFlowIntegrationTests : IClassFixture<SqlTestFixture>
         }
         finally
         {
-            db.DeleteSwapRequest(conn, swapId);
-            db.DeleteShift(conn, shiftId);
-            db.DeleteStaff(conn, requesterId);
-            db.DeleteStaff(conn, colleagueId);
+            database.DeleteSwapRequest(connection, swapRequestId);
+            database.DeleteShift(connection, shiftId);
+            database.DeleteStaff(connection, requesterId);
+            database.DeleteStaff(connection, colleagueId);
         }
     }
 
     [Fact]
     public void RequestSwapCommand_WhenAllConditionsMet_CreatesSwapRequestInDatabase()
     {
-        using var conn = db.OpenConnection();
-        var requesterId = db.InsertStaff(conn, "Doctor", "SwapReq",  "Requester", "SwapTestSpec");
-        var colleagueId = db.InsertStaff(conn, "Doctor", "SwapReq",  "Colleague", "SwapTestSpec");
+        using var connection = database.OpenConnection();
+        var requesterId = database.InsertStaff(connection, "Doctor", "SwapReq",  "Requester", "SwapTestSpec");
+        var colleagueId = database.InsertStaff(connection, "Doctor", "SwapReq",  "Colleague", "SwapTestSpec");
         var start   = DateTime.Today.AddDays(35).AddHours(9);
-        var shiftId = db.InsertShift(conn, requesterId, "ER", start, start.AddHours(8));
+        var shiftId = database.InsertShift(connection, requesterId, "ER", start, start.AddHours(8));
         try
         {
-            var staffRepo = new StaffRepository(db.ConnectionString);
-            var shiftRepo = new ShiftRepository(db.ConnectionString, staffRepo);
-            var swapRepo  = new ShiftSwapRepository(db.ConnectionString);
+            var staffRepo = new StaffRepository(database.ConnectionString);
+            var shiftRepo = new ShiftRepository(database.ConnectionString, staffRepo);
+            var swapRepo  = new ShiftSwapRepository(database.ConnectionString);
             var service   = new ShiftSwapService(staffRepo, shiftRepo, swapRepo);
             var viewModel = new MyScheduleViewModel(service);
 
-            viewModel.SelectedDoctor   = viewModel.Doctors.First(d => d.StaffId == requesterId);
-            viewModel.SelectedShift    = viewModel.FutureShifts.First(s => s.Id == shiftId);
-            viewModel.SelectedColleague = viewModel.EligibleColleagues.First(c => c.StaffId == colleagueId);
+            bool IsRequester(DoctorOptionViewModel doctor) => doctor.StaffId == requesterId;
+            bool IsTargetShift(DoctorShiftItemViewModel shiftItem) => shiftItem.Id == shiftId;
+            bool IsColleague(StaffOptionViewModel colleague) => colleague.StaffId == colleagueId;
+            viewModel.SelectedDoctor    = viewModel.Doctors.First(IsRequester);
+            viewModel.SelectedShift     = viewModel.FutureShifts.First(IsTargetShift);
+            viewModel.SelectedColleague = viewModel.EligibleColleagues.First(IsColleague);
 
             ((RelayCommand)viewModel.RequestSwapCommand).Execute(null!);
 
             var pending = swapRepo.GetSwapRequestsForColleague(colleagueId);
-            Assert.Contains(pending, r => r.ShiftId == shiftId && r.RequesterId == requesterId);
+            bool IsMatchingRequest(ShiftSwapRequest swapRequest) => swapRequest.ShiftId == shiftId && swapRequest.RequesterId == requesterId;
+            Assert.Contains(pending, IsMatchingRequest);
         }
         finally
         {
-            db.DeleteSwapRequestsByShift(conn, shiftId);
-            db.DeleteNotificationsByStaff(conn, colleagueId);
-            db.DeleteShift(conn, shiftId);
-            db.DeleteStaff(conn, requesterId);
-            db.DeleteStaff(conn, colleagueId);
+            database.DeleteSwapRequestsByShift(connection, shiftId);
+            database.DeleteNotificationsByStaff(connection, colleagueId);
+            database.DeleteShift(connection, shiftId);
+            database.DeleteStaff(connection, requesterId);
+            database.DeleteStaff(connection, colleagueId);
         }
     }
 
@@ -113,22 +117,25 @@ public class ShiftSwapFlowIntegrationTests : IClassFixture<SqlTestFixture>
     [Fact]
     public void RequestSwapCommand_WhenAllConditionsMet_SetsSuccessStatusMessage()
     {
-        using var conn = db.OpenConnection();
-        var requesterId = db.InsertStaff(conn, "Doctor", "SwapMsg",  "Requester", "SwapMsgSpec");
-        var colleagueId = db.InsertStaff(conn, "Doctor", "SwapMsg",  "Colleague", "SwapMsgSpec");
+        using var connection = database.OpenConnection();
+        var requesterId = database.InsertStaff(connection, "Doctor", "SwapMsg",  "Requester", "SwapMsgSpec");
+        var colleagueId = database.InsertStaff(connection, "Doctor", "SwapMsg",  "Colleague", "SwapMsgSpec");
         var start   = DateTime.Today.AddDays(36).AddHours(9);
-        var shiftId = db.InsertShift(conn, requesterId, "ER", start, start.AddHours(8));
+        var shiftId = database.InsertShift(connection, requesterId, "ER", start, start.AddHours(8));
         try
         {
-            var staffRepo = new StaffRepository(db.ConnectionString);
-            var shiftRepo = new ShiftRepository(db.ConnectionString, staffRepo);
-            var swapRepo  = new ShiftSwapRepository(db.ConnectionString);
+            var staffRepo = new StaffRepository(database.ConnectionString);
+            var shiftRepo = new ShiftRepository(database.ConnectionString, staffRepo);
+            var swapRepo  = new ShiftSwapRepository(database.ConnectionString);
             var service   = new ShiftSwapService(staffRepo, shiftRepo, swapRepo);
             var viewModel = new MyScheduleViewModel(service);
 
-            viewModel.SelectedDoctor    = viewModel.Doctors.First(d => d.StaffId == requesterId);
-            viewModel.SelectedShift     = viewModel.FutureShifts.First(s => s.Id == shiftId);
-            viewModel.SelectedColleague = viewModel.EligibleColleagues.First(c => c.StaffId == colleagueId);
+            bool IsRequester(DoctorOptionViewModel doctor) => doctor.StaffId == requesterId;
+            bool IsTargetShift(DoctorShiftItemViewModel shiftItem) => shiftItem.Id == shiftId;
+            bool IsColleague(StaffOptionViewModel colleague) => colleague.StaffId == colleagueId;
+            viewModel.SelectedDoctor    = viewModel.Doctors.First(IsRequester);
+            viewModel.SelectedShift     = viewModel.FutureShifts.First(IsTargetShift);
+            viewModel.SelectedColleague = viewModel.EligibleColleagues.First(IsColleague);
 
             ((RelayCommand)viewModel.RequestSwapCommand).Execute(null!);
 
@@ -136,24 +143,24 @@ public class ShiftSwapFlowIntegrationTests : IClassFixture<SqlTestFixture>
         }
         finally
         {
-            db.DeleteSwapRequestsByShift(conn, shiftId);
-            db.DeleteNotificationsByStaff(conn, colleagueId);
-            db.DeleteShift(conn, shiftId);
-            db.DeleteStaff(conn, requesterId);
-            db.DeleteStaff(conn, colleagueId);
+            database.DeleteSwapRequestsByShift(connection, shiftId);
+            database.DeleteNotificationsByStaff(connection, colleagueId);
+            database.DeleteShift(connection, shiftId);
+            database.DeleteStaff(connection, requesterId);
+            database.DeleteStaff(connection, colleagueId);
         }
     }
 
-    private static int InsertSwapRequest(SqlConnection conn, int shiftId, int requesterId, int colleagueId)
+    private static int InsertSwapRequest(SqlConnection connection, int shiftId, int requesterId, int colleagueId)
     {
-        using var cmd = new SqlCommand(@"
+        using var command = new SqlCommand(@"
             INSERT INTO ShiftSwapRequests (shift_id, requester_id, colleague_id, requested_at, status)
             VALUES (@ShiftId, @RequesterId, @ColleagueId, @RequestedAt, 'PENDING');
-            SELECT CAST(SCOPE_IDENTITY() AS INT);", conn);
-        cmd.Parameters.AddWithValue("@ShiftId",     shiftId);
-        cmd.Parameters.AddWithValue("@RequesterId", requesterId);
-        cmd.Parameters.AddWithValue("@ColleagueId", colleagueId);
-        cmd.Parameters.AddWithValue("@RequestedAt", DateTime.UtcNow);
-        return (int)cmd.ExecuteScalar()!;
+            SELECT CAST(SCOPE_IDENTITY() AS INT);", connection);
+        command.Parameters.AddWithValue("@ShiftId",     shiftId);
+        command.Parameters.AddWithValue("@RequesterId", requesterId);
+        command.Parameters.AddWithValue("@ColleagueId", colleagueId);
+        command.Parameters.AddWithValue("@RequestedAt", DateTime.UtcNow);
+        return (int)command.ExecuteScalar()!;
     }
 }

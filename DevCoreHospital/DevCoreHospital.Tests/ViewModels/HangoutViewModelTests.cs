@@ -23,7 +23,7 @@ namespace DevCoreHospital.Tests.ViewModels
         public HangoutViewModelTests()
         {
             mockService = new Mock<IHangoutService>();
-            mockService.Setup(s => s.GetAllHangouts()).Returns(new List<Hangout>());
+            mockService.Setup(hangoutService => hangoutService.GetAllHangouts()).Returns(new List<Hangout>());
             viewModel = new HangoutViewModel(mockService.Object);
         }
 
@@ -98,7 +98,7 @@ namespace DevCoreHospital.Tests.ViewModels
 
             viewModel.CreateCommand.Execute(null);
 
-            mockService.Verify(s => s.CreateHangout(
+            mockService.Verify(hangoutService => hangoutService.CreateHangout(
                 "My Hangout",
                 It.IsAny<string>(),
                 It.IsAny<DateTime>(),
@@ -144,7 +144,7 @@ namespace DevCoreHospital.Tests.ViewModels
         public void CreateHangout_SetsErrorMessage_WhenServiceThrows()
         {
             mockService
-                .Setup(s => s.CreateHangout(
+                .Setup(hangoutService => hangoutService.CreateHangout(
                     It.IsAny<string>(), It.IsAny<string>(), It.IsAny<DateTime>(),
                     It.IsAny<int>(), It.IsAny<IStaff>()))
                 .Throws(new InvalidOperationException("Service error"));
@@ -174,7 +174,7 @@ namespace DevCoreHospital.Tests.ViewModels
 
             viewModel.JoinHangoutById(1);
 
-            mockService.Verify(s => s.JoinHangout(It.IsAny<int>(), It.IsAny<IStaff>()), Times.Never);
+            mockService.Verify(hangoutService => hangoutService.JoinHangout(It.IsAny<int>(), It.IsAny<IStaff>()), Times.Never);
         }
 
         [Fact]
@@ -194,14 +194,14 @@ namespace DevCoreHospital.Tests.ViewModels
 
             viewModel.JoinHangoutById(42);
 
-            mockService.Verify(s => s.JoinHangout(42, It.IsAny<IStaff>()), Times.Once);
+            mockService.Verify(hangoutService => hangoutService.JoinHangout(42, It.IsAny<IStaff>()), Times.Once);
         }
 
         [Fact]
         public void JoinHangoutById_SetsErrorMessage_WhenServiceThrows()
         {
             mockService
-                .Setup(s => s.JoinHangout(It.IsAny<int>(), It.IsAny<IStaff>()))
+                .Setup(hangoutService => hangoutService.JoinHangout(It.IsAny<int>(), It.IsAny<IStaff>()))
                 .Throws(new InvalidOperationException("Already joined."));
 
             viewModel.SelectedDoctor = TestDoctor;
@@ -214,22 +214,22 @@ namespace DevCoreHospital.Tests.ViewModels
         [Fact]
         public void Hangouts_IsEmpty_WhenServiceReturnsNoHangouts()
         {
-            mockService.Setup(s => s.GetAllHangouts()).Returns(new List<Hangout>());
+            mockService.Setup(hangoutService => hangoutService.GetAllHangouts()).Returns(new List<Hangout>());
 
-            var vm = new HangoutViewModel(mockService.Object);
+            var localViewModel = new HangoutViewModel(mockService.Object);
 
-            Assert.Empty(vm.Hangouts);
+            Assert.Empty(localViewModel.Hangouts);
         }
 
         [Fact]
         public void Hangouts_ContainsOneItem_WhenServiceReturnsOneHangout()
         {
             var hangout = new Hangout(1, "Team Lunch", "desc", DateTime.Now.AddDays(10), 5);
-            mockService.Setup(s => s.GetAllHangouts()).Returns(new List<Hangout> { hangout });
+            mockService.Setup(hangoutService => hangoutService.GetAllHangouts()).Returns(new List<Hangout> { hangout });
 
-            var vm = new HangoutViewModel(mockService.Object);
+            var localViewModel = new HangoutViewModel(mockService.Object);
 
-            Assert.Single(vm.Hangouts);
+            Assert.Single(localViewModel.Hangouts);
         }
 
         [Fact]
@@ -249,19 +249,20 @@ namespace DevCoreHospital.Tests.ViewModels
         {
             var hangout = new Hangout(1, "My Hangout", "desc", DateTime.Now.AddDays(10), 5);
             int getHangoutsCalls = 0;
-            mockService.Setup(s => s.GetAllHangouts()).Returns(() =>
+            List<Hangout> GetHangoutsWithCount()
             {
                 getHangoutsCalls++;
                 return getHangoutsCalls > 1 ? new List<Hangout> { hangout } : new List<Hangout>();
-            });
+            }
+            mockService.Setup(hangoutService => hangoutService.GetAllHangouts()).Returns(GetHangoutsWithCount);
 
-            var vm = new HangoutViewModel(mockService.Object);
-            vm.Title = "My Hangout";
-            vm.SelectedDoctor = TestDoctor;
+            var localViewModel = new HangoutViewModel(mockService.Object);
+            localViewModel.Title = "My Hangout";
+            localViewModel.SelectedDoctor = TestDoctor;
 
-            vm.CreateCommand.Execute(null);
+            localViewModel.CreateCommand.Execute(null);
 
-            Assert.Single(vm.Hangouts);
+            Assert.Single(localViewModel.Hangouts);
         }
 
         [Fact]
@@ -269,18 +270,19 @@ namespace DevCoreHospital.Tests.ViewModels
         {
             var hangout = new Hangout(1, "Team Lunch", "desc", DateTime.Now.AddDays(10), 5);
             int getHangoutsCalls = 0;
-            mockService.Setup(s => s.GetAllHangouts()).Returns(() =>
+            List<Hangout> GetHangoutsWithCount()
             {
                 getHangoutsCalls++;
                 return getHangoutsCalls > 1 ? new List<Hangout> { hangout } : new List<Hangout>();
-            });
+            }
+            mockService.Setup(hangoutService => hangoutService.GetAllHangouts()).Returns(GetHangoutsWithCount);
 
-            var vm = new HangoutViewModel(mockService.Object);
-            vm.SelectedDoctor = TestDoctor;
+            var localViewModel = new HangoutViewModel(mockService.Object);
+            localViewModel.SelectedDoctor = TestDoctor;
 
-            vm.JoinHangoutById(1);
+            localViewModel.JoinHangoutById(1);
 
-            Assert.Single(vm.Hangouts);
+            Assert.Single(localViewModel.Hangouts);
         }
     }
 }

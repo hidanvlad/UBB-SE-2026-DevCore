@@ -51,31 +51,47 @@ namespace DevCoreHospital
         {
             // StaffRepository implements IStaffRepository, IShiftManagementStaffRepository, IPharmacyStaffRepository.
             // Registered once as a singleton concrete type; all three interfaces forward to the same instance.
-            services.AddSingleton<StaffRepository>(_ => new StaffRepository(AppSettings.ConnectionString));
-            services.AddSingleton<IStaffRepository>(sp => sp.GetRequiredService<StaffRepository>());
-            services.AddSingleton<IShiftManagementStaffRepository>(sp => sp.GetRequiredService<StaffRepository>());
-            services.AddSingleton<IPharmacyStaffRepository>(sp => sp.GetRequiredService<StaffRepository>());
+            static StaffRepository CreateStaffRepository(IServiceProvider serviceProvider) => new StaffRepository(AppSettings.ConnectionString);
+            services.AddSingleton<StaffRepository>(CreateStaffRepository);
+            static StaffRepository ResolveStaffRepository(IServiceProvider serviceProvider) => serviceProvider.GetRequiredService<StaffRepository>();
+            services.AddSingleton<IStaffRepository>(ResolveStaffRepository);
+            static StaffRepository ResolveShiftManagementStaffRepository(IServiceProvider serviceProvider) => serviceProvider.GetRequiredService<StaffRepository>();
+            services.AddSingleton<IShiftManagementStaffRepository>(ResolveShiftManagementStaffRepository);
+            static StaffRepository ResolvePharmacyStaffRepository(IServiceProvider serviceProvider) => serviceProvider.GetRequiredService<StaffRepository>();
+            services.AddSingleton<IPharmacyStaffRepository>(ResolvePharmacyStaffRepository);
 
             // ShiftRepository implements IShiftRepository, IShiftManagementShiftRepository, IPharmacyShiftRepository.
-            services.AddSingleton<ShiftRepository>(sp =>
-                new ShiftRepository(AppSettings.ConnectionString, sp.GetRequiredService<StaffRepository>()));
-            services.AddSingleton<IShiftRepository>(sp => sp.GetRequiredService<ShiftRepository>());
-            services.AddSingleton<IShiftManagementShiftRepository>(sp => sp.GetRequiredService<ShiftRepository>());
-            services.AddSingleton<IPharmacyShiftRepository>(sp => sp.GetRequiredService<ShiftRepository>());
+            static ShiftRepository CreateShiftRepository(IServiceProvider serviceProvider) =>
+                new ShiftRepository(AppSettings.ConnectionString, serviceProvider.GetRequiredService<StaffRepository>());
+            services.AddSingleton<ShiftRepository>(CreateShiftRepository);
+            static ShiftRepository ResolveShiftRepository(IServiceProvider serviceProvider) => serviceProvider.GetRequiredService<ShiftRepository>();
+            services.AddSingleton<IShiftRepository>(ResolveShiftRepository);
+            static ShiftRepository ResolveShiftManagementShiftRepository(IServiceProvider serviceProvider) => serviceProvider.GetRequiredService<ShiftRepository>();
+            services.AddSingleton<IShiftManagementShiftRepository>(ResolveShiftManagementShiftRepository);
+            static ShiftRepository ResolvePharmacyShiftRepository(IServiceProvider serviceProvider) => serviceProvider.GetRequiredService<ShiftRepository>();
+            services.AddSingleton<IPharmacyShiftRepository>(ResolvePharmacyShiftRepository);
 
-            services.AddSingleton<SalaryRepository>(_ => new SalaryRepository(AppSettings.ConnectionString));
-            services.AddSingleton<ShiftSwapRepository>(_ => new ShiftSwapRepository(AppSettings.ConnectionString));
-            services.AddSingleton<IShiftSwapRepository>(sp => sp.GetRequiredService<ShiftSwapRepository>());
+            static SalaryRepository CreateSalaryRepository(IServiceProvider serviceProvider) => new SalaryRepository(AppSettings.ConnectionString);
+            services.AddSingleton<SalaryRepository>(CreateSalaryRepository);
+            static ShiftSwapRepository CreateShiftSwapRepository(IServiceProvider serviceProvider) => new ShiftSwapRepository(AppSettings.ConnectionString);
+            services.AddSingleton<ShiftSwapRepository>(CreateShiftSwapRepository);
+            static ShiftSwapRepository ResolveShiftSwapRepository(IServiceProvider serviceProvider) => serviceProvider.GetRequiredService<ShiftSwapRepository>();
+            services.AddSingleton<IShiftSwapRepository>(ResolveShiftSwapRepository);
 
-            services.AddSingleton<AppointmentRepository>(_ => new AppointmentRepository(AppSettings.ConnectionString));
-            services.AddSingleton<IAppointmentRepository>(sp => sp.GetRequiredService<AppointmentRepository>());
+            static AppointmentRepository CreateAppointmentRepository(IServiceProvider serviceProvider) => new AppointmentRepository(AppSettings.ConnectionString);
+            services.AddSingleton<AppointmentRepository>(CreateAppointmentRepository);
+            static AppointmentRepository ResolveAppointmentRepository(IServiceProvider serviceProvider) => serviceProvider.GetRequiredService<AppointmentRepository>();
+            services.AddSingleton<IAppointmentRepository>(ResolveAppointmentRepository);
 
             services.AddSingleton<IHangoutRepository, HangoutRepository>();
 
-            services.AddSingleton<IEvaluationsRepository>(_ => new EvaluationsRepository(AppSettings.ConnectionString));
+            static IEvaluationsRepository CreateEvaluationsRepository(IServiceProvider serviceProvider) => new EvaluationsRepository(AppSettings.ConnectionString);
+            services.AddSingleton<IEvaluationsRepository>(CreateEvaluationsRepository);
 
-            services.AddSingleton<IERDispatchRepository>(_ => new ERDispatchRepository(AppSettings.ConnectionString));
-            services.AddSingleton<IFatigueAuditRepository>(_ => new FatigueAuditRepository(AppSettings.ConnectionString));
+            static IERDispatchRepository CreateERDispatchRepository(IServiceProvider serviceProvider) => new ERDispatchRepository(AppSettings.ConnectionString);
+            services.AddSingleton<IERDispatchRepository>(CreateERDispatchRepository);
+            static IFatigueAuditRepository CreateFatigueAuditRepository(IServiceProvider serviceProvider) => new FatigueAuditRepository(AppSettings.ConnectionString);
+            services.AddSingleton<IFatigueAuditRepository>(CreateFatigueAuditRepository);
         }
 
         private static void RegisterServices(IServiceCollection services)
@@ -88,11 +104,12 @@ namespace DevCoreHospital
             services.AddSingleton<IPharmacyVacationService, PharmacyVacationService>();
             services.AddSingleton<IShiftManagementService, ShiftManagementService>();
             services.AddSingleton<IShiftSwapService, ShiftSwapService>();
-            services.AddSingleton<ISalaryComputationService>(sp =>
+            static ISalaryComputationService CreateSalaryComputationService(IServiceProvider serviceProvider) =>
                 new SalaryComputationService(
-                    sp.GetRequiredService<SalaryRepository>(),
-                    sp.GetRequiredService<IStaffRepository>(),
-                    sp.GetRequiredService<IShiftManagementShiftRepository>()));
+                    serviceProvider.GetRequiredService<SalaryRepository>(),
+                    serviceProvider.GetRequiredService<IStaffRepository>(),
+                    serviceProvider.GetRequiredService<IShiftManagementShiftRepository>());
+            services.AddSingleton<ISalaryComputationService>(CreateSalaryComputationService);
             services.AddSingleton<IMedicalEvaluationService, MedicalEvaluationService>();
         }
 
@@ -112,18 +129,21 @@ namespace DevCoreHospital
             // Multi-constructor ViewModels: use explicit factories to avoid ambiguity.
             // MS DI treats IEnumerable<T> as always-resolvable (returns empty collection),
             // so any ViewModel with an IEnumerable<T> overload must be wired explicitly.
-            services.AddTransient<IncomingSwapRequestsViewModel>(sp =>
+            static IncomingSwapRequestsViewModel CreateIncomingSwapRequestsViewModel(IServiceProvider serviceProvider) =>
                 new IncomingSwapRequestsViewModel(
-                    sp.GetRequiredService<IShiftSwapService>()));
+                    serviceProvider.GetRequiredService<IShiftSwapService>());
+            services.AddTransient<IncomingSwapRequestsViewModel>(CreateIncomingSwapRequestsViewModel);
 
-            services.AddTransient<HangoutViewModel>(sp =>
+            static HangoutViewModel CreateHangoutViewModel(IServiceProvider serviceProvider) =>
                 new HangoutViewModel(
-                    sp.GetRequiredService<IHangoutService>(),
-                    sp.GetRequiredService<IDoctorAppointmentService>()));
+                    serviceProvider.GetRequiredService<IHangoutService>(),
+                    serviceProvider.GetRequiredService<IDoctorAppointmentService>());
+            services.AddTransient<HangoutViewModel>(CreateHangoutViewModel);
 
-            services.AddTransient<SalaryComputationViewModel>(sp =>
+            static SalaryComputationViewModel CreateSalaryComputationViewModel(IServiceProvider serviceProvider) =>
                 new SalaryComputationViewModel(
-                    sp.GetRequiredService<ISalaryComputationService>()));
+                    serviceProvider.GetRequiredService<ISalaryComputationService>());
+            services.AddTransient<SalaryComputationViewModel>(CreateSalaryComputationViewModel);
         }
     }
 }

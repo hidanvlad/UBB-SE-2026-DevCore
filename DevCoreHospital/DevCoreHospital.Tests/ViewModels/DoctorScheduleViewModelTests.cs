@@ -30,12 +30,12 @@ namespace DevCoreHospital.Tests.ViewModels
 
             mockAppointmentService = new Mock<IDoctorAppointmentService>();
             mockAppointmentService
-                .Setup(s => s.GetAppointmentsInRangeAsync(
+                .Setup(appointmentService => appointmentService.GetAppointmentsInRangeAsync(
                     It.IsAny<int>(), It.IsAny<DateTime>(), It.IsAny<DateTime>()))
                 .ReturnsAsync(new List<Appointment>());
 
             mockAppointmentService
-                .Setup(s => s.GetShiftsForStaffInRangeAsync(
+                .Setup(appointmentService => appointmentService.GetShiftsForStaffInRangeAsync(
                     It.IsAny<int>(), It.IsAny<DateTime>(), It.IsAny<DateTime>()))
                 .ReturnsAsync(new List<Shift>());
 
@@ -132,7 +132,7 @@ namespace DevCoreHospital.Tests.ViewModels
             };
 
             mockAppointmentService
-                .Setup(s => s.GetAppointmentsInRangeAsync(
+                .Setup(appointmentService => appointmentService.GetAppointmentsInRangeAsync(
                     It.IsAny<int>(), It.IsAny<DateTime>(), It.IsAny<DateTime>()))
                 .ReturnsAsync(new List<Appointment> { appointment });
 
@@ -151,14 +151,15 @@ namespace DevCoreHospital.Tests.ViewModels
             DateTime capturedFrom = default;
             DateTime capturedTo = default;
 
+            void CaptureDateRange(int _, DateTime from, DateTime to)
+            {
+                capturedFrom = from;
+                capturedTo = to;
+            }
             mockAppointmentService
-                .Setup(s => s.GetAppointmentsInRangeAsync(
+                .Setup(appointmentService => appointmentService.GetAppointmentsInRangeAsync(
                     It.IsAny<int>(), It.IsAny<DateTime>(), It.IsAny<DateTime>()))
-                .Callback<int, DateTime, DateTime>((_, from, to) =>
-                {
-                    capturedFrom = from;
-                    capturedTo = to;
-                })
+                .Callback<int, DateTime, DateTime>(CaptureDateRange)
                 .ReturnsAsync(new List<Appointment>());
 
             viewModel.ViewMode = DoctorScheduleViewModel.ScheduleViewMode.Daily;
@@ -183,7 +184,7 @@ namespace DevCoreHospital.Tests.ViewModels
                 ShiftStatus.SCHEDULED);
 
             mockAppointmentService
-                .Setup(s => s.GetShiftsForStaffInRangeAsync(
+                .Setup(appointmentService => appointmentService.GetShiftsForStaffInRangeAsync(
                     It.IsAny<int>(), It.IsAny<DateTime>(), It.IsAny<DateTime>()))
                 .ReturnsAsync(new List<Shift> { shiftOnFriday });
 
@@ -208,7 +209,7 @@ namespace DevCoreHospital.Tests.ViewModels
             };
 
             mockAppointmentService
-                .Setup(s => s.GetAppointmentsInRangeAsync(
+                .Setup(appointmentService => appointmentService.GetAppointmentsInRangeAsync(
                     It.IsAny<int>(), It.IsAny<DateTime>(), It.IsAny<DateTime>()))
                 .ReturnsAsync(appointments);
 
@@ -227,7 +228,7 @@ namespace DevCoreHospital.Tests.ViewModels
             var selectedDate = new DateTime(2025, 6, 11);
 
             mockAppointmentService
-                .Setup(s => s.GetShiftsForStaffInRangeAsync(
+                .Setup(appointmentService => appointmentService.GetShiftsForStaffInRangeAsync(
                     It.IsAny<int>(), It.IsAny<DateTime>(), It.IsAny<DateTime>()))
                 .ReturnsAsync(new List<Shift>());
 
@@ -250,7 +251,7 @@ namespace DevCoreHospital.Tests.ViewModels
                 ShiftStatus.SCHEDULED);
 
             mockAppointmentService
-                .Setup(s => s.GetShiftsForStaffInRangeAsync(
+                .Setup(appointmentService => appointmentService.GetShiftsForStaffInRangeAsync(
                     It.IsAny<int>(), It.IsAny<DateTime>(), It.IsAny<DateTime>()))
                 .ReturnsAsync(new List<Shift> { scheduledShift });
 
@@ -284,7 +285,7 @@ namespace DevCoreHospital.Tests.ViewModels
             };
 
             mockAppointmentService
-                .Setup(s => s.GetAppointmentsInRangeAsync(
+                .Setup(appointmentService => appointmentService.GetAppointmentsInRangeAsync(
                     It.IsAny<int>(), It.IsAny<DateTime>(), It.IsAny<DateTime>()))
                 .ReturnsAsync(new List<Appointment> { appointment });
 
@@ -307,7 +308,7 @@ namespace DevCoreHospital.Tests.ViewModels
                 ShiftStatus.SCHEDULED);
 
             mockAppointmentService
-                .Setup(s => s.GetShiftsForStaffInRangeAsync(
+                .Setup(appointmentService => appointmentService.GetShiftsForStaffInRangeAsync(
                     It.IsAny<int>(), It.IsAny<DateTime>(), It.IsAny<DateTime>()))
                 .ReturnsAsync(new List<Shift> { shift });
 
@@ -533,7 +534,7 @@ namespace DevCoreHospital.Tests.ViewModels
         public async Task InitializeAsync_SetsNoDoctorsErrorMessage_WhenServiceReturnsEmptyList()
         {
             mockAppointmentService
-                .Setup(s => s.GetAllDoctorsAsync())
+                .Setup(appointmentService => appointmentService.GetAllDoctorsAsync())
                 .ReturnsAsync(new List<(int DoctorId, string DoctorName)>());
 
             await viewModel.InitializeAsync();
@@ -545,7 +546,7 @@ namespace DevCoreHospital.Tests.ViewModels
         public async Task LoadAsync_SetsErrorMessage_WhenAppointmentServiceThrows()
         {
             mockAppointmentService
-                .Setup(s => s.GetAppointmentsInRangeAsync(
+                .Setup(appointmentService => appointmentService.GetAppointmentsInRangeAsync(
                     It.IsAny<int>(), It.IsAny<DateTime>(), It.IsAny<DateTime>()))
                 .ThrowsAsync(new InvalidOperationException("DB error"));
 

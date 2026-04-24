@@ -6,31 +6,31 @@ namespace DevCoreHospital.Tests.Repositories;
 
 public class ShiftSwapRepositoryTests : IClassFixture<SqlTestFixture>
 {
-    private readonly SqlTestFixture db;
+    private readonly SqlTestFixture database;
     private const string InvalidConnectionString = "InvalidConnectionString";
 
-    public ShiftSwapRepositoryTests(SqlTestFixture db) => this.db = db;
+    public ShiftSwapRepositoryTests(SqlTestFixture database) => this.database = database;
 
     [Fact]
     public void GetSwapRequestsForColleague_WhenConnectionFails_ReturnsEmptyList()
     {
-        var repo = new ShiftSwapRepository(InvalidConnectionString);
+        var repository = new ShiftSwapRepository(InvalidConnectionString);
 
-        Assert.Empty(repo.GetSwapRequestsForColleague(1));
+        Assert.Empty(repository.GetSwapRequestsForColleague(1));
     }
 
     [Fact]
     public void GetShiftSwapRequestById_WhenConnectionFails_ReturnsNull()
     {
-        var repo = new ShiftSwapRepository(InvalidConnectionString);
+        var repository = new ShiftSwapRepository(InvalidConnectionString);
 
-        Assert.Null(repo.GetShiftSwapRequestById(1));
+        Assert.Null(repository.GetShiftSwapRequestById(1));
     }
 
     [Fact]
     public void CreateShiftSwapRequest_WhenConnectionFails_ReturnsZero()
     {
-        var repo = new ShiftSwapRepository(InvalidConnectionString);
+        var repository = new ShiftSwapRepository(InvalidConnectionString);
         var request = new ShiftSwapRequest
         {
             ShiftId = 1,
@@ -40,47 +40,47 @@ public class ShiftSwapRepositoryTests : IClassFixture<SqlTestFixture>
             Status = ShiftSwapRequestStatus.PENDING,
         };
 
-        Assert.Equal(0, repo.CreateShiftSwapRequest(request));
+        Assert.Equal(0, repository.CreateShiftSwapRequest(request));
     }
 
     [Fact]
     public void UpdateShiftSwapRequestStatus_WhenConnectionFails_ReturnsFalse()
     {
-        var repo = new ShiftSwapRepository(InvalidConnectionString);
+        var repository = new ShiftSwapRepository(InvalidConnectionString);
 
-        Assert.False(repo.UpdateShiftSwapRequestStatus(1, "ACCEPTED"));
+        Assert.False(repository.UpdateShiftSwapRequestStatus(1, "ACCEPTED"));
     }
 
     [Fact]
     public void ReassignShiftToStaff_WhenConnectionFails_ReturnsFalse()
     {
-        var repo = new ShiftSwapRepository(InvalidConnectionString);
+        var repository = new ShiftSwapRepository(InvalidConnectionString);
 
-        Assert.False(repo.ReassignShiftToStaff(1, 5));
+        Assert.False(repository.ReassignShiftToStaff(1, 5));
     }
 
     [Fact]
     public void AddNotification_WhenConnectionFails_DoesNotThrow()
     {
-        var repo = new ShiftSwapRepository(InvalidConnectionString);
+        var repository = new ShiftSwapRepository(InvalidConnectionString);
 
-        var ex = Record.Exception(() => repo.AddNotification(1, "Test Title", "Test message"));
+        var exception = Record.Exception(() => repository.AddNotification(1, "Test Title", "Test message"));
 
-        Assert.Null(ex);
+        Assert.Null(exception);
     }
 
     [Fact]
     public void CreateShiftSwapRequest_ReturnsPositiveId()
     {
-        using var conn = db.OpenConnection();
-        var requesterId = db.InsertStaff(conn, "Doctor", "Alice", "CreateSwap", "Cardiology");
-        var colleagueId = db.InsertStaff(conn, "Doctor", "Bob", "CreateSwap", "Cardiology");
-        var shiftId = db.InsertShift(conn, requesterId, "Ward A", DateTime.Now.AddHours(1), DateTime.Now.AddHours(9));
+        using var connection = database.OpenConnection();
+        var requesterId = database.InsertStaff(connection, "Doctor", "Alice", "CreateSwap", "Cardiology");
+        var colleagueId = database.InsertStaff(connection, "Doctor", "Bob", "CreateSwap", "Cardiology");
+        var shiftId = database.InsertShift(connection, requesterId, "Ward A", DateTime.Now.AddHours(1), DateTime.Now.AddHours(9));
         int swapId = 0;
         try
         {
-            var repo = new ShiftSwapRepository(db.ConnectionString);
-            swapId = repo.CreateShiftSwapRequest(new ShiftSwapRequest
+            var repository = new ShiftSwapRepository(database.ConnectionString);
+            swapId = repository.CreateShiftSwapRequest(new ShiftSwapRequest
             {
                 ShiftId = shiftId,
                 RequesterId = requesterId,
@@ -93,31 +93,31 @@ public class ShiftSwapRepositoryTests : IClassFixture<SqlTestFixture>
         }
         finally
         {
-            db.DeleteSwapRequest(conn, swapId);
-            db.DeleteShift(conn, shiftId);
-            db.DeleteStaff(conn, requesterId);
-            db.DeleteStaff(conn, colleagueId);
+            database.DeleteSwapRequest(connection, swapId);
+            database.DeleteShift(connection, shiftId);
+            database.DeleteStaff(connection, requesterId);
+            database.DeleteStaff(connection, colleagueId);
         }
     }
 
     [Fact]
     public void GetShiftSwapRequestById_ReturnsCorrectRequest()
     {
-        using var conn = db.OpenConnection();
-        var requesterId = db.InsertStaff(conn, "Doctor", "Alice", "GetById", "Cardiology");
-        var colleagueId = db.InsertStaff(conn, "Doctor", "Bob", "GetById", "Cardiology");
-        var shiftId = db.InsertShift(conn, requesterId, "Ward B", DateTime.Now.AddHours(2), DateTime.Now.AddHours(10));
+        using var connection = database.OpenConnection();
+        var requesterId = database.InsertStaff(connection, "Doctor", "Alice", "GetById", "Cardiology");
+        var colleagueId = database.InsertStaff(connection, "Doctor", "Bob", "GetById", "Cardiology");
+        var shiftId = database.InsertShift(connection, requesterId, "Ward B", DateTime.Now.AddHours(2), DateTime.Now.AddHours(10));
         int swapId = 0;
         try
         {
-            var repo = new ShiftSwapRepository(db.ConnectionString);
-            swapId = repo.CreateShiftSwapRequest(new ShiftSwapRequest
+            var repository = new ShiftSwapRepository(database.ConnectionString);
+            swapId = repository.CreateShiftSwapRequest(new ShiftSwapRequest
             {
                 ShiftId = shiftId, RequesterId = requesterId, ColleagueId = colleagueId,
                 RequestedAt = DateTime.UtcNow, Status = ShiftSwapRequestStatus.PENDING,
             });
 
-            var result = repo.GetShiftSwapRequestById(swapId);
+            var result = repository.GetShiftSwapRequestById(swapId);
 
             Assert.NotNull(result);
             Assert.Equal(swapId, result!.SwapId);
@@ -128,115 +128,115 @@ public class ShiftSwapRepositoryTests : IClassFixture<SqlTestFixture>
         }
         finally
         {
-            db.DeleteSwapRequest(conn, swapId);
-            db.DeleteShift(conn, shiftId);
-            db.DeleteStaff(conn, requesterId);
-            db.DeleteStaff(conn, colleagueId);
+            database.DeleteSwapRequest(connection, swapId);
+            database.DeleteShift(connection, shiftId);
+            database.DeleteStaff(connection, requesterId);
+            database.DeleteStaff(connection, colleagueId);
         }
     }
 
     [Fact]
     public void GetSwapRequestsForColleague_ReturnsRequestsForColleague()
     {
-        using var conn = db.OpenConnection();
-        var requesterId = db.InsertStaff(conn, "Doctor", "Alice", "GetPending", "Neurology");
-        var colleagueId = db.InsertStaff(conn, "Doctor", "Bob", "GetPending", "Neurology");
-        var shiftId = db.InsertShift(conn, requesterId, "Ward C", DateTime.Now.AddHours(3), DateTime.Now.AddHours(11));
+        using var connection = database.OpenConnection();
+        var requesterId = database.InsertStaff(connection, "Doctor", "Alice", "GetPending", "Neurology");
+        var colleagueId = database.InsertStaff(connection, "Doctor", "Bob", "GetPending", "Neurology");
+        var shiftId = database.InsertShift(connection, requesterId, "Ward C", DateTime.Now.AddHours(3), DateTime.Now.AddHours(11));
         int swapId = 0;
         try
         {
-            var repo = new ShiftSwapRepository(db.ConnectionString);
-            swapId = repo.CreateShiftSwapRequest(new ShiftSwapRequest
+            var repository = new ShiftSwapRepository(database.ConnectionString);
+            swapId = repository.CreateShiftSwapRequest(new ShiftSwapRequest
             {
                 ShiftId = shiftId, RequesterId = requesterId, ColleagueId = colleagueId,
                 RequestedAt = DateTime.UtcNow, Status = ShiftSwapRequestStatus.PENDING,
             });
 
-            var results = repo.GetSwapRequestsForColleague(colleagueId);
+            var results = repository.GetSwapRequestsForColleague(colleagueId);
 
-            Assert.Contains(results, r => r.SwapId == swapId);
+            Assert.Contains(results, swapRequest => swapRequest.SwapId == swapId);
         }
         finally
         {
-            db.DeleteSwapRequest(conn, swapId);
-            db.DeleteShift(conn, shiftId);
-            db.DeleteStaff(conn, requesterId);
-            db.DeleteStaff(conn, colleagueId);
+            database.DeleteSwapRequest(connection, swapId);
+            database.DeleteShift(connection, shiftId);
+            database.DeleteStaff(connection, requesterId);
+            database.DeleteStaff(connection, colleagueId);
         }
     }
 
     [Fact]
     public void UpdateShiftSwapRequestStatus_ReturnsTrueAndUpdatesStatus()
     {
-        using var conn = db.OpenConnection();
-        var requesterId = db.InsertStaff(conn, "Doctor", "Alice", "UpdateStatus", "Oncology");
-        var colleagueId = db.InsertStaff(conn, "Doctor", "Bob", "UpdateStatus", "Oncology");
-        var shiftId = db.InsertShift(conn, requesterId, "Ward D", DateTime.Now.AddHours(4), DateTime.Now.AddHours(12));
+        using var connection = database.OpenConnection();
+        var requesterId = database.InsertStaff(connection, "Doctor", "Alice", "UpdateStatus", "Oncology");
+        var colleagueId = database.InsertStaff(connection, "Doctor", "Bob", "UpdateStatus", "Oncology");
+        var shiftId = database.InsertShift(connection, requesterId, "Ward D", DateTime.Now.AddHours(4), DateTime.Now.AddHours(12));
         int swapId = 0;
         try
         {
-            var repo = new ShiftSwapRepository(db.ConnectionString);
-            swapId = repo.CreateShiftSwapRequest(new ShiftSwapRequest
+            var repository = new ShiftSwapRepository(database.ConnectionString);
+            swapId = repository.CreateShiftSwapRequest(new ShiftSwapRequest
             {
                 ShiftId = shiftId, RequesterId = requesterId, ColleagueId = colleagueId,
                 RequestedAt = DateTime.UtcNow, Status = ShiftSwapRequestStatus.PENDING,
             });
 
-            var result = repo.UpdateShiftSwapRequestStatus(swapId, "ACCEPTED");
+            var result = repository.UpdateShiftSwapRequestStatus(swapId, "ACCEPTED");
 
             Assert.True(result);
-            Assert.Equal(ShiftSwapRequestStatus.ACCEPTED, repo.GetShiftSwapRequestById(swapId)!.Status);
+            Assert.Equal(ShiftSwapRequestStatus.ACCEPTED, repository.GetShiftSwapRequestById(swapId)!.Status);
         }
         finally
         {
-            db.DeleteSwapRequest(conn, swapId);
-            db.DeleteShift(conn, shiftId);
-            db.DeleteStaff(conn, requesterId);
-            db.DeleteStaff(conn, colleagueId);
+            database.DeleteSwapRequest(connection, swapId);
+            database.DeleteShift(connection, shiftId);
+            database.DeleteStaff(connection, requesterId);
+            database.DeleteStaff(connection, colleagueId);
         }
     }
 
     [Fact]
     public void ReassignShiftToStaff_ReturnsTrueAndUpdatesStaffOnShift()
     {
-        using var conn = db.OpenConnection();
-        var originalStaffId = db.InsertStaff(conn, "Doctor", "Alice", "Reassign", "Cardiology");
-        var newStaffId = db.InsertStaff(conn, "Doctor", "Bob", "Reassign", "Cardiology");
-        var shiftId = db.InsertShift(conn, originalStaffId, "Ward E", DateTime.Now.AddHours(5), DateTime.Now.AddHours(13));
+        using var connection = database.OpenConnection();
+        var originalStaffId = database.InsertStaff(connection, "Doctor", "Alice", "Reassign", "Cardiology");
+        var newStaffId = database.InsertStaff(connection, "Doctor", "Bob", "Reassign", "Cardiology");
+        var shiftId = database.InsertShift(connection, originalStaffId, "Ward E", DateTime.Now.AddHours(5), DateTime.Now.AddHours(13));
         try
         {
-            var repo = new ShiftSwapRepository(db.ConnectionString);
+            var repository = new ShiftSwapRepository(database.ConnectionString);
 
-            var result = repo.ReassignShiftToStaff(shiftId, newStaffId);
+            var result = repository.ReassignShiftToStaff(shiftId, newStaffId);
 
             Assert.True(result);
-            Assert.Equal(newStaffId, db.GetShiftStaffId(conn, shiftId));
+            Assert.Equal(newStaffId, database.GetShiftStaffId(connection, shiftId));
         }
         finally
         {
-            db.DeleteShift(conn, shiftId);
-            db.DeleteStaff(conn, originalStaffId);
-            db.DeleteStaff(conn, newStaffId);
+            database.DeleteShift(connection, shiftId);
+            database.DeleteStaff(connection, originalStaffId);
+            database.DeleteStaff(connection, newStaffId);
         }
     }
 
     [Fact]
     public void AddNotification_InsertsRecordInDatabase()
     {
-        using var conn = db.OpenConnection();
-        var staffId = db.InsertStaff(conn, "Doctor", "Alice", "Notification", "Cardiology");
+        using var connection = database.OpenConnection();
+        var staffId = database.InsertStaff(connection, "Doctor", "Alice", "Notification", "Cardiology");
         try
         {
-            var repo = new ShiftSwapRepository(db.ConnectionString);
+            var repository = new ShiftSwapRepository(database.ConnectionString);
 
-            repo.AddNotification(staffId, "Test Alert", "This is a test notification.");
+            repository.AddNotification(staffId, "Test Alert", "This is a test notification.");
 
-            Assert.Equal(1, db.CountNotificationsForStaff(conn, staffId, "Test Alert"));
+            Assert.Equal(1, database.CountNotificationsForStaff(connection, staffId, "Test Alert"));
         }
         finally
         {
-            db.DeleteNotificationsByStaff(conn, staffId);
-            db.DeleteStaff(conn, staffId);
+            database.DeleteNotificationsByStaff(connection, staffId);
+            database.DeleteStaff(connection, staffId);
         }
     }
 }

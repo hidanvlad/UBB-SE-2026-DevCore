@@ -8,20 +8,20 @@ namespace DevCoreHospital.Services;
 
 public sealed class PharmacyScheduleService : IPharmacyScheduleService
 {
-    private readonly IShiftRepository shiftRepo;
-    private readonly IPharmacyStaffRepository staffRepo;
+    private readonly IShiftRepository shiftRepository;
+    private readonly IPharmacyStaffRepository staffRepository;
 
-    public PharmacyScheduleService(IShiftRepository shiftRepo, IPharmacyStaffRepository staffRepo)
+    public PharmacyScheduleService(IShiftRepository shiftRepository, IPharmacyStaffRepository staffRepository)
     {
-        this.shiftRepo = shiftRepo;
-        this.staffRepo = staffRepo;
+        this.shiftRepository = shiftRepository;
+        this.staffRepository = staffRepository;
     }
 
     public Task<IReadOnlyList<Shift>> GetShiftsAsync(int pharmacistStaffId, DateTime rangeStart, DateTime rangeEnd)
     {
         return Task.Run<IReadOnlyList<Shift>>(
-            () => shiftRepo.GetShiftsForStaffInRange(pharmacistStaffId, rangeStart, rangeEnd));
+            () => shiftRepository.GetShiftsForStaffInRange(pharmacistStaffId, rangeStart, rangeEnd));
     }
 
-    public List<Pharmacyst> GetPharmacists() => staffRepo.GetPharmacists();
+    public List<Pharmacyst> GetPharmacists() => staffRepository.GetPharmacists();
 }

@@ -38,7 +38,7 @@ namespace DevCoreHospital.Tests.Services
         [Fact]
         public void RegisterVacation_ThrowsArgumentException_WhenPharmacistNotFound()
         {
-            mockStaffRepository.Setup(r => r.GetPharmacists()).Returns(new List<Pharmacyst>());
+            mockStaffRepository.Setup(pharmacyStaffRepository => pharmacyStaffRepository.GetPharmacists()).Returns(new List<Pharmacyst>());
 
             var exception = Assert.Throws<ArgumentException>(() =>
                 service.RegisterVacation(99, new DateTime(2025, 6, 1), new DateTime(2025, 6, 3)));
@@ -52,8 +52,8 @@ namespace DevCoreHospital.Tests.Services
             var existingShift = new Shift(10, pharmacist, "Ward A",
                 new DateTime(2025, 6, 8), new DateTime(2025, 6, 12), ShiftStatus.SCHEDULED);
 
-            mockStaffRepository.Setup(r => r.GetPharmacists()).Returns(new List<Pharmacyst> { pharmacist });
-            mockShiftRepository.Setup(r => r.GetShiftsByStaffID(pharmacist.StaffID)).Returns(new List<Shift> { existingShift });
+            mockStaffRepository.Setup(pharmacyStaffRepository => pharmacyStaffRepository.GetPharmacists()).Returns(new List<Pharmacyst> { pharmacist });
+            mockShiftRepository.Setup(pharmacyShiftRepository => pharmacyShiftRepository.GetShiftsByStaffID(pharmacist.StaffID)).Returns(new List<Shift> { existingShift });
 
             var exception = Assert.Throws<InvalidOperationException>(() =>
                 service.RegisterVacation(pharmacist.StaffID, new DateTime(2025, 6, 10), new DateTime(2025, 6, 15)));
@@ -67,8 +67,8 @@ namespace DevCoreHospital.Tests.Services
             var existingVacation = new Shift(10, pharmacist, "Vacation",
                 new DateTime(2025, 6, 1), new DateTime(2025, 6, 4), ShiftStatus.VACATION);
 
-            mockStaffRepository.Setup(r => r.GetPharmacists()).Returns(new List<Pharmacyst> { pharmacist });
-            mockShiftRepository.Setup(r => r.GetShiftsByStaffID(pharmacist.StaffID)).Returns(new List<Shift> { existingVacation });
+            mockStaffRepository.Setup(pharmacyStaffRepository => pharmacyStaffRepository.GetPharmacists()).Returns(new List<Pharmacyst> { pharmacist });
+            mockShiftRepository.Setup(pharmacyShiftRepository => pharmacyShiftRepository.GetShiftsByStaffID(pharmacist.StaffID)).Returns(new List<Shift> { existingVacation });
 
             var exception = Assert.Throws<InvalidOperationException>(() =>
                 service.RegisterVacation(pharmacist.StaffID, new DateTime(2025, 6, 20), new DateTime(2025, 6, 21)));
@@ -79,38 +79,38 @@ namespace DevCoreHospital.Tests.Services
         [Fact]
         public void RegisterVacation_AddsVacationShift_WhenAllConditionsAreMet()
         {
-            mockStaffRepository.Setup(r => r.GetPharmacists()).Returns(new List<Pharmacyst> { pharmacist });
-            mockShiftRepository.Setup(r => r.GetShiftsByStaffID(pharmacist.StaffID)).Returns(new List<Shift>());
-            mockShiftRepository.Setup(r => r.GetShifts()).Returns(new List<Shift>());
+            mockStaffRepository.Setup(pharmacyStaffRepository => pharmacyStaffRepository.GetPharmacists()).Returns(new List<Pharmacyst> { pharmacist });
+            mockShiftRepository.Setup(pharmacyShiftRepository => pharmacyShiftRepository.GetShiftsByStaffID(pharmacist.StaffID)).Returns(new List<Shift>());
+            mockShiftRepository.Setup(pharmacyShiftRepository => pharmacyShiftRepository.GetShifts()).Returns(new List<Shift>());
 
             service.RegisterVacation(pharmacist.StaffID, new DateTime(2025, 7, 1), new DateTime(2025, 7, 3));
 
-            mockShiftRepository.Verify(r => r.AddShift(It.IsAny<Shift>()), Times.Once);
+            mockShiftRepository.Verify(pharmacyShiftRepository => pharmacyShiftRepository.AddShift(It.IsAny<Shift>()), Times.Once);
         }
 
         [Fact]
         public void RegisterVacation_AddsShiftWithVacationStatus_WhenAllConditionsAreMet()
         {
-            mockStaffRepository.Setup(r => r.GetPharmacists()).Returns(new List<Pharmacyst> { pharmacist });
-            mockShiftRepository.Setup(r => r.GetShiftsByStaffID(pharmacist.StaffID)).Returns(new List<Shift>());
-            mockShiftRepository.Setup(r => r.GetShifts()).Returns(new List<Shift>());
+            mockStaffRepository.Setup(pharmacyStaffRepository => pharmacyStaffRepository.GetPharmacists()).Returns(new List<Pharmacyst> { pharmacist });
+            mockShiftRepository.Setup(pharmacyShiftRepository => pharmacyShiftRepository.GetShiftsByStaffID(pharmacist.StaffID)).Returns(new List<Shift>());
+            mockShiftRepository.Setup(pharmacyShiftRepository => pharmacyShiftRepository.GetShifts()).Returns(new List<Shift>());
 
             service.RegisterVacation(pharmacist.StaffID, new DateTime(2025, 7, 1), new DateTime(2025, 7, 3));
 
-            mockShiftRepository.Verify(r => r.AddShift(
+            mockShiftRepository.Verify(pharmacyShiftRepository => pharmacyShiftRepository.AddShift(
                 It.Is<Shift>(shift => shift.Status == ShiftStatus.VACATION)), Times.Once);
         }
 
         [Fact]
         public void RegisterVacation_AllowsVacation_WhenExactlyAtMonthlyLimit()
         {
-            mockStaffRepository.Setup(r => r.GetPharmacists()).Returns(new List<Pharmacyst> { pharmacist });
-            mockShiftRepository.Setup(r => r.GetShiftsByStaffID(pharmacist.StaffID)).Returns(new List<Shift>());
-            mockShiftRepository.Setup(r => r.GetShifts()).Returns(new List<Shift>());
+            mockStaffRepository.Setup(pharmacyStaffRepository => pharmacyStaffRepository.GetPharmacists()).Returns(new List<Pharmacyst> { pharmacist });
+            mockShiftRepository.Setup(pharmacyShiftRepository => pharmacyShiftRepository.GetShiftsByStaffID(pharmacist.StaffID)).Returns(new List<Shift>());
+            mockShiftRepository.Setup(pharmacyShiftRepository => pharmacyShiftRepository.GetShifts()).Returns(new List<Shift>());
 
             service.RegisterVacation(pharmacist.StaffID, new DateTime(2025, 6, 1), new DateTime(2025, 6, 4));
 
-            mockShiftRepository.Verify(r => r.AddShift(It.IsAny<Shift>()), Times.Once);
+            mockShiftRepository.Verify(pharmacyShiftRepository => pharmacyShiftRepository.AddShift(It.IsAny<Shift>()), Times.Once);
         }
 
         [Fact]
@@ -119,8 +119,8 @@ namespace DevCoreHospital.Tests.Services
             var existingVacation = new Shift(10, pharmacist, "Vacation",
                 new DateTime(2025, 7, 1), new DateTime(2025, 7, 4), ShiftStatus.VACATION);
 
-            mockStaffRepository.Setup(r => r.GetPharmacists()).Returns(new List<Pharmacyst> { pharmacist });
-            mockShiftRepository.Setup(r => r.GetShiftsByStaffID(pharmacist.StaffID)).Returns(new List<Shift> { existingVacation });
+            mockStaffRepository.Setup(pharmacyStaffRepository => pharmacyStaffRepository.GetPharmacists()).Returns(new List<Pharmacyst> { pharmacist });
+            mockShiftRepository.Setup(pharmacyShiftRepository => pharmacyShiftRepository.GetShiftsByStaffID(pharmacist.StaffID)).Returns(new List<Shift> { existingVacation });
 
             Assert.Throws<InvalidOperationException>(() =>
                 service.RegisterVacation(pharmacist.StaffID, new DateTime(2025, 7, 28), new DateTime(2025, 7, 31)));
@@ -129,25 +129,25 @@ namespace DevCoreHospital.Tests.Services
         [Fact]
         public void RegisterVacation_Succeeds_WhenStartDateEqualsEndDate()
         {
-            mockStaffRepository.Setup(r => r.GetPharmacists()).Returns(new List<Pharmacyst> { pharmacist });
-            mockShiftRepository.Setup(r => r.GetShiftsByStaffID(pharmacist.StaffID)).Returns(new List<Shift>());
-            mockShiftRepository.Setup(r => r.GetShifts()).Returns(new List<Shift>());
+            mockStaffRepository.Setup(pharmacyStaffRepository => pharmacyStaffRepository.GetPharmacists()).Returns(new List<Pharmacyst> { pharmacist });
+            mockShiftRepository.Setup(pharmacyShiftRepository => pharmacyShiftRepository.GetShiftsByStaffID(pharmacist.StaffID)).Returns(new List<Shift>());
+            mockShiftRepository.Setup(pharmacyShiftRepository => pharmacyShiftRepository.GetShifts()).Returns(new List<Shift>());
 
             service.RegisterVacation(pharmacist.StaffID, new DateTime(2025, 7, 10), new DateTime(2025, 7, 10));
 
-            mockShiftRepository.Verify(r => r.AddShift(It.IsAny<Shift>()), Times.Once);
+            mockShiftRepository.Verify(pharmacyShiftRepository => pharmacyShiftRepository.AddShift(It.IsAny<Shift>()), Times.Once);
         }
 
         [Fact]
         public void RegisterVacation_Succeeds_WhenVacationSpansTwoMonthsButNeitherExceedsLimit()
         {
-            mockStaffRepository.Setup(r => r.GetPharmacists()).Returns(new List<Pharmacyst> { pharmacist });
-            mockShiftRepository.Setup(r => r.GetShiftsByStaffID(pharmacist.StaffID)).Returns(new List<Shift>());
-            mockShiftRepository.Setup(r => r.GetShifts()).Returns(new List<Shift>());
+            mockStaffRepository.Setup(pharmacyStaffRepository => pharmacyStaffRepository.GetPharmacists()).Returns(new List<Pharmacyst> { pharmacist });
+            mockShiftRepository.Setup(pharmacyShiftRepository => pharmacyShiftRepository.GetShiftsByStaffID(pharmacist.StaffID)).Returns(new List<Shift>());
+            mockShiftRepository.Setup(pharmacyShiftRepository => pharmacyShiftRepository.GetShifts()).Returns(new List<Shift>());
 
             service.RegisterVacation(pharmacist.StaffID, new DateTime(2025, 6, 30), new DateTime(2025, 7, 2));
 
-            mockShiftRepository.Verify(r => r.AddShift(It.IsAny<Shift>()), Times.Once);
+            mockShiftRepository.Verify(pharmacyShiftRepository => pharmacyShiftRepository.AddShift(It.IsAny<Shift>()), Times.Once);
         }
 
         [Fact]
@@ -159,7 +159,7 @@ namespace DevCoreHospital.Tests.Services
                 new Pharmacyst(1, "Ana", "Brown", string.Empty, true, "General", 1),
                 new Pharmacyst(2, "Ana", "Adams", string.Empty, true, "IV", 3),
             };
-            mockStaffRepository.Setup(r => r.GetPharmacists()).Returns(pharmacists);
+            mockStaffRepository.Setup(pharmacyStaffRepository => pharmacyStaffRepository.GetPharmacists()).Returns(pharmacists);
 
             var result = service.GetPharmacists();
 
@@ -177,8 +177,8 @@ namespace DevCoreHospital.Tests.Services
             var existingVacation = new Shift(10, pharmacist, "Vacation",
                 new DateTime(2025, 7, 1), new DateTime(2025, 7, 4), ShiftStatus.VACATION);
 
-            mockStaffRepository.Setup(r => r.GetPharmacists()).Returns(new List<Pharmacyst> { pharmacist });
-            mockShiftRepository.Setup(r => r.GetShiftsByStaffID(pharmacist.StaffID)).Returns(new List<Shift> { existingVacation });
+            mockStaffRepository.Setup(pharmacyStaffRepository => pharmacyStaffRepository.GetPharmacists()).Returns(new List<Pharmacyst> { pharmacist });
+            mockShiftRepository.Setup(pharmacyShiftRepository => pharmacyShiftRepository.GetShiftsByStaffID(pharmacist.StaffID)).Returns(new List<Shift> { existingVacation });
 
             Assert.Throws<InvalidOperationException>(() =>
                 service.RegisterVacation(pharmacist.StaffID, new DateTime(2025, 6, 30), new DateTime(2025, 7, 3)));

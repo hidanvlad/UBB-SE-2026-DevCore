@@ -88,7 +88,8 @@ namespace DevCoreHospital.ViewModels
             var englishCulture = CultureInfo.GetCultureInfo("en-US");
 
             Violations.Clear();
-            foreach (var violation in result.Violations.OrderBy(violation => violation.ShiftStart))
+            DateTime GetViolationShiftStart(Models.AuditViolation violation) => violation.ShiftStart;
+            foreach (var violation in result.Violations.OrderBy(GetViolationShiftStart))
             {
                 Violations.Add(new AuditViolationRow
                 {
@@ -101,7 +102,8 @@ namespace DevCoreHospital.ViewModels
             }
 
             Suggestions.Clear();
-            foreach (var suggestion in result.Suggestions.OrderBy(suggestion => suggestion.ShiftId))
+            int GetSuggestionShiftId(Models.AutoSuggestRecommendation suggestion) => suggestion.ShiftId;
+            foreach (var suggestion in result.Suggestions.OrderBy(GetSuggestionShiftId))
             {
                 Suggestions.Add(new AutoSuggestRow
                 {
@@ -124,7 +126,8 @@ namespace DevCoreHospital.ViewModels
 
         public ReassignmentResult ApplyReassignment(int shiftId)
         {
-            var suggestion = Suggestions.FirstOrDefault(auditSuggestion => auditSuggestion.ShiftId == shiftId);
+            bool IsMatchingShift(AutoSuggestRow auditSuggestion) => auditSuggestion.ShiftId == shiftId;
+            var suggestion = Suggestions.FirstOrDefault(IsMatchingShift);
             if (suggestion == null || !suggestion.SuggestedStaffId.HasValue)
             {
                 return new ReassignmentResult(

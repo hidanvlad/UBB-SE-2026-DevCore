@@ -12,24 +12,24 @@ namespace DevCoreHospital.Tests.Services
     {
         private static readonly DateTime WeekStart = new DateTime(2025, 4, 14);
 
-        private readonly Mock<IFatigueAuditRepository> repoMock;
-        private readonly FatigueAuditService sut;
+        private readonly Mock<IFatigueAuditRepository> repositoryMock;
+        private readonly FatigueAuditService fatigueAuditService;
 
         public FatigueAuditServiceTests()
         {
-            repoMock = new Mock<IFatigueAuditRepository>();
-            sut = new FatigueAuditService(repoMock.Object);
+            repositoryMock = new Mock<IFatigueAuditRepository>();
+            fatigueAuditService = new FatigueAuditService(repositoryMock.Object);
         }
 
         private void SetupRepo(IReadOnlyList<RosterShift> shifts, IReadOnlyList<StaffProfile> profiles)
         {
-            repoMock.Setup(r => r.GetAllShifts()).Returns(shifts);
-            repoMock.Setup(r => r.GetStaffProfiles()).Returns(profiles);
+            repositoryMock.Setup(repository => repository.GetAllShifts()).Returns(shifts);
+            repositoryMock.Setup(repository => repository.GetStaffProfiles()).Returns(profiles);
         }
 
         private static RosterShift MakeShift(
             int id, int staffId, string staffName,
-            string role, string spec,
+            string role, string specialization,
             DateTime start, DateTime end,
             string? status = null)
             => new RosterShift
@@ -38,21 +38,21 @@ namespace DevCoreHospital.Tests.Services
                 StaffId = staffId,
                 StaffName = staffName,
                 Role = role,
-                Specialization = spec,
+                Specialization = specialization,
                 Start = start,
                 End = end,
                 Status = status,
             };
 
         private static StaffProfile MakeProfile(
-            int staffId, string fullName, string role, string spec,
+            int staffId, string fullName, string role, string specialization,
             bool isAvailable = true, bool isActive = true)
             => new StaffProfile
             {
                 StaffId = staffId,
                 FullName = fullName,
                 Role = role,
-                Specialization = spec,
+                Specialization = specialization,
                 IsAvailable = isAvailable,
                 IsActive = isActive,
             };
@@ -62,7 +62,7 @@ namespace DevCoreHospital.Tests.Services
         {
             SetupRepo(Array.Empty<RosterShift>(), Array.Empty<StaffProfile>());
 
-            var result = sut.RunAutoAudit(WeekStart);
+            var result = fatigueAuditService.RunAutoAudit(WeekStart);
 
             Assert.False(result.HasConflicts);
             Assert.True(result.CanPublish);
@@ -75,7 +75,7 @@ namespace DevCoreHospital.Tests.Services
         {
             SetupRepo(Array.Empty<RosterShift>(), Array.Empty<StaffProfile>());
 
-            var result = sut.RunAutoAudit(WeekStart);
+            var result = fatigueAuditService.RunAutoAudit(WeekStart);
 
             Assert.Equal(WeekStart, result.WeekStart);
         }
@@ -86,7 +86,7 @@ namespace DevCoreHospital.Tests.Services
             var wednesday = new DateTime(2025, 4, 16);
             SetupRepo(Array.Empty<RosterShift>(), Array.Empty<StaffProfile>());
 
-            var result = sut.RunAutoAudit(wednesday);
+            var result = fatigueAuditService.RunAutoAudit(wednesday);
 
             Assert.Equal(WeekStart, result.WeekStart);
         }
@@ -102,11 +102,11 @@ namespace DevCoreHospital.Tests.Services
             };
             SetupRepo(shifts, Array.Empty<StaffProfile>());
 
-            var result = sut.RunAutoAudit(WeekStart);
+            var result = fatigueAuditService.RunAutoAudit(WeekStart);
 
             Assert.True(result.HasConflicts);
             Assert.Equal(3, result.Violations.Count);
-            Assert.All(result.Violations, v => Assert.Equal("MAX_60H_PER_WEEK", v.Rule));
+            Assert.All(result.Violations, violation => Assert.Equal("MAX_60H_PER_WEEK", violation.Rule));
         }
 
         [Fact]
@@ -120,9 +120,9 @@ namespace DevCoreHospital.Tests.Services
             };
             SetupRepo(shifts, Array.Empty<StaffProfile>());
 
-            var result = sut.RunAutoAudit(WeekStart);
+            var result = fatigueAuditService.RunAutoAudit(WeekStart);
 
-            Assert.All(result.Violations, v => Assert.Contains("63", v.Message));
+            Assert.All(result.Violations, violation => Assert.Contains("63", violation.Message));
         }
 
         [Fact]
@@ -135,9 +135,9 @@ namespace DevCoreHospital.Tests.Services
             };
             SetupRepo(shifts, Array.Empty<StaffProfile>());
 
-            var result = sut.RunAutoAudit(WeekStart);
+            var result = fatigueAuditService.RunAutoAudit(WeekStart);
 
-            Assert.DoesNotContain(result.Violations, v => v.Rule == "MAX_60H_PER_WEEK");
+            Assert.DoesNotContain(result.Violations, violation => violation.Rule == "MAX_60H_PER_WEEK");
         }
 
         [Fact]
@@ -149,10 +149,10 @@ namespace DevCoreHospital.Tests.Services
                 WeekStart.AddHours(22), WeekStart.AddHours(32));
             SetupRepo(new List<RosterShift> { shift1, shift2 }, Array.Empty<StaffProfile>());
 
-            var result = sut.RunAutoAudit(WeekStart);
+            var result = fatigueAuditService.RunAutoAudit(WeekStart);
 
             Assert.True(result.HasConflicts);
-            Assert.Contains(result.Violations, v => v.Rule == "MIN_12H_REST" && v.ShiftId == 2);
+            Assert.Contains(result.Violations, violation => violation.Rule == "MIN_12H_REST" && violation.ShiftId == 2);
         }
 
         [Fact]
@@ -164,9 +164,9 @@ namespace DevCoreHospital.Tests.Services
                 WeekStart.AddHours(22), WeekStart.AddHours(32));
             SetupRepo(new List<RosterShift> { shift1, shift2 }, Array.Empty<StaffProfile>());
 
-            var result = sut.RunAutoAudit(WeekStart);
+            var result = fatigueAuditService.RunAutoAudit(WeekStart);
 
-            var restViolation = result.Violations.Single(v => v.Rule == "MIN_12H_REST");
+            var restViolation = result.Violations.Single(violation => violation.Rule == "MIN_12H_REST");
             Assert.Contains("2.0h", restViolation.Message);
         }
 
@@ -179,9 +179,9 @@ namespace DevCoreHospital.Tests.Services
                 WeekStart.AddHours(32), WeekStart.AddHours(40));
             SetupRepo(new List<RosterShift> { shift1, shift2 }, Array.Empty<StaffProfile>());
 
-            var result = sut.RunAutoAudit(WeekStart);
+            var result = fatigueAuditService.RunAutoAudit(WeekStart);
 
-            Assert.DoesNotContain(result.Violations, v => v.Rule == "MIN_12H_REST");
+            Assert.DoesNotContain(result.Violations, violation => violation.Rule == "MIN_12H_REST");
         }
 
         [Fact]
@@ -195,7 +195,7 @@ namespace DevCoreHospital.Tests.Services
             };
             SetupRepo(shifts, Array.Empty<StaffProfile>());
 
-            var result = sut.RunAutoAudit(WeekStart);
+            var result = fatigueAuditService.RunAutoAudit(WeekStart);
 
             Assert.False(result.HasConflicts);
             Assert.Empty(result.Violations);
@@ -208,7 +208,7 @@ namespace DevCoreHospital.Tests.Services
                 WeekStart.AddDays(-7), WeekStart.AddDays(-7).AddHours(50));
             SetupRepo(new List<RosterShift> { previousWeekShift }, Array.Empty<StaffProfile>());
 
-            var result = sut.RunAutoAudit(WeekStart);
+            var result = fatigueAuditService.RunAutoAudit(WeekStart);
 
             Assert.False(result.HasConflicts);
         }
@@ -228,9 +228,9 @@ namespace DevCoreHospital.Tests.Services
             };
             SetupRepo(shifts, profiles);
 
-            var result = sut.RunAutoAudit(WeekStart);
+            var result = fatigueAuditService.RunAutoAudit(WeekStart);
 
-            var suggestion = result.Suggestions.First(s => s.ShiftId == 1);
+            var suggestion = result.Suggestions.First(suggestion => suggestion.ShiftId == 1);
             Assert.Equal(2, suggestion.SuggestedStaffId);
             Assert.Equal("Bob", suggestion.SuggestedStaffName);
         }
@@ -246,9 +246,9 @@ namespace DevCoreHospital.Tests.Services
             };
             SetupRepo(shifts, Array.Empty<StaffProfile>());
 
-            var result = sut.RunAutoAudit(WeekStart);
+            var result = fatigueAuditService.RunAutoAudit(WeekStart);
 
-            Assert.All(result.Suggestions, s => Assert.Null(s.SuggestedStaffId));
+            Assert.All(result.Suggestions, suggestion => Assert.Null(suggestion.SuggestedStaffId));
         }
 
         [Fact]
@@ -266,9 +266,9 @@ namespace DevCoreHospital.Tests.Services
             };
             SetupRepo(shifts, profiles);
 
-            var result = sut.RunAutoAudit(WeekStart);
+            var result = fatigueAuditService.RunAutoAudit(WeekStart);
 
-            var suggestion = result.Suggestions.First(s => s.SuggestedStaffId.HasValue);
+            var suggestion = result.Suggestions.First(suggestion => suggestion.SuggestedStaffId.HasValue);
             Assert.Equal(2, suggestion.SuggestedStaffId);
             Assert.Contains("Fallback", suggestion.Reason, StringComparison.OrdinalIgnoreCase);
         }
@@ -288,9 +288,9 @@ namespace DevCoreHospital.Tests.Services
             };
             SetupRepo(shifts, profiles);
 
-            var result = sut.RunAutoAudit(WeekStart);
+            var result = fatigueAuditService.RunAutoAudit(WeekStart);
 
-            Assert.All(result.Suggestions, s => Assert.Null(s.SuggestedStaffId));
+            Assert.All(result.Suggestions, suggestion => Assert.Null(suggestion.SuggestedStaffId));
         }
 
         [Fact]
@@ -308,28 +308,28 @@ namespace DevCoreHospital.Tests.Services
             };
             SetupRepo(shifts, profiles);
 
-            var result = sut.RunAutoAudit(WeekStart);
+            var result = fatigueAuditService.RunAutoAudit(WeekStart);
 
-            Assert.All(result.Suggestions, s => Assert.Null(s.SuggestedStaffId));
+            Assert.All(result.Suggestions, suggestion => Assert.Null(suggestion.SuggestedStaffId));
         }
 
         [Fact]
         public void ReassignShift_DelegatesToRepository_AndReturnsItsResult()
         {
-            repoMock.Setup(r => r.ReassignShift(10, 20)).Returns(true);
+            repositoryMock.Setup(repository => repository.ReassignShift(10, 20)).Returns(true);
 
-            var result = sut.ReassignShift(10, 20);
+            var result = fatigueAuditService.ReassignShift(10, 20);
 
             Assert.True(result);
-            repoMock.Verify(r => r.ReassignShift(10, 20), Times.Once);
+            repositoryMock.Verify(repository => repository.ReassignShift(10, 20), Times.Once);
         }
 
         [Fact]
         public void ReassignShift_ReturnsFalse_WhenRepositoryReturnsFalse()
         {
-            repoMock.Setup(r => r.ReassignShift(It.IsAny<int>(), It.IsAny<int>())).Returns(false);
+            repositoryMock.Setup(repository => repository.ReassignShift(It.IsAny<int>(), It.IsAny<int>())).Returns(false);
 
-            var result = sut.ReassignShift(5, 7);
+            var result = fatigueAuditService.ReassignShift(5, 7);
 
             Assert.False(result);
         }
@@ -364,9 +364,9 @@ namespace DevCoreHospital.Tests.Services
             };
             SetupRepo(shifts, profiles);
 
-            var result = sut.RunAutoAudit(WeekStart);
+            var result = fatigueAuditService.RunAutoAudit(WeekStart);
 
-            Assert.All(result.Suggestions, s => Assert.Null(s.SuggestedStaffId));
+            Assert.All(result.Suggestions, suggestion => Assert.Null(suggestion.SuggestedStaffId));
         }
 
         [Fact]
@@ -378,10 +378,10 @@ namespace DevCoreHospital.Tests.Services
                 WeekStart.AddDays(7).AddHours(2), WeekStart.AddDays(7).AddHours(10));
             SetupRepo(new List<RosterShift> { shift1, shift2 }, Array.Empty<StaffProfile>());
 
-            var result = sut.RunAutoAudit(WeekStart);
+            var result = fatigueAuditService.RunAutoAudit(WeekStart);
 
             Assert.False(result.HasConflicts);
-            Assert.DoesNotContain(result.Violations, v => v.ShiftId == 2);
+            Assert.DoesNotContain(result.Violations, violation => violation.ShiftId == 2);
         }
 
         [Fact]
@@ -396,9 +396,9 @@ namespace DevCoreHospital.Tests.Services
             var profiles = new List<StaffProfile> { MakeProfile(2, "Bob", "Doctor", "Cardiology") };
             SetupRepo(new List<RosterShift> { aliceShift1, aliceShift2, bobShift }, profiles);
 
-            var result = sut.RunAutoAudit(WeekStart);
+            var result = fatigueAuditService.RunAutoAudit(WeekStart);
 
-            var suggestion = result.Suggestions.FirstOrDefault(s => s.ShiftId == 2);
+            var suggestion = result.Suggestions.FirstOrDefault(suggestion => suggestion.ShiftId == 2);
             Assert.NotNull(suggestion);
             Assert.Null(suggestion.SuggestedStaffId);
         }
@@ -415,9 +415,9 @@ namespace DevCoreHospital.Tests.Services
             var profiles = new List<StaffProfile> { MakeProfile(2, "Bob", "Doctor", "Cardiology") };
             SetupRepo(new List<RosterShift> { aliceShift1, aliceShift2, bobShift }, profiles);
 
-            var result = sut.RunAutoAudit(WeekStart);
+            var result = fatigueAuditService.RunAutoAudit(WeekStart);
 
-            var suggestion = result.Suggestions.FirstOrDefault(s => s.ShiftId == 2);
+            var suggestion = result.Suggestions.FirstOrDefault(suggestion => suggestion.ShiftId == 2);
             Assert.NotNull(suggestion);
             Assert.Null(suggestion.SuggestedStaffId);
         }
@@ -434,9 +434,9 @@ namespace DevCoreHospital.Tests.Services
             var profiles = new List<StaffProfile> { MakeProfile(2, "Bob", "Doctor", "Cardiology") };
             SetupRepo(new List<RosterShift> { aliceShift1, aliceShift2, bobShift }, profiles);
 
-            var result = sut.RunAutoAudit(WeekStart);
+            var result = fatigueAuditService.RunAutoAudit(WeekStart);
 
-            var suggestion = result.Suggestions.FirstOrDefault(s => s.ShiftId == 2);
+            var suggestion = result.Suggestions.FirstOrDefault(suggestion => suggestion.ShiftId == 2);
             Assert.NotNull(suggestion);
             Assert.Null(suggestion.SuggestedStaffId);
         }

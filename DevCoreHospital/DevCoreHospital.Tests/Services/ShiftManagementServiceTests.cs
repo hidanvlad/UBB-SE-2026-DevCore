@@ -28,7 +28,7 @@ namespace DevCoreHospital.Tests.Services
             var shiftId = 100;
             var doctor = BuildDoctor(10, "Cardiology");
             shiftRepository
-                .Setup(repo => repo.GetShifts())
+                .Setup(repository => repository.GetShifts())
                 .Returns(new List<Shift>
                 {
                     BuildShift(shiftId, doctor, new DateTime(2026, 4, 21, 8, 0, 0), new DateTime(2026, 4, 21, 16, 0, 0))
@@ -37,14 +37,17 @@ namespace DevCoreHospital.Tests.Services
             int updateCount = 0;
             int updatedShiftId = -1;
             ShiftStatus updatedStatus = ShiftStatus.CANCELLED;
+
+            void CaptureShiftStatusUpdate(int capturedShiftId, ShiftStatus capturedStatus)
+            {
+                updateCount++;
+                updatedShiftId = capturedShiftId;
+                updatedStatus = capturedStatus;
+            }
+
             shiftRepository
-                .Setup(repo => repo.UpdateShiftStatus(It.IsAny<int>(), It.IsAny<ShiftStatus>()))
-                .Callback<int, ShiftStatus>((id, status) =>
-                {
-                    updateCount++;
-                    updatedShiftId = id;
-                    updatedStatus = status;
-                });
+                .Setup(repository => repository.UpdateShiftStatus(It.IsAny<int>(), It.IsAny<ShiftStatus>()))
+                .Callback<int, ShiftStatus>(CaptureShiftStatusUpdate);
 
             service.SetShiftActive(shiftId);
 
@@ -59,7 +62,7 @@ namespace DevCoreHospital.Tests.Services
             var shiftId = 101;
             var doctor = BuildDoctor(11, "Neurology");
             shiftRepository
-                .Setup(repo => repo.GetShifts())
+                .Setup(repository => repository.GetShifts())
                 .Returns(new List<Shift>
                 {
                     BuildShift(shiftId, doctor, new DateTime(2026, 4, 21, 9, 0, 0), new DateTime(2026, 4, 21, 17, 0, 0))
@@ -69,15 +72,18 @@ namespace DevCoreHospital.Tests.Services
             int updatedStaffId = -1;
             bool updatedAvailability = false;
             DoctorStatus updatedDoctorStatus = DoctorStatus.IN_EXAMINATION;
+
+            void CaptureStaffAvailabilityUpdate(int capturedStaffId, bool capturedIsAvailable, DoctorStatus capturedStatus)
+            {
+                updateCount++;
+                updatedStaffId = capturedStaffId;
+                updatedAvailability = capturedIsAvailable;
+                updatedDoctorStatus = capturedStatus;
+            }
+
             staffRepository
-                .Setup(repo => repo.UpdateStaffAvailability(It.IsAny<int>(), It.IsAny<bool>(), It.IsAny<DoctorStatus>()))
-                .Callback<int, bool, DoctorStatus>((staffId, isAvailable, status) =>
-                {
-                    updateCount++;
-                    updatedStaffId = staffId;
-                    updatedAvailability = isAvailable;
-                    updatedDoctorStatus = status;
-                });
+                .Setup(repository => repository.UpdateStaffAvailability(It.IsAny<int>(), It.IsAny<bool>(), It.IsAny<DoctorStatus>()))
+                .Callback<int, bool, DoctorStatus>(CaptureStaffAvailabilityUpdate);
 
             service.SetShiftActive(shiftId);
 
@@ -90,11 +96,11 @@ namespace DevCoreHospital.Tests.Services
         [Fact]
         public void SetShiftActive_WhenShiftDoesNotExist_DoesNotUpdateShiftStatus()
         {
-            shiftRepository.Setup(repo => repo.GetShifts()).Returns(new List<Shift>());
+            shiftRepository.Setup(repository => repository.GetShifts()).Returns(new List<Shift>());
 
             int updateCount = 0;
             shiftRepository
-                .Setup(repo => repo.UpdateShiftStatus(It.IsAny<int>(), It.IsAny<ShiftStatus>()))
+                .Setup(repository => repository.UpdateShiftStatus(It.IsAny<int>(), It.IsAny<ShiftStatus>()))
                 .Callback(() => updateCount++);
 
             service.SetShiftActive(999);
@@ -105,11 +111,11 @@ namespace DevCoreHospital.Tests.Services
         [Fact]
         public void SetShiftActive_WhenShiftDoesNotExist_DoesNotUpdateStaffAvailability()
         {
-            shiftRepository.Setup(repo => repo.GetShifts()).Returns(new List<Shift>());
+            shiftRepository.Setup(repository => repository.GetShifts()).Returns(new List<Shift>());
 
             int updateCount = 0;
             staffRepository
-                .Setup(repo => repo.UpdateStaffAvailability(It.IsAny<int>(), It.IsAny<bool>(), It.IsAny<DoctorStatus>()))
+                .Setup(repository => repository.UpdateStaffAvailability(It.IsAny<int>(), It.IsAny<bool>(), It.IsAny<DoctorStatus>()))
                 .Callback(() => updateCount++);
 
             service.SetShiftActive(999);
@@ -123,7 +129,7 @@ namespace DevCoreHospital.Tests.Services
             var shiftId = 200;
             var doctor = BuildDoctor(20, "Oncology");
             shiftRepository
-                .Setup(repo => repo.GetShifts())
+                .Setup(repository => repository.GetShifts())
                 .Returns(new List<Shift>
                 {
                     BuildShift(shiftId, doctor, new DateTime(2026, 4, 21, 8, 0, 0), new DateTime(2026, 4, 21, 16, 0, 0))
@@ -133,15 +139,18 @@ namespace DevCoreHospital.Tests.Services
             int updatedStaffId = -1;
             bool updatedAvailability = true;
             DoctorStatus updatedDoctorStatus = DoctorStatus.AVAILABLE;
+
+            void CaptureStaffAvailabilityUpdate(int capturedStaffId, bool capturedIsAvailable, DoctorStatus capturedStatus)
+            {
+                updateCount++;
+                updatedStaffId = capturedStaffId;
+                updatedAvailability = capturedIsAvailable;
+                updatedDoctorStatus = capturedStatus;
+            }
+
             staffRepository
-                .Setup(repo => repo.UpdateStaffAvailability(It.IsAny<int>(), It.IsAny<bool>(), It.IsAny<DoctorStatus>()))
-                .Callback<int, bool, DoctorStatus>((staffId, isAvailable, status) =>
-                {
-                    updateCount++;
-                    updatedStaffId = staffId;
-                    updatedAvailability = isAvailable;
-                    updatedDoctorStatus = status;
-                });
+                .Setup(repository => repository.UpdateStaffAvailability(It.IsAny<int>(), It.IsAny<bool>(), It.IsAny<DoctorStatus>()))
+                .Callback<int, bool, DoctorStatus>(CaptureStaffAvailabilityUpdate);
 
             service.CancelShift(shiftId);
 
@@ -157,7 +166,7 @@ namespace DevCoreHospital.Tests.Services
             var shiftId = 201;
             var doctor = BuildDoctor(21, "Cardiology");
             shiftRepository
-                .Setup(repo => repo.GetShifts())
+                .Setup(repository => repository.GetShifts())
                 .Returns(new List<Shift>
                 {
                     BuildShift(shiftId, doctor, new DateTime(2026, 4, 21, 10, 0, 0), new DateTime(2026, 4, 21, 18, 0, 0))
@@ -166,14 +175,17 @@ namespace DevCoreHospital.Tests.Services
             int updateCount = 0;
             int updatedShiftId = -1;
             ShiftStatus updatedStatus = ShiftStatus.SCHEDULED;
+
+            void CaptureShiftStatusUpdate(int capturedShiftId, ShiftStatus capturedStatus)
+            {
+                updateCount++;
+                updatedShiftId = capturedShiftId;
+                updatedStatus = capturedStatus;
+            }
+
             shiftRepository
-                .Setup(repo => repo.UpdateShiftStatus(It.IsAny<int>(), It.IsAny<ShiftStatus>()))
-                .Callback<int, ShiftStatus>((id, status) =>
-                {
-                    updateCount++;
-                    updatedShiftId = id;
-                    updatedStatus = status;
-                });
+                .Setup(repository => repository.UpdateShiftStatus(It.IsAny<int>(), It.IsAny<ShiftStatus>()))
+                .Callback<int, ShiftStatus>(CaptureShiftStatusUpdate);
 
             service.CancelShift(shiftId);
 
@@ -185,11 +197,11 @@ namespace DevCoreHospital.Tests.Services
         [Fact]
         public void CancelShift_WhenShiftDoesNotExist_DoesNotUpdateStaffAvailability()
         {
-            shiftRepository.Setup(repo => repo.GetShifts()).Returns(new List<Shift>());
+            shiftRepository.Setup(repository => repository.GetShifts()).Returns(new List<Shift>());
 
             int updateCount = 0;
             staffRepository
-                .Setup(repo => repo.UpdateStaffAvailability(It.IsAny<int>(), It.IsAny<bool>(), It.IsAny<DoctorStatus>()))
+                .Setup(repository => repository.UpdateStaffAvailability(It.IsAny<int>(), It.IsAny<bool>(), It.IsAny<DoctorStatus>()))
                 .Callback(() => updateCount++);
 
             service.CancelShift(999);
@@ -200,11 +212,11 @@ namespace DevCoreHospital.Tests.Services
         [Fact]
         public void CancelShift_WhenShiftDoesNotExist_DoesNotUpdateShiftStatus()
         {
-            shiftRepository.Setup(repo => repo.GetShifts()).Returns(new List<Shift>());
+            shiftRepository.Setup(repository => repository.GetShifts()).Returns(new List<Shift>());
 
             int updateCount = 0;
             shiftRepository
-                .Setup(repo => repo.UpdateShiftStatus(It.IsAny<int>(), It.IsAny<ShiftStatus>()))
+                .Setup(repository => repository.UpdateShiftStatus(It.IsAny<int>(), It.IsAny<ShiftStatus>()))
                 .Callback(() => updateCount++);
 
             service.CancelShift(999);
@@ -226,7 +238,7 @@ namespace DevCoreHospital.Tests.Services
             var day = new DateTime(2026, 4, 21);
             var existingDoctor = BuildDoctor(25, "Cardiology");
             var existingShift = BuildShift(1, existingDoctor, day.AddHours(10), day.AddHours(12));
-            shiftRepository.Setup(repo => repo.GetShifts()).Returns(new List<Shift> { existingShift });
+            shiftRepository.Setup(repository => repository.GetShifts()).Returns(new List<Shift> { existingShift });
 
             var result = service.ValidateNoOverlap(existingDoctor.StaffID, day.AddHours(candidateStartHour), day.AddHours(candidateEndHour));
 
@@ -239,7 +251,7 @@ namespace DevCoreHospital.Tests.Services
             var day = new DateTime(2026, 4, 21);
             var otherDoctor = BuildDoctor(200, "Neurology");
             var shiftForOtherStaff = BuildShift(10, otherDoctor, day.AddHours(10), day.AddHours(12));
-            shiftRepository.Setup(repo => repo.GetShifts()).Returns(new List<Shift> { shiftForOtherStaff });
+            shiftRepository.Setup(repository => repository.GetShifts()).Returns(new List<Shift> { shiftForOtherStaff });
 
             var result = service.ValidateNoOverlap(201, day.AddHours(10), day.AddHours(12));
 
@@ -255,7 +267,7 @@ namespace DevCoreHospital.Tests.Services
             var matchingPharmacist = BuildPharmacyst(1, "Sterile Compounding");
             var nonMatchingPharmacist = BuildPharmacyst(2, "Oncology");
             var doctor = BuildDoctor(3, "Cardiology");
-            staffRepository.Setup(repo => repo.LoadAllStaff()).Returns(new List<IStaff>
+            staffRepository.Setup(repository => repository.LoadAllStaff()).Returns(new List<IStaff>
             {
                 matchingPharmacist,
                 nonMatchingPharmacist,
@@ -273,7 +285,7 @@ namespace DevCoreHospital.Tests.Services
             var matchingDoctor = BuildDoctor(10, "Cardiology");
             var nonMatchingDoctor = BuildDoctor(11, "Neurology");
             var pharmacist = BuildPharmacyst(12, "Sterile Compounding");
-            staffRepository.Setup(repo => repo.LoadAllStaff()).Returns(new List<IStaff>
+            staffRepository.Setup(repository => repository.LoadAllStaff()).Returns(new List<IStaff>
             {
                 matchingDoctor,
                 nonMatchingDoctor,
@@ -299,7 +311,7 @@ namespace DevCoreHospital.Tests.Services
             nullCertification.Certification = null!;
             var doctor = BuildDoctor(35, "Cardiology");
 
-            staffRepository.Setup(repo => repo.LoadAllStaff()).Returns(new List<IStaff>
+            staffRepository.Setup(repository => repository.LoadAllStaff()).Returns(new List<IStaff>
             {
                 compounding,
                 toxicology,
@@ -325,7 +337,7 @@ namespace DevCoreHospital.Tests.Services
             nullSpecialization.Specialization = null!;
             var pharmacist = BuildPharmacyst(45, "Compounding");
 
-            staffRepository.Setup(repo => repo.LoadAllStaff()).Returns(new List<IStaff>
+            staffRepository.Setup(repository => repository.LoadAllStaff()).Returns(new List<IStaff>
             {
                 cardiology,
                 neurology,
@@ -345,7 +357,7 @@ namespace DevCoreHospital.Tests.Services
         {
             var doctor = BuildDoctor(50, string.Empty);
             var pharmacist = BuildPharmacyst(51, string.Empty);
-            staffRepository.Setup(repo => repo.LoadAllStaff()).Returns(new List<IStaff>
+            staffRepository.Setup(repository => repository.LoadAllStaff()).Returns(new List<IStaff>
             {
                 doctor,
                 pharmacist,
@@ -390,7 +402,7 @@ namespace DevCoreHospital.Tests.Services
             var targetShift = BuildShift(1000, currentDoctor, day.AddHours(10), day.AddHours(12));
             var conflictingShift = BuildShift(2000, candidateOverlap, day.AddHours(11), day.AddHours(13));
 
-            staffRepository.Setup(repo => repo.LoadAllStaff()).Returns(new List<IStaff>
+            staffRepository.Setup(repository => repository.LoadAllStaff()).Returns(new List<IStaff>
             {
                 currentDoctor,
                 candidateNoOverlap,
@@ -399,7 +411,7 @@ namespace DevCoreHospital.Tests.Services
                 anotherNoOverlapDoctor,
             });
 
-            shiftRepository.Setup(repo => repo.GetShifts()).Returns(new List<Shift>
+            shiftRepository.Setup(repository => repository.GetShifts()).Returns(new List<Shift>
             {
                 targetShift,
                 conflictingShift,
@@ -424,20 +436,22 @@ namespace DevCoreHospital.Tests.Services
             var shift = BuildShift(shiftId, doctor, new DateTime(2026, 4, 21, 8, 0, 0), new DateTime(2026, 4, 21, 16, 0, 0));
             var callOrder = new List<string>();
 
-            shiftRepository
-                .Setup(repo => repo.GetShifts())
-                .Returns(() =>
-                {
-                    callOrder.Add("GetShifts");
-                    return new List<Shift> { shift };
-                });
+            List<Shift> GetShiftsAndRecordCall()
+            {
+                callOrder.Add("GetShifts");
+                return new List<Shift> { shift };
+            }
 
             shiftRepository
-                .Setup(repo => repo.UpdateShiftStatus(It.IsAny<int>(), It.IsAny<ShiftStatus>()))
+                .Setup(repository => repository.GetShifts())
+                .Returns(GetShiftsAndRecordCall);
+
+            shiftRepository
+                .Setup(repository => repository.UpdateShiftStatus(It.IsAny<int>(), It.IsAny<ShiftStatus>()))
                 .Callback(() => callOrder.Add("UpdateShiftStatus"));
 
             staffRepository
-                .Setup(repo => repo.UpdateStaffAvailability(It.IsAny<int>(), It.IsAny<bool>(), It.IsAny<DoctorStatus>()))
+                .Setup(repository => repository.UpdateStaffAvailability(It.IsAny<int>(), It.IsAny<bool>(), It.IsAny<DoctorStatus>()))
                 .Callback(() => callOrder.Add("UpdateStaffAvailability"));
 
             service.SetShiftActive(shiftId);
@@ -460,20 +474,22 @@ namespace DevCoreHospital.Tests.Services
             var shift = BuildShift(shiftId, doctor, new DateTime(2026, 4, 21, 8, 0, 0), new DateTime(2026, 4, 21, 16, 0, 0));
             var callOrder = new List<string>();
 
+            List<Shift> GetShiftsAndRecordCall()
+            {
+                callOrder.Add("GetShifts");
+                return new List<Shift> { shift };
+            }
+
             shiftRepository
-                .Setup(repo => repo.GetShifts())
-                .Returns(() =>
-                {
-                    callOrder.Add("GetShifts");
-                    return new List<Shift> { shift };
-                });
+                .Setup(repository => repository.GetShifts())
+                .Returns(GetShiftsAndRecordCall);
 
             staffRepository
-                .Setup(repo => repo.UpdateStaffAvailability(It.IsAny<int>(), It.IsAny<bool>(), It.IsAny<DoctorStatus>()))
+                .Setup(repository => repository.UpdateStaffAvailability(It.IsAny<int>(), It.IsAny<bool>(), It.IsAny<DoctorStatus>()))
                 .Callback(() => callOrder.Add("UpdateStaffAvailability"));
 
             shiftRepository
-                .Setup(repo => repo.UpdateShiftStatus(It.IsAny<int>(), It.IsAny<ShiftStatus>()))
+                .Setup(repository => repository.UpdateShiftStatus(It.IsAny<int>(), It.IsAny<ShiftStatus>()))
                 .Callback(() => callOrder.Add("UpdateShiftStatus"));
 
             service.CancelShift(shiftId);
@@ -537,7 +553,7 @@ namespace DevCoreHospital.Tests.Services
 
             service.AddShift(shift);
 
-            shiftRepository.Verify(r => r.AddShift(shift), Times.Once);
+            shiftRepository.Verify(repository => repository.AddShift(shift), Times.Once);
         }
 
         [Fact]
@@ -547,7 +563,7 @@ namespace DevCoreHospital.Tests.Services
             var doctor = BuildDoctor(67, "Cardiology");
             var matchingShift = BuildShift(700, doctor, day.AddHours(8), day.AddHours(16));
             var differentDayShift = BuildShift(701, doctor, day.AddDays(1).AddHours(8), day.AddDays(1).AddHours(16));
-            shiftRepository.Setup(r => r.GetShifts()).Returns(new List<Shift> { matchingShift, differentDayShift });
+            shiftRepository.Setup(repository => repository.GetShifts()).Returns(new List<Shift> { matchingShift, differentDayShift });
 
             var result = service.GetDailyShifts(day);
 
@@ -561,7 +577,7 @@ namespace DevCoreHospital.Tests.Services
             var day = new DateTime(2026, 4, 21);
             var doctor = BuildDoctor(68, "Cardiology");
             var otherDayShift = BuildShift(702, doctor, day.AddDays(1).AddHours(8), day.AddDays(1).AddHours(16));
-            shiftRepository.Setup(r => r.GetShifts()).Returns(new List<Shift> { otherDayShift });
+            shiftRepository.Setup(repository => repository.GetShifts()).Returns(new List<Shift> { otherDayShift });
 
             var result = service.GetDailyShifts(day);
 
@@ -582,7 +598,7 @@ namespace DevCoreHospital.Tests.Services
             var activeShift = BuildShift(800, doctor, day.AddHours(8), day.AddHours(16), ShiftStatus.ACTIVE);
             var scheduledShift = BuildShift(801, doctor, day.AddHours(16), day.AddHours(20), ShiftStatus.SCHEDULED);
             var cancelledShift = BuildShift(802, doctor, day.AddDays(1).AddHours(8), day.AddDays(1).AddHours(16), ShiftStatus.CANCELLED);
-            shiftRepository.Setup(r => r.GetShifts()).Returns(new List<Shift> { activeShift, scheduledShift, cancelledShift });
+            shiftRepository.Setup(repository => repository.GetShifts()).Returns(new List<Shift> { activeShift, scheduledShift, cancelledShift });
 
             var result = service.GetActiveShifts();
 
@@ -596,7 +612,7 @@ namespace DevCoreHospital.Tests.Services
             var day = new DateTime(2026, 4, 21);
             var doctor = BuildDoctor(71, "Cardiology");
             var scheduledShift = BuildShift(803, doctor, day.AddHours(8), day.AddHours(16), ShiftStatus.SCHEDULED);
-            shiftRepository.Setup(r => r.GetShifts()).Returns(new List<Shift> { scheduledShift });
+            shiftRepository.Setup(repository => repository.GetShifts()).Returns(new List<Shift> { scheduledShift });
 
             var result = service.GetActiveShifts();
 
@@ -612,7 +628,7 @@ namespace DevCoreHospital.Tests.Services
             var doctor = BuildDoctor(72, "Cardiology");
             var shiftOne = BuildShift(810, doctor, weekMonday.AddHours(8), weekMonday.AddHours(16));
             var shiftTwo = BuildShift(811, doctor, weekMonday.AddDays(1).AddHours(8), weekMonday.AddDays(1).AddHours(12));
-            shiftRepository.Setup(r => r.GetShifts()).Returns(new List<Shift> { shiftOne, shiftTwo });
+            shiftRepository.Setup(repository => repository.GetShifts()).Returns(new List<Shift> { shiftOne, shiftTwo });
 
             var result = service.GetWeeklyHours(doctor.StaffID);
 
@@ -624,7 +640,7 @@ namespace DevCoreHospital.Tests.Services
         {
             var doctor = BuildDoctor(73, "Cardiology");
             var pastShift = BuildShift(812, doctor, DateTime.Now.AddDays(-14).AddHours(8), DateTime.Now.AddDays(-14).AddHours(16));
-            shiftRepository.Setup(r => r.GetShifts()).Returns(new List<Shift> { pastShift });
+            shiftRepository.Setup(repository => repository.GetShifts()).Returns(new List<Shift> { pastShift });
 
             var result = service.GetWeeklyHours(doctor.StaffID);
 
@@ -637,7 +653,7 @@ namespace DevCoreHospital.Tests.Services
             var day = DateTime.Now.AddDays(1);
             var doctor = BuildDoctor(74, "Cardiology");
             var shift = BuildShift(820, doctor, day.AddHours(8), day.AddHours(16), ShiftStatus.SCHEDULED);
-            shiftRepository.Setup(r => r.GetShifts()).Returns(new List<Shift> { shift });
+            shiftRepository.Setup(repository => repository.GetShifts()).Returns(new List<Shift> { shift });
 
             var result = service.IsStaffWorkingDuring(doctor.StaffID, day.AddHours(10), day.AddHours(12));
 
@@ -650,7 +666,7 @@ namespace DevCoreHospital.Tests.Services
             var day = DateTime.Now.AddDays(1);
             var doctor = BuildDoctor(75, "Cardiology");
             var shift = BuildShift(821, doctor, day.AddHours(8), day.AddHours(16), ShiftStatus.SCHEDULED);
-            shiftRepository.Setup(r => r.GetShifts()).Returns(new List<Shift> { shift });
+            shiftRepository.Setup(repository => repository.GetShifts()).Returns(new List<Shift> { shift });
 
             var result = service.IsStaffWorkingDuring(doctor.StaffID, day.AddHours(17), day.AddHours(19));
 
@@ -663,7 +679,7 @@ namespace DevCoreHospital.Tests.Services
             var day = DateTime.Now.AddDays(1);
             var doctor = BuildDoctor(76, "Cardiology");
             var shift = BuildShift(822, doctor, day.AddHours(8), day.AddHours(16), ShiftStatus.COMPLETED);
-            shiftRepository.Setup(r => r.GetShifts()).Returns(new List<Shift> { shift });
+            shiftRepository.Setup(repository => repository.GetShifts()).Returns(new List<Shift> { shift });
 
             var result = service.IsStaffWorkingDuring(doctor.StaffID, day.AddHours(10), day.AddHours(12));
 
@@ -680,9 +696,12 @@ namespace DevCoreHospital.Tests.Services
             var doctor = BuildDoctor(90, "Cardiology");
             var start = new DateTime(2030, 7, 1, 8, 0, 0);
             var end = new DateTime(2030, 7, 1, 16, 0, 0);
-            shiftRepository.Setup(r => r.GetShifts()).Returns(new List<Shift>());
+            shiftRepository.Setup(repository => repository.GetShifts()).Returns(new List<Shift>());
             Shift? added = null;
-            shiftRepository.Setup(r => r.AddShift(It.IsAny<Shift>())).Callback<Shift>(s => added = s);
+
+            void CaptureAddedShift(Shift shift) { added = shift; }
+
+            shiftRepository.Setup(repository => repository.AddShift(It.IsAny<Shift>())).Callback<Shift>(CaptureAddedShift);
 
             bool result = service.TryAddShift(doctor, start, end, "ER");
 
@@ -698,9 +717,9 @@ namespace DevCoreHospital.Tests.Services
         {
             var doctor = BuildDoctor(91, "Cardiology");
             var existing = BuildShift(900, doctor, new DateTime(2030, 7, 2, 8, 0, 0), new DateTime(2030, 7, 2, 16, 0, 0));
-            shiftRepository.Setup(r => r.GetShifts()).Returns(new List<Shift> { existing });
+            shiftRepository.Setup(repository => repository.GetShifts()).Returns(new List<Shift> { existing });
             int addCalls = 0;
-            shiftRepository.Setup(r => r.AddShift(It.IsAny<Shift>())).Callback(() => addCalls++);
+            shiftRepository.Setup(repository => repository.AddShift(It.IsAny<Shift>())).Callback(() => addCalls++);
 
             bool result = service.TryAddShift(doctor, new DateTime(2030, 7, 2, 10, 0, 0), new DateTime(2030, 7, 2, 14, 0, 0), "ER");
 

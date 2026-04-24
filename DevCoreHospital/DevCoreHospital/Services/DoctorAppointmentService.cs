@@ -72,19 +72,23 @@ namespace DevCoreHospital.Services
         {
             const int maxAppointments = 500;
             var rawAppointments = await dataSource.GetUpcomingAppointmentsAsync(doctorId, from, 0, maxAppointments);
-            return rawAppointments
-                .Where(appointment => appointment.DoctorId == doctorId)
-                .Where(appointment =>
-                {
-                    var start = appointment.Date.Date + appointment.StartTime;
-                    var end = appointment.Date.Date + appointment.EndTime;
-                    if (end <= start)
-                    {
-                        return false;
-                    }
 
-                    return start < to && end > from;
-                })
+            bool IsForDoctor(Appointment appointment) => appointment.DoctorId == doctorId;
+            bool IsInRange(Appointment appointment)
+            {
+                var start = appointment.Date.Date + appointment.StartTime;
+                var end = appointment.Date.Date + appointment.EndTime;
+                if (end <= start)
+                {
+                    return false;
+                }
+
+                return start < to && end > from;
+            }
+
+            return rawAppointments
+                .Where(IsForDoctor)
+                .Where(IsInRange)
                 .OrderBy(appointment => appointment.Date)
                 .ThenBy(appointment => appointment.StartTime)
                 .ToList();
@@ -108,10 +112,12 @@ namespace DevCoreHospital.Services
                 return Task.FromResult<IReadOnlyList<Shift>>(new List<Shift>());
             }
 
+            bool IsNotCancelled(Shift shift) => shift.Status != ShiftStatus.CANCELLED;
+
             return Task.Run<IReadOnlyList<Shift>>(() =>
                 shiftRepository
                     .GetShiftsForStaffInRange(doctorId, from, to)
-                    .Where(shift => shift.Status != ShiftStatus.CANCELLED)
+                    .Where(IsNotCancelled)
                     .OrderBy(shift => shift.StartTime)
                     .ToList());
         }

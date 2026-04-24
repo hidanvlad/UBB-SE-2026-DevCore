@@ -18,11 +18,11 @@ public class IncomingSwapRequestsViewModelTests
     {
         var service = new Mock<IShiftSwapService>();
         service.Setup(shiftSwapService => shiftSwapService.GetIncomingSwapRequests(1)).Returns(new List<ShiftSwapRequest>());
-        var vm = new IncomingSwapRequestsViewModel(service.Object, new[] { new DoctorOptionViewModel { StaffId = 1, DisplayName = "D" } });
+        var viewModel = new IncomingSwapRequestsViewModel(service.Object, new[] { new DoctorOptionViewModel { StaffId = 1, DisplayName = "D" } });
 
-        vm.SelectedDoctor = null;
+        viewModel.SelectedDoctor = null;
 
-        Assert.Equal("Select doctor first.", vm.StatusMessage);
+        Assert.Equal("Select doctor first.", viewModel.StatusMessage);
     }
 
     [Fact]
@@ -30,9 +30,9 @@ public class IncomingSwapRequestsViewModelTests
     {
         var service = new Mock<IShiftSwapService>();
         service.Setup(shiftSwapService => shiftSwapService.GetIncomingSwapRequests(1)).Returns(new List<ShiftSwapRequest>());
-        var vm = new IncomingSwapRequestsViewModel(service.Object, new[] { new DoctorOptionViewModel { StaffId = 1, DisplayName = "D" } });
+        var viewModel = new IncomingSwapRequestsViewModel(service.Object, new[] { new DoctorOptionViewModel { StaffId = 1, DisplayName = "D" } });
 
-        Assert.Equal("No pending requests.", vm.StatusMessage);
+        Assert.Equal("No pending requests.", viewModel.StatusMessage);
     }
 
     [Fact]
@@ -44,9 +44,9 @@ public class IncomingSwapRequestsViewModelTests
             new() { SwapId = 1, ShiftId = 2, RequesterId = 3, ColleagueId = 1, RequestedAt = DateTime.UtcNow, Status = ShiftSwapRequestStatus.PENDING }
         };
         service.Setup(shiftSwapService => shiftSwapService.GetIncomingSwapRequests(1)).Returns(list);
-        var vm = new IncomingSwapRequestsViewModel(service.Object, new[] { new DoctorOptionViewModel { StaffId = 1, DisplayName = "D" } });
+        var viewModel = new IncomingSwapRequestsViewModel(service.Object, new[] { new DoctorOptionViewModel { StaffId = 1, DisplayName = "D" } });
 
-        Assert.Equal("1 pending request(s).", vm.StatusMessage);
+        Assert.Equal("1 pending request(s).", viewModel.StatusMessage);
     }
 
     [Fact]
@@ -54,13 +54,13 @@ public class IncomingSwapRequestsViewModelTests
     {
         var service = new Mock<IShiftSwapService>(MockBehavior.Strict);
         service.Setup(shiftSwapService => shiftSwapService.GetIncomingSwapRequests(1)).Returns(new List<ShiftSwapRequest>());
-        var vm = new IncomingSwapRequestsViewModel(service.Object, new[] { new DoctorOptionViewModel { StaffId = 1, DisplayName = "D" } });
-        vm.Requests.Add(new IncomingSwapRequestItemViewModel { SwapId = 9, ShiftId = 1, RequesterId = 1 });
-        vm.SelectedRequest = null;
+        var viewModel = new IncomingSwapRequestsViewModel(service.Object, new[] { new DoctorOptionViewModel { StaffId = 1, DisplayName = "D" } });
+        viewModel.Requests.Add(new IncomingSwapRequestItemViewModel { SwapId = 9, ShiftId = 1, RequesterId = 1 });
+        viewModel.SelectedRequest = null;
 
-        var ex = Record.Exception(() => ((RelayCommand)vm.AcceptCommand).Execute(null!));
+        var exception = Record.Exception(() => ((RelayCommand)viewModel.AcceptCommand).Execute(null!));
 
-        Assert.Null(ex);
+        Assert.Null(exception);
     }
 
     [Fact]
@@ -72,9 +72,9 @@ public class IncomingSwapRequestsViewModelTests
         viewModel.Requests.Add(new IncomingSwapRequestItemViewModel { SwapId = 9, ShiftId = 1, RequesterId = 1 });
         viewModel.SelectedRequest = null;
 
-        var ex = Record.Exception(() => ((RelayCommand)viewModel.RejectCommand).Execute(null!));
+        var exception = Record.Exception(() => ((RelayCommand)viewModel.RejectCommand).Execute(null!));
 
-        Assert.Null(ex);
+        Assert.Null(exception);
     }
 
     [Fact]
@@ -187,9 +187,9 @@ public class IncomingSwapRequestsViewModelTests
     public void Constructor_WhenDoctorListIsEmpty_SelectedDoctorIsNull()
     {
         var service = new Mock<IShiftSwapService>();
-        var vm = new IncomingSwapRequestsViewModel(service.Object, System.Array.Empty<DoctorOptionViewModel>());
+        var viewModel = new IncomingSwapRequestsViewModel(service.Object, System.Array.Empty<DoctorOptionViewModel>());
 
-        Assert.Null(vm.SelectedDoctor);
+        Assert.Null(viewModel.SelectedDoctor);
     }
 
     [Fact]

@@ -123,7 +123,8 @@ namespace DevCoreHospital.ViewModels.Doctor
             try
             {
                 var allDoctors = await doctorService.GetAllDoctorsAsync();
-                foreach (var doctor in allDoctors.OrderBy(doctor => doctor.DoctorName))
+                string GetDoctorName((int DoctorId, string DoctorName) doctor) => doctor.DoctorName;
+                foreach (var doctor in allDoctors.OrderBy(GetDoctorName))
                 {
                     Doctors.Add(new DoctorScheduleViewModel.DoctorOption
                     {
@@ -139,9 +140,9 @@ namespace DevCoreHospital.ViewModels.Doctor
                     SelectedDoctor = Doctors.First();
                 }
             }
-            catch (Exception ex)
+            catch (Exception exception)
             {
-                ErrorMessage = $"Failed to load doctors: {ex.Message}";
+                ErrorMessage = $"Failed to load doctors: {exception.Message}";
             }
         }
 
@@ -180,9 +181,9 @@ namespace DevCoreHospital.ViewModels.Doctor
                 Title = string.Empty;
                 Description = string.Empty;
             }
-            catch (Exception ex)
+            catch (Exception exception)
             {
-                ErrorMessage = ex.Message;
+                ErrorMessage = exception.Message;
             }
         }
 
@@ -210,9 +211,9 @@ namespace DevCoreHospital.ViewModels.Doctor
                 SuccessMessage = "Joined hangout successfully!";
                 LoadHangouts();
             }
-            catch (Exception ex)
+            catch (Exception exception)
             {
-                ErrorMessage = ex.Message;
+                ErrorMessage = exception.Message;
             }
         }
     }

@@ -40,7 +40,8 @@ public sealed class FakeShiftSwapService : IShiftSwapService
     {
         if (FutureShiftsByStaffId.TryGetValue(staffId, out var shifts))
         {
-            return shifts.Where(s => s.StartTime > DateTime.Now).ToList();
+            bool IsFutureShift(Shift shift) => shift.StartTime > DateTime.Now;
+            return shifts.Where(IsFutureShift).ToList();
         }
 
         return new List<Shift>();

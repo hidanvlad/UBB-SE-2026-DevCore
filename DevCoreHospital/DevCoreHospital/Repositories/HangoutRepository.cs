@@ -176,9 +176,9 @@ namespace DevCoreHospital.Repositories
                     statuses.Add(reader.IsDBNull(0) ? string.Empty : reader.GetString(0));
                 }
             }
-            catch (Exception ex)
+            catch (Exception exception)
             {
-                System.Diagnostics.Debug.WriteLine($"Error GetAppointmentStatuses: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Error GetAppointmentStatuses: {exception.Message}");
             }
             return statuses;
         }

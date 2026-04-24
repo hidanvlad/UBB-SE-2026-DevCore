@@ -28,7 +28,8 @@ namespace DevCoreHospital.Tests.ViewModels
 
             var viewModel = new AdminShiftViewModel(serviceMock.Object);
 
-            Assert.Equal(new[] { earlyShift.Id, lateShift.Id }, viewModel.Shifts.Select(shift => shift.Id).ToArray());
+            int GetShiftId(Shift shift) => shift.Id;
+            Assert.Equal(new[] { earlyShift.Id, lateShift.Id }, viewModel.Shifts.Select(GetShiftId).ToArray());
         }
 
         [Fact]
@@ -66,7 +67,8 @@ namespace DevCoreHospital.Tests.ViewModels
             viewModel.SelectedDate = selectedDate;
             viewModel.IsWeeklyView = true;
 
-            Assert.Equal(new[] { shift1.Id, shift2.Id }, viewModel.Shifts.Select(shift => shift.Id).ToArray());
+            int GetShiftId(Shift shift) => shift.Id;
+            Assert.Equal(new[] { shift1.Id, shift2.Id }, viewModel.Shifts.Select(GetShiftId).ToArray());
         }
 
         [Fact]
@@ -109,7 +111,8 @@ namespace DevCoreHospital.Tests.ViewModels
             viewModel.IsWeeklyView = true;
             viewModel.SelectedDepartment = "ER";
 
-            Assert.Equal(new[] { erShift.Id }, viewModel.Shifts.Select(shift => shift.Id).ToArray());
+            int GetShiftId(Shift shift) => shift.Id;
+            Assert.Equal(new[] { erShift.Id }, viewModel.Shifts.Select(GetShiftId).ToArray());
         }
 
         [Fact]
@@ -150,7 +153,8 @@ namespace DevCoreHospital.Tests.ViewModels
 
             viewModel.FilterStaffForShift("ER", "Cardio");
 
-            Assert.Equal(new[] { doctor1.StaffID, doctor2.StaffID }, viewModel.AvailableStaff.Select(staff => staff.StaffID).ToArray());
+            int GetStaffId(IStaff staff) => staff.StaffID;
+            Assert.Equal(new[] { doctor1.StaffID, doctor2.StaffID }, viewModel.AvailableStaff.Select(GetStaffId).ToArray());
         }
 
         [Fact]
@@ -184,13 +188,14 @@ namespace DevCoreHospital.Tests.ViewModels
 
             var serviceMock = new Mock<IShiftManagementService>();
             int getWeeklyCalls = 0;
+            List<Shift> GetWeeklyShiftsAndCount()
+            {
+                getWeeklyCalls++;
+                return new List<Shift>();
+            }
             serviceMock
                 .Setup(service => service.GetWeeklyShifts(It.IsAny<DateTime>()))
-                .Returns(() =>
-                {
-                    getWeeklyCalls++;
-                    return new List<Shift>();
-                });
+                .Returns(GetWeeklyShiftsAndCount);
             serviceMock
                 .Setup(service => service.TryAddShift(doctor, start, end, "ER"))
                 .Returns(false);
@@ -212,9 +217,10 @@ namespace DevCoreHospital.Tests.ViewModels
                 .Returns(new List<Shift>());
 
             int capturedShiftId = -1;
+            void CaptureShiftId(int shiftId) { capturedShiftId = shiftId; }
             serviceMock
                 .Setup(service => service.SetShiftActive(It.IsAny<int>()))
-                .Callback<int>(shiftId => capturedShiftId = shiftId);
+                .Callback<int>(CaptureShiftId);
 
             var viewModel = new AdminShiftViewModel(serviceMock.Object);
 
@@ -232,9 +238,10 @@ namespace DevCoreHospital.Tests.ViewModels
                 .Returns(new List<Shift>());
 
             int capturedShiftId = -1;
+            void CaptureShiftId(int shiftId) { capturedShiftId = shiftId; }
             serviceMock
                 .Setup(service => service.CancelShift(It.IsAny<int>()))
-                .Callback<int>(shiftId => capturedShiftId = shiftId);
+                .Callback<int>(CaptureShiftId);
 
             var viewModel = new AdminShiftViewModel(serviceMock.Object);
 
@@ -251,13 +258,14 @@ namespace DevCoreHospital.Tests.ViewModels
 
             var serviceMock = new Mock<IShiftManagementService>();
             int getWeeklyCalls = 0;
+            List<Shift> GetWeeklyShiftsAndCount()
+            {
+                getWeeklyCalls++;
+                return new List<Shift>();
+            }
             serviceMock
                 .Setup(service => service.GetWeeklyShifts(It.IsAny<DateTime>()))
-                .Returns(() =>
-                {
-                    getWeeklyCalls++;
-                    return new List<Shift>();
-                });
+                .Returns(GetWeeklyShiftsAndCount);
             serviceMock
                 .Setup(service => service.ReassignShift(shift, replacement))
                 .Returns(true);
@@ -277,13 +285,14 @@ namespace DevCoreHospital.Tests.ViewModels
 
             var serviceMock = new Mock<IShiftManagementService>();
             int getWeeklyCalls = 0;
+            List<Shift> GetWeeklyShiftsAndCount()
+            {
+                getWeeklyCalls++;
+                return new List<Shift>();
+            }
             serviceMock
                 .Setup(service => service.GetWeeklyShifts(It.IsAny<DateTime>()))
-                .Returns(() =>
-                {
-                    getWeeklyCalls++;
-                    return new List<Shift>();
-                });
+                .Returns(GetWeeklyShiftsAndCount);
             serviceMock
                 .Setup(service => service.ReassignShift(shift, replacement))
                 .Returns(false);
@@ -311,10 +320,11 @@ namespace DevCoreHospital.Tests.ViewModels
                 .Returns(new List<IStaff> { firstReplacement, secondReplacement });
 
             int capturedReplacementId = -1;
+            void CaptureReplacementId(Shift replacedShift, IStaff staff) { capturedReplacementId = staff.StaffID; }
             serviceMock
                 .Setup(service => service.ReassignShift(shift, It.IsAny<IStaff>()))
                 .Returns(true)
-                .Callback<Shift, IStaff>((_, staff) => capturedReplacementId = staff.StaffID);
+                .Callback<Shift, IStaff>(CaptureReplacementId);
 
             var viewModel = new AdminShiftViewModel(serviceMock.Object);
 
@@ -337,9 +347,10 @@ namespace DevCoreHospital.Tests.ViewModels
                 .Returns(new List<IStaff>());
 
             int reassignCalls = 0;
+            void CountReassignCall() { reassignCalls++; }
             serviceMock
                 .Setup(service => service.ReassignShift(It.IsAny<Shift>(), It.IsAny<IStaff>()))
-                .Callback(() => reassignCalls++);
+                .Callback(CountReassignCall);
 
             var viewModel = new AdminShiftViewModel(serviceMock.Object);
 

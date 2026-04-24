@@ -7,10 +7,10 @@ namespace DevCoreHospital.Tests.Repositories;
 
 public class AppointmentRepositoryTests : IClassFixture<SqlTestFixture>
 {
-    private readonly SqlTestFixture db;
+    private readonly SqlTestFixture database;
     private const string InvalidConnectionString = "InvalidConnectionString";
 
-    public AppointmentRepositoryTests(SqlTestFixture db) => this.db = db;
+    public AppointmentRepositoryTests(SqlTestFixture database) => this.database = database;
 
     [Fact]
     public async Task GetUpcomingAppointmentsAsync_WhenConnectionFails_ThrowsException()
@@ -35,7 +35,7 @@ public class AppointmentRepositoryTests : IClassFixture<SqlTestFixture>
     [Fact]
     public async Task AddAppointmentAsync_WhenConnectionFails_ThrowsException()
     {
-        var appt = new Appointment
+        var appointment = new Appointment
         {
             Id = 1, DoctorId = 10, PatientName = "PAT-5", Date = DateTime.Today,
             StartTime = new TimeSpan(9, 0, 0), EndTime = new TimeSpan(10, 0, 0),
@@ -43,7 +43,7 @@ public class AppointmentRepositoryTests : IClassFixture<SqlTestFixture>
         };
 
         await Assert.ThrowsAnyAsync<Exception>(() =>
-            new AppointmentRepository(InvalidConnectionString).AddAppointmentAsync(appt));
+            new AppointmentRepository(InvalidConnectionString).AddAppointmentAsync(appointment));
     }
 
     [Fact]
@@ -64,71 +64,73 @@ public class AppointmentRepositoryTests : IClassFixture<SqlTestFixture>
     [Fact]
     public async Task GetAllDoctorsAsync_ReturnsDoctorInsertedInDatabase()
     {
-        using var conn = db.OpenConnection();
-        var doctorId = db.InsertStaff(conn, "Doctor", "Alice", "GetAllDoc", "Cardiology");
+        using var connection = database.OpenConnection();
+        var doctorId = database.InsertStaff(connection, "Doctor", "Alice", "GetAllDoc", "Cardiology");
         try
         {
-            var result = await new AppointmentRepository(db.ConnectionString).GetAllDoctorsAsync();
+            var result = await new AppointmentRepository(database.ConnectionString).GetAllDoctorsAsync();
 
-            Assert.Contains(result, d => d.DoctorId == doctorId);
+            bool DoctorMatchesInserted((int DoctorId, string DoctorName) doctor) => doctor.DoctorId == doctorId;
+            Assert.Contains(result, DoctorMatchesInserted);
         }
         finally
         {
-            db.DeleteStaff(conn, doctorId);
+            database.DeleteStaff(connection, doctorId);
         }
     }
 
     [Fact]
     public async Task GetAppointmentDetailsAsync_ReturnsCorrectAppointment()
     {
-        using var conn = db.OpenConnection();
-        var doctorId = db.InsertStaff(conn, "Doctor", "Bob", "ApptDetails", "Neurology");
+        using var connection = database.OpenConnection();
+        var doctorId = database.InsertStaff(connection, "Doctor", "Bob", "ApptDetails", "Neurology");
         var start = DateTime.Today.AddDays(1).AddHours(9);
-        var apptId = db.InsertAppointment(conn, 999, doctorId, start, start.AddHours(1));
+        var appointmentId = database.InsertAppointment(connection, 999, doctorId, start, start.AddHours(1));
         try
         {
-            var result = await new AppointmentRepository(db.ConnectionString).GetAppointmentDetailsAsync(apptId);
+            var result = await new AppointmentRepository(database.ConnectionString).GetAppointmentDetailsAsync(appointmentId);
 
             Assert.NotNull(result);
-            Assert.Equal(apptId, result!.Id);
+            Assert.Equal(appointmentId, result!.Id);
             Assert.Equal(doctorId, result.DoctorId);
         }
         finally
         {
-            db.DeleteAppointment(conn, apptId);
-            db.DeleteStaff(conn, doctorId);
+            database.DeleteAppointment(connection, appointmentId);
+            database.DeleteStaff(connection, doctorId);
         }
     }
 
     [Fact]
     public async Task GetAppointmentsForAdminAsync_ReturnsAppointmentsForDoctor()
     {
-        using var conn = db.OpenConnection();
-        var doctorId = db.InsertStaff(conn, "Doctor", "Carol", "ApptAdmin", "Oncology");
+        using var connection = database.OpenConnection();
+        var doctorId = database.InsertStaff(connection, "Doctor", "Carol", "ApptAdmin", "Oncology");
         var start = DateTime.Today.AddDays(2).AddHours(10);
-        var apptId = db.InsertAppointment(conn, 888, doctorId, start, start.AddHours(1));
+        var appointmentId = database.InsertAppointment(connection, 888, doctorId, start, start.AddHours(1));
         try
         {
-            var result = await new AppointmentRepository(db.ConnectionString).GetAppointmentsForAdminAsync(doctorId);
+            var result = await new AppointmentRepository(database.ConnectionString).GetAppointmentsForAdminAsync(doctorId);
 
-            Assert.Contains(result, a => a.Id == apptId);
+            bool AppointmentMatchesInserted(Appointment appointment) => appointment.Id == appointmentId;
+            Assert.Contains(result, AppointmentMatchesInserted);
         }
         finally
         {
-            db.DeleteAppointment(conn, apptId);
-            db.DeleteStaff(conn, doctorId);
+            database.DeleteAppointment(connection, appointmentId);
+            database.DeleteStaff(connection, doctorId);
         }
     }
 
     [Fact]
     public async Task AddAppointmentAsync_InsertsAppointmentInDatabase()
     {
-        using var conn = db.OpenConnection();
-        var doctorId = db.InsertStaff(conn, "Doctor", "Dave", "ApptAdd", "Cardiology");
+        using var connection = database.OpenConnection();
+        var doctorId = database.InsertStaff(connection, "Doctor", "Dave", "ApptAdd", "Cardiology");
         try
         {
-            var repo = new AppointmentRepository(db.ConnectionString);
-            await repo.AddAppointmentAsync(new Appointment
+            var repository = new AppointmentRepository(database.ConnectionString);
+            await repository.AddAppointmentAsync(new Appointment
             {
                 DoctorId = doctorId, PatientName = "PAT-777",
                 Date = DateTime.Today.AddDays(3),
@@ -136,92 +138,94 @@ public class AppointmentRepositoryTests : IClassFixture<SqlTestFixture>
                 Status = "Scheduled", Type = string.Empty, Location = string.Empty,
             });
 
-            var all = await repo.GetAppointmentsForAdminAsync(doctorId);
-            Assert.Contains(all, a => a.DoctorId == doctorId);
+            var all = await repository.GetAppointmentsForAdminAsync(doctorId);
+            bool AppointmentBelongsToDoctor(Appointment appointment) => appointment.DoctorId == doctorId;
+            Assert.Contains(all, AppointmentBelongsToDoctor);
         }
         finally
         {
-            db.DeleteAppointmentsByDoctor(conn, doctorId);
-            db.DeleteStaff(conn, doctorId);
+            database.DeleteAppointmentsByDoctor(connection, doctorId);
+            database.DeleteStaff(connection, doctorId);
         }
     }
 
     [Fact]
     public async Task UpdateAppointmentStatusAsync_ChangesStatus()
     {
-        using var conn = db.OpenConnection();
-        var doctorId = db.InsertStaff(conn, "Doctor", "Eve", "ApptUpdate", "Endocrinology");
+        using var connection = database.OpenConnection();
+        var doctorId = database.InsertStaff(connection, "Doctor", "Eve", "ApptUpdate", "Endocrinology");
         var start = DateTime.Today.AddDays(4).AddHours(14);
-        var apptId = db.InsertAppointment(conn, 111, doctorId, start, start.AddHours(1));
+        var appointmentId = database.InsertAppointment(connection, 111, doctorId, start, start.AddHours(1));
         try
         {
-            await new AppointmentRepository(db.ConnectionString).UpdateAppointmentStatusAsync(apptId, "Completed");
+            await new AppointmentRepository(database.ConnectionString).UpdateAppointmentStatusAsync(appointmentId, "Completed");
 
-            Assert.Equal("Completed", db.GetAppointmentStatus(conn, apptId));
+            Assert.Equal("Completed", database.GetAppointmentStatus(connection, appointmentId));
         }
         finally
         {
-            db.DeleteAppointment(conn, apptId);
-            db.DeleteStaff(conn, doctorId);
+            database.DeleteAppointment(connection, appointmentId);
+            database.DeleteStaff(connection, doctorId);
         }
     }
 
     [Fact]
     public async Task GetActiveAppointmentsCountForDoctorAsync_ReturnsCorrectCount()
     {
-        using var conn = db.OpenConnection();
-        var doctorId = db.InsertStaff(conn, "Doctor", "Frank", "ApptCount", "Cardiology");
+        using var connection = database.OpenConnection();
+        var doctorId = database.InsertStaff(connection, "Doctor", "Frank", "ApptCount", "Cardiology");
         var start = DateTime.Today.AddDays(5).AddHours(9);
-        var appt1 = db.InsertAppointment(conn, 222, doctorId, start, start.AddHours(1), "Scheduled");
-        var appt2 = db.InsertAppointment(conn, 333, doctorId, start.AddHours(2), start.AddHours(3), "Scheduled");
-        var appt3 = db.InsertAppointment(conn, 444, doctorId, start.AddHours(4), start.AddHours(5), "Completed");
+        var appointmentOneId = database.InsertAppointment(connection, 222, doctorId, start, start.AddHours(1), "Scheduled");
+        var appointmentTwoId = database.InsertAppointment(connection, 333, doctorId, start.AddHours(2), start.AddHours(3), "Scheduled");
+        var appointmentThreeId = database.InsertAppointment(connection, 444, doctorId, start.AddHours(4), start.AddHours(5), "Completed");
         try
         {
-            Assert.Equal(2, await new AppointmentRepository(db.ConnectionString).GetActiveAppointmentsCountForDoctorAsync(doctorId));
+            Assert.Equal(2, await new AppointmentRepository(database.ConnectionString).GetActiveAppointmentsCountForDoctorAsync(doctorId));
         }
         finally
         {
-            db.DeleteAppointment(conn, appt1);
-            db.DeleteAppointment(conn, appt2);
-            db.DeleteAppointment(conn, appt3);
-            db.DeleteStaff(conn, doctorId);
+            database.DeleteAppointment(connection, appointmentOneId);
+            database.DeleteAppointment(connection, appointmentTwoId);
+            database.DeleteAppointment(connection, appointmentThreeId);
+            database.DeleteStaff(connection, doctorId);
         }
     }
 
     [Fact]
     public async Task GetUpcomingAppointmentsAsync_ReturnsAppointmentsInDateRange()
     {
-        using var conn = db.OpenConnection();
-        var doctorId = db.InsertStaff(conn, "Doctor", "Grace", "ApptUpcoming", "Neurology");
+        using var connection = database.OpenConnection();
+        var doctorId = database.InsertStaff(connection, "Doctor", "Grace", "ApptUpcoming", "Neurology");
         var start = DateTime.Today.AddDays(2).AddHours(8);
-        var apptId = db.InsertAppointment(conn, 555, doctorId, start, start.AddHours(1));
+        var appointmentId = database.InsertAppointment(connection, 555, doctorId, start, start.AddHours(1));
         try
         {
-            var result = await new AppointmentRepository(db.ConnectionString).GetUpcomingAppointmentsAsync(doctorId, DateTime.Today, 0, 100);
+            var result = await new AppointmentRepository(database.ConnectionString).GetUpcomingAppointmentsAsync(doctorId, DateTime.Today, 0, 100);
 
-            Assert.Contains(result, a => a.Id == apptId);
+            bool AppointmentMatchesInserted(Appointment appointment) => appointment.Id == appointmentId;
+            Assert.Contains(result, AppointmentMatchesInserted);
         }
         finally
         {
-            db.DeleteAppointment(conn, apptId);
-            db.DeleteStaff(conn, doctorId);
+            database.DeleteAppointment(connection, appointmentId);
+            database.DeleteStaff(connection, doctorId);
         }
     }
 
     [Fact]
     public async Task UpdateDoctorStatusAsync_UpdatesStaffStatusInDatabase()
     {
-        using var conn = db.OpenConnection();
-        var doctorId = db.InsertStaff(conn, "Doctor", "Henry", "ApptDocStatus", "Cardiology", status: "Available");
+        using var connection = database.OpenConnection();
+        var doctorId = database.InsertStaff(connection, "Doctor", "Henry", "ApptDocStatus", "Cardiology", status: "Available");
         try
         {
-            await new AppointmentRepository(db.ConnectionString).UpdateDoctorStatusAsync(doctorId, "In_Examination");
+            await new AppointmentRepository(database.ConnectionString).UpdateDoctorStatusAsync(doctorId, "In_Examination");
 
-            Assert.Equal("In_Examination", db.GetStaffStatus(conn, doctorId));
+            Assert.Equal("In_Examination", database.GetStaffStatus(connection, doctorId));
         }
         finally
         {
-            db.DeleteStaff(conn, doctorId);
+            database.DeleteStaff(connection, doctorId);
         }
     }
 }

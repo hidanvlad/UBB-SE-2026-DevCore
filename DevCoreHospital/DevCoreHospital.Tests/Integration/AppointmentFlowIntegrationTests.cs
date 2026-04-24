@@ -36,7 +36,8 @@ namespace DevCoreHospital.Tests.Integration
 
             public Task UpdateAppointmentStatusAsync(int id, string status)
             {
-                var appointment = appointments.FirstOrDefault(a => a.Id == id);
+                bool HasMatchingId(Appointment appointment) => appointment.Id == id;
+                var appointment = appointments.FirstOrDefault(HasMatchingId);
                 if (appointment != null)
                 {
                     appointment.Status = status;
@@ -47,10 +48,11 @@ namespace DevCoreHospital.Tests.Integration
 
             public Task<int> GetActiveAppointmentsCountForDoctorAsync(int doctorId)
             {
-                int count = appointments.Count(a =>
-                    a.DoctorId == doctorId &&
-                    !string.Equals(a.Status, "Finished", StringComparison.OrdinalIgnoreCase) &&
-                    !string.Equals(a.Status, "Canceled", StringComparison.OrdinalIgnoreCase));
+                bool IsActiveAppointmentForDoctor(Appointment appointment) =>
+                    appointment.DoctorId == doctorId &&
+                    !string.Equals(appointment.Status, "Finished", StringComparison.OrdinalIgnoreCase) &&
+                    !string.Equals(appointment.Status, "Canceled", StringComparison.OrdinalIgnoreCase);
+                int count = appointments.Count(IsActiveAppointmentForDoctor);
                 return Task.FromResult(count);
             }
 
@@ -63,8 +65,10 @@ namespace DevCoreHospital.Tests.Integration
             public Task<IReadOnlyList<Appointment>> GetUpcomingAppointmentsAsync(
                 int doctorUserId, DateTime fromDate, int skip, int take)
             {
+                bool IsUpcomingForDoctor(Appointment appointment) =>
+                    appointment.DoctorId == doctorUserId && appointment.Date >= fromDate;
                 IReadOnlyList<Appointment> result = appointments
-                    .Where(a => a.DoctorId == doctorUserId && a.Date >= fromDate)
+                    .Where(IsUpcomingForDoctor)
                     .Skip(skip).Take(take)
                     .ToList();
                 return Task.FromResult(result);
@@ -78,14 +82,16 @@ namespace DevCoreHospital.Tests.Integration
 
             public Task<Appointment?> GetAppointmentDetailsAsync(int appointmentId)
             {
-                Appointment? result = appointments.FirstOrDefault(a => a.Id == appointmentId);
+                bool HasMatchingId(Appointment appointment) => appointment.Id == appointmentId;
+                Appointment? result = appointments.FirstOrDefault(HasMatchingId);
                 return Task.FromResult(result);
             }
 
             public Task<IReadOnlyList<Appointment>> GetAppointmentsForAdminAsync(int doctorId)
             {
+                bool IsForDoctor(Appointment appointment) => appointment.DoctorId == doctorId;
                 IReadOnlyList<Appointment> result = appointments
-                    .Where(a => a.DoctorId == doctorId)
+                    .Where(IsForDoctor)
                     .ToList();
                 return Task.FromResult(result);
             }
@@ -107,8 +113,11 @@ namespace DevCoreHospital.Tests.Integration
 
             public List<Shift> GetShifts() => shifts;
 
-            public List<Shift> GetShiftsByStaffID(int staffId) =>
-                shifts.Where(s => s.AppointedStaff.StaffID == staffId).ToList();
+            public List<Shift> GetShiftsByStaffID(int staffId)
+            {
+                bool IsForStaff(Shift shift) => shift.AppointedStaff.StaffID == staffId;
+                return shifts.Where(IsForStaff).ToList();
+            }
 
             public void AddShift(Shift shift) => shifts.Add(shift);
         }
@@ -119,18 +128,26 @@ namespace DevCoreHospital.Tests.Integration
 
             public InMemoryShiftRepository(List<Shift> shifts) => this.shifts = shifts;
 
-            public IReadOnlyList<Shift> GetShiftsForStaffInRange(int staffId, DateTime from, DateTime to) =>
-                shifts
-                    .Where(s => s.AppointedStaff.StaffID == staffId
-                        && s.StartTime < to
-                        && s.EndTime > from)
-                    .ToList();
+            public IReadOnlyList<Shift> GetShiftsForStaffInRange(int staffId, DateTime from, DateTime to)
+            {
+                bool IsInRangeForStaff(Shift shift) =>
+                    shift.AppointedStaff.StaffID == staffId
+                    && shift.StartTime < to
+                    && shift.EndTime > from;
+                return shifts.Where(IsInRangeForStaff).ToList();
+            }
 
-            public Shift? GetShiftById(int shiftId) =>
-                shifts.FirstOrDefault(s => s.Id == shiftId);
+            public Shift? GetShiftById(int shiftId)
+            {
+                bool HasMatchingId(Shift shift) => shift.Id == shiftId;
+                return shifts.FirstOrDefault(HasMatchingId);
+            }
 
-            public List<Shift> GetShiftsByStaffID(int staffId) =>
-                shifts.Where(s => s.AppointedStaff.StaffID == staffId).ToList();
+            public List<Shift> GetShiftsByStaffID(int staffId)
+            {
+                bool IsForStaff(Shift shift) => shift.AppointedStaff.StaffID == staffId;
+                return shifts.Where(IsForStaff).ToList();
+            }
         }
 
 

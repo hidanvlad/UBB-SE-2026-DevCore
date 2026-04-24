@@ -48,7 +48,8 @@ namespace DevCoreHospital.Repositories
                     string statusText = reader.IsDBNull(5) ? "Scheduled" : reader.GetString(5);
 
                     Enum.TryParse<ShiftStatus>(statusText, true, out ShiftStatus shiftStatus);
-                    var appointedStaff = allStaff.FirstOrDefault(s => s.StaffID == staffId);
+                    bool HasMatchingStaffId(IStaff staffMember) => staffMember.StaffID == staffId;
+                    var appointedStaff = allStaff.FirstOrDefault(HasMatchingStaffId);
 
                     if (appointedStaff != null)
                     {
@@ -56,9 +57,9 @@ namespace DevCoreHospital.Repositories
                     }
                 }
             }
-            catch (Exception ex)
+            catch (Exception exception)
             {
-                System.Diagnostics.Debug.WriteLine($"Error FetchAllShiftsFromDatabase: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Error FetchAllShiftsFromDatabase: {exception.Message}");
             }
             return shifts;
         }
@@ -67,19 +68,30 @@ namespace DevCoreHospital.Repositories
         public List<Shift> GetShifts() => FetchAllShiftsFromDatabase();
 
         public Shift? GetShiftById(int shiftId)
-            => FetchAllShiftsFromDatabase().FirstOrDefault(s => s.Id == shiftId);
+        {
+            bool HasMatchingId(Shift shift) => shift.Id == shiftId;
+            return FetchAllShiftsFromDatabase().FirstOrDefault(HasMatchingId);
+        }
 
         public List<Shift> GetShiftsByStaffID(int staffId)
-            => FetchAllShiftsFromDatabase().Where(s => s.AppointedStaff.StaffID == staffId).ToList();
+        {
+            bool HasMatchingStaffId(Shift shift) => shift.AppointedStaff.StaffID == staffId;
+            return FetchAllShiftsFromDatabase().Where(HasMatchingStaffId).ToList();
+        }
 
         public IReadOnlyList<Shift> GetShiftsForStaffInRange(int staffId, DateTime rangeStart, DateTime rangeEnd)
-            => FetchAllShiftsFromDatabase()
-                .Where(s =>
-                    s.AppointedStaff.StaffID == staffId &&
-                    s.StartTime < rangeEnd &&
-                    s.EndTime > rangeStart)
-                .OrderBy(s => s.StartTime)
+        {
+            bool IsInRangeForStaff(Shift shift) =>
+                shift.AppointedStaff.StaffID == staffId &&
+                shift.StartTime < rangeEnd &&
+                shift.EndTime > rangeStart;
+            DateTime GetStartTime(Shift shift) => shift.StartTime;
+
+            return FetchAllShiftsFromDatabase()
+                .Where(IsInRangeForStaff)
+                .OrderBy(GetStartTime)
                 .ToList();
+        }
 
         // ── Write methods ───────────────────────────────────────────────────
         public void AddShift(Shift newShift)
@@ -98,9 +110,9 @@ namespace DevCoreHospital.Repositories
                 AddParameter(command, "@Status", newShift.Status.ToString());
                 command.ExecuteNonQuery();
             }
-            catch (Exception ex)
+            catch (Exception exception)
             {
-                System.Diagnostics.Debug.WriteLine($"Error AddShift: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Error AddShift: {exception.Message}");
             }
         }
 
@@ -116,9 +128,9 @@ namespace DevCoreHospital.Repositories
                 AddParameter(command, "@Id", shiftId);
                 command.ExecuteNonQuery();
             }
-            catch (Exception ex)
+            catch (Exception exception)
             {
-                System.Diagnostics.Debug.WriteLine($"Error UpdateShiftStatus: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Error UpdateShiftStatus: {exception.Message}");
             }
         }
 
@@ -133,9 +145,9 @@ namespace DevCoreHospital.Repositories
                 AddParameter(command, "@Id", shiftId);
                 command.ExecuteNonQuery();
             }
-            catch (Exception ex)
+            catch (Exception exception)
             {
-                System.Diagnostics.Debug.WriteLine($"Error CancelShift: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Error CancelShift: {exception.Message}");
             }
         }
     }

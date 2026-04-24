@@ -8,58 +8,58 @@ namespace DevCoreHospital.Tests.Repositories;
 
 public class EvaluationsRepositoryTests : IClassFixture<SqlTestFixture>
 {
-    private readonly SqlTestFixture db;
+    private readonly SqlTestFixture database;
     private const string InvalidConnectionString = "Data Source=.;Initial Catalog=NoSuchDb;Integrated Security=True";
 
-    public EvaluationsRepositoryTests(SqlTestFixture db) => this.db = db;
+    public EvaluationsRepositoryTests(SqlTestFixture database) => this.database = database;
 
 
     [Fact]
     public void GetEvaluationsByDoctor_WhenDoctorIdIsNotNumeric_ReturnsEmptyList()
-        => Assert.Empty(new EvaluationsRepository(db.ConnectionString).GetEvaluationsByDoctor("not-a-number"));
+        => Assert.Empty(new EvaluationsRepository(database.ConnectionString).GetEvaluationsByDoctor("not-a-number"));
 
     [Fact]
     public void GetEvaluationsByDoctor_WhenDoctorIdIsEmpty_ReturnsEmptyList()
-        => Assert.Empty(new EvaluationsRepository(db.ConnectionString).GetEvaluationsByDoctor(string.Empty));
+        => Assert.Empty(new EvaluationsRepository(database.ConnectionString).GetEvaluationsByDoctor(string.Empty));
 
     [Fact]
     public void GetEvaluationsByDoctor_WhenDoctorIdIsWhitespace_ReturnsEmptyList()
-        => Assert.Empty(new EvaluationsRepository(db.ConnectionString).GetEvaluationsByDoctor("   "));
+        => Assert.Empty(new EvaluationsRepository(database.ConnectionString).GetEvaluationsByDoctor("   "));
 
     [Fact]
     public void GetEvaluationsByDoctor_WhenDoctorIdIsAlphanumeric_ReturnsEmptyList()
-        => Assert.Empty(new EvaluationsRepository(db.ConnectionString).GetEvaluationsByDoctor("DR-42"));
+        => Assert.Empty(new EvaluationsRepository(database.ConnectionString).GetEvaluationsByDoctor("DR-42"));
 
     [Fact]
     public void CheckMedicineConflict_ReturnsNull_WhenMedsIsEmpty()
     {
-        var repo = new EvaluationsRepository(db.ConnectionString);
+        var repository = new EvaluationsRepository(database.ConnectionString);
 
-        Assert.Null(repo.CheckMedicineConflict("P1", string.Empty));
+        Assert.Null(repository.CheckMedicineConflict("P1", string.Empty));
     }
 
     [Fact]
     public void CheckMedicineConflict_ReturnsNull_WhenMedsIsWhitespace()
     {
-        var repo = new EvaluationsRepository(db.ConnectionString);
+        var repository = new EvaluationsRepository(database.ConnectionString);
 
-        Assert.Null(repo.CheckMedicineConflict("P1", "   "));
+        Assert.Null(repository.CheckMedicineConflict("P1", "   "));
     }
 
     [Fact]
     public void CheckMedicineConflict_ReturnsNull_WhenPatientIdIsEmpty()
     {
-        var repo = new EvaluationsRepository(db.ConnectionString);
+        var repository = new EvaluationsRepository(database.ConnectionString);
 
-        Assert.Null(repo.CheckMedicineConflict(string.Empty, "Aspirin"));
+        Assert.Null(repository.CheckMedicineConflict(string.Empty, "Aspirin"));
     }
 
     [Fact]
     public void CheckMedicineConflict_ReturnsNull_WhenPatientIdIsWhitespace()
     {
-        var repo = new EvaluationsRepository(db.ConnectionString);
+        var repository = new EvaluationsRepository(database.ConnectionString);
 
-        Assert.Null(repo.CheckMedicineConflict("   ", "Aspirin"));
+        Assert.Null(repository.CheckMedicineConflict("   ", "Aspirin"));
     }
 
 
@@ -76,25 +76,25 @@ public class EvaluationsRepositoryTests : IClassFixture<SqlTestFixture>
     [Fact]
     public void IsDoctorFatigued_ReturnsFalse_WhenHoursAreBelowThreshold()
     {
-        var repo = new TestableEvaluationsRepository(fatigueHours: 11.9);
+        var repository = new TestableEvaluationsRepository(fatigueHours: 11.9);
 
-        Assert.False(repo.IsDoctorFatigued("1"));
+        Assert.False(repository.IsDoctorFatigued("1"));
     }
 
     [Fact]
     public void IsDoctorFatigued_ReturnsTrue_WhenHoursAreExactlyAtThreshold()
     {
-        var repo = new TestableEvaluationsRepository(fatigueHours: 12.0);
+        var repository = new TestableEvaluationsRepository(fatigueHours: 12.0);
 
-        Assert.True(repo.IsDoctorFatigued("1"));
+        Assert.True(repository.IsDoctorFatigued("1"));
     }
 
     [Fact]
     public void IsDoctorFatigued_ReturnsTrue_WhenHoursExceedThreshold()
     {
-        var repo = new TestableEvaluationsRepository(fatigueHours: 16.5);
+        var repository = new TestableEvaluationsRepository(fatigueHours: 16.5);
 
-        Assert.True(repo.IsDoctorFatigued("1"));
+        Assert.True(repository.IsDoctorFatigued("1"));
     }
 
 
@@ -120,100 +120,100 @@ public class EvaluationsRepositoryTests : IClassFixture<SqlTestFixture>
     [Fact]
     public void SaveEvaluation_UsesZeroPatientId_WhenPatientIdIsNonNumeric()
     {
-        var repo = new CapturingSaveRepository();
+        var repository = new CapturingSaveRepository();
         var record = new MedicalEvaluation { PatientId = "ABC", Symptoms = "Fever", Notes = "N", MedsList = "M" };
 
-        repo.SaveEvaluation(record);
+        repository.SaveEvaluation(record);
 
-        Assert.Equal(0, repo.CapturedPatientId);
+        Assert.Equal(0, repository.CapturedPatientId);
     }
 
     [Fact]
     public void SaveEvaluation_ParsesPatientId_WhenNumeric()
     {
-        var repo = new CapturingSaveRepository();
+        var repository = new CapturingSaveRepository();
         var record = new MedicalEvaluation { PatientId = "42", Symptoms = "Cough", Notes = "N", MedsList = "M" };
 
-        repo.SaveEvaluation(record);
+        repository.SaveEvaluation(record);
 
-        Assert.Equal(42, repo.CapturedPatientId);
+        Assert.Equal(42, repository.CapturedPatientId);
     }
 
     [Fact]
     public void SaveEvaluation_SetsAssumedRiskTrue_WhenSymptomsContainRiskTag()
     {
-        var repo = new CapturingSaveRepository();
+        var repository = new CapturingSaveRepository();
         var record = new MedicalEvaluation { PatientId = "1", Symptoms = "Chest pain [RISK]", Notes = "N", MedsList = "M" };
 
-        repo.SaveEvaluation(record);
+        repository.SaveEvaluation(record);
 
-        Assert.True(repo.CapturedAssumedRisk);
+        Assert.True(repository.CapturedAssumedRisk);
     }
 
     [Fact]
     public void SaveEvaluation_SetsAssumedRiskFalse_WhenSymptomsHaveNoRiskTag()
     {
-        var repo = new CapturingSaveRepository();
+        var repository = new CapturingSaveRepository();
         var record = new MedicalEvaluation { PatientId = "1", Symptoms = "Headache", Notes = "N", MedsList = "M" };
 
-        repo.SaveEvaluation(record);
+        repository.SaveEvaluation(record);
 
-        Assert.False(repo.CapturedAssumedRisk);
+        Assert.False(repository.CapturedAssumedRisk);
     }
 
     [Fact]
     public void SaveEvaluation_SetsAssumedRiskTrue_WhenRiskTagIsMixedCase()
     {
-        var repo = new CapturingSaveRepository();
+        var repository = new CapturingSaveRepository();
         var record = new MedicalEvaluation { PatientId = "1", Symptoms = "Pain [risk]", Notes = "N", MedsList = "M" };
 
-        repo.SaveEvaluation(record);
+        repository.SaveEvaluation(record);
 
-        Assert.True(repo.CapturedAssumedRisk);
+        Assert.True(repository.CapturedAssumedRisk);
     }
 
     [Fact]
     public void SaveEvaluation_UsesEvaluatorId_WhenEvaluatorIsSet()
     {
-        var repo = new CapturingSaveRepository();
+        var repository = new CapturingSaveRepository();
         var doctor = new Doctor { StaffID = 77 };
         var record = new MedicalEvaluation { PatientId = "1", Symptoms = "S", Notes = "N", MedsList = "M", Evaluator = doctor };
 
-        repo.SaveEvaluation(record);
+        repository.SaveEvaluation(record);
 
-        Assert.Equal(77, repo.CapturedDoctorId);
+        Assert.Equal(77, repository.CapturedDoctorId);
     }
 
 
     [Fact]
     public void GetAllDoctors_ReturnsInsertedDoctor()
     {
-        using var conn = db.OpenConnection();
-        var doctorId = db.InsertStaff(conn, "Doctor", "Eval", "AllDoc", "Neurology");
+        using var connection = database.OpenConnection();
+        var doctorId = database.InsertStaff(connection, "Doctor", "Eval", "AllDoc", "Neurology");
         try
         {
-            var repo = new EvaluationsRepository(db.ConnectionString);
+            var repository = new EvaluationsRepository(database.ConnectionString);
 
-            var result = repo.GetAllDoctors();
+            var result = repository.GetAllDoctors();
 
-            Assert.Contains(result, d => d.StaffID == doctorId);
+            Assert.Contains(result, doctor => doctor.StaffID == doctorId);
         }
         finally
         {
-            db.DeleteStaff(conn, doctorId);
+            database.DeleteStaff(connection, doctorId);
         }
     }
 
     [Fact]
     public void GetDoctorById_ReturnsDoctor_WhenExists()
     {
-        using var conn = db.OpenConnection();
-        var doctorId = db.InsertStaff(conn, "Doctor", "John", "EvalGet", "Cardiology");
+        using var connection = database.OpenConnection();
+        var doctorId = database.InsertStaff(connection, "Doctor", "John", "EvalGet", "Cardiology");
         try
         {
-            var repo = new EvaluationsRepository(db.ConnectionString);
+            var repository = new EvaluationsRepository(database.ConnectionString);
 
-            var result = repo.GetDoctorById(doctorId);
+            var result = repository.GetDoctorById(doctorId);
 
             Assert.NotNull(result);
             Assert.Equal(doctorId, result!.StaffID);
@@ -221,16 +221,16 @@ public class EvaluationsRepositoryTests : IClassFixture<SqlTestFixture>
         }
         finally
         {
-            db.DeleteStaff(conn, doctorId);
+            database.DeleteStaff(connection, doctorId);
         }
     }
 
     [Fact]
     public void GetDoctorById_ReturnsNull_WhenNotFound()
     {
-        var repo = new EvaluationsRepository(db.ConnectionString);
+        var repository = new EvaluationsRepository(database.ConnectionString);
 
-        var result = repo.GetDoctorById(int.MaxValue);
+        var result = repository.GetDoctorById(int.MaxValue);
 
         Assert.Null(result);
     }
@@ -239,11 +239,11 @@ public class EvaluationsRepositoryTests : IClassFixture<SqlTestFixture>
     [Fact]
     public void SaveEvaluation_ThenGetByDoctor_ReturnsInsertedEvaluation()
     {
-        using var conn = db.OpenConnection();
-        var doctorId = db.InsertStaff(conn, "Doctor", "Save", "EvalDoc", "Pediatrics");
+        using var connection = database.OpenConnection();
+        var doctorId = database.InsertStaff(connection, "Doctor", "Save", "EvalDoc", "Pediatrics");
         try
         {
-            var repo = new EvaluationsRepository(db.ConnectionString);
+            var repository = new EvaluationsRepository(database.ConnectionString);
             var doctor = new Doctor { StaffID = doctorId };
             var record = new MedicalEvaluation
             {
@@ -254,59 +254,59 @@ public class EvaluationsRepositoryTests : IClassFixture<SqlTestFixture>
                 Evaluator = doctor,
             };
 
-            repo.SaveEvaluation(record);
-            var results = repo.GetEvaluationsByDoctor(doctorId.ToString());
+            repository.SaveEvaluation(record);
+            var results = repository.GetEvaluationsByDoctor(doctorId.ToString());
 
-            Assert.Contains(results, e => e.Symptoms == "Cough" && e.MedsList == "Paracetamol");
+            Assert.Contains(results, evaluation => evaluation.Symptoms == "Cough" && evaluation.MedsList == "Paracetamol");
         }
         finally
         {
-            db.DeleteMedicalEvaluationsByDoctor(conn, doctorId);
-            db.DeleteStaff(conn, doctorId);
+            database.DeleteMedicalEvaluationsByDoctor(connection, doctorId);
+            database.DeleteStaff(connection, doctorId);
         }
     }
 
     [Fact]
     public void DeleteEvaluation_RemovesEvaluation_SoItNoLongerAppears()
     {
-        using var conn = db.OpenConnection();
-        var doctorId = db.InsertStaff(conn, "Doctor", "Del", "EvalDoc", "Orthopedics");
+        using var connection = database.OpenConnection();
+        var doctorId = database.InsertStaff(connection, "Doctor", "Del", "EvalDoc", "Orthopedics");
         try
         {
-            var evalId = db.InsertMedicalEvaluation(conn, doctorId, 1, "Broken arm");
-            var repo = new EvaluationsRepository(db.ConnectionString);
+            var evalId = database.InsertMedicalEvaluation(connection, doctorId, 1, "Broken arm");
+            var repository = new EvaluationsRepository(database.ConnectionString);
 
-            repo.DeleteEvaluation(evalId);
+            repository.DeleteEvaluation(evalId);
 
-            var remaining = repo.GetEvaluationsByDoctor(doctorId.ToString());
-            Assert.DoesNotContain(remaining, e => e.EvaluationID == evalId);
+            var remaining = repository.GetEvaluationsByDoctor(doctorId.ToString());
+            Assert.DoesNotContain(remaining, evaluation => evaluation.EvaluationID == evalId);
         }
         finally
         {
-            db.DeleteMedicalEvaluationsByDoctor(conn, doctorId);
-            db.DeleteStaff(conn, doctorId);
+            database.DeleteMedicalEvaluationsByDoctor(connection, doctorId);
+            database.DeleteStaff(connection, doctorId);
         }
     }
 
     [Fact]
     public void GetEvaluationsByDoctor_ReturnsMultipleEvaluations_WhenSeveralInserted()
     {
-        using var conn = db.OpenConnection();
-        var doctorId = db.InsertStaff(conn, "Doctor", "Multi", "EvalDoc", "General");
+        using var connection = database.OpenConnection();
+        var doctorId = database.InsertStaff(connection, "Doctor", "Multi", "EvalDoc", "General");
         try
         {
-            db.InsertMedicalEvaluation(conn, doctorId, 1, "Fever");
-            db.InsertMedicalEvaluation(conn, doctorId, 2, "Cold");
-            var repo = new EvaluationsRepository(db.ConnectionString);
+            database.InsertMedicalEvaluation(connection, doctorId, 1, "Fever");
+            database.InsertMedicalEvaluation(connection, doctorId, 2, "Cold");
+            var repository = new EvaluationsRepository(database.ConnectionString);
 
-            var results = repo.GetEvaluationsByDoctor(doctorId.ToString());
+            var results = repository.GetEvaluationsByDoctor(doctorId.ToString());
 
             Assert.True(results.Count >= 2);
         }
         finally
         {
-            db.DeleteMedicalEvaluationsByDoctor(conn, doctorId);
-            db.DeleteStaff(conn, doctorId);
+            database.DeleteMedicalEvaluationsByDoctor(connection, doctorId);
+            database.DeleteStaff(connection, doctorId);
         }
     }
 
@@ -314,35 +314,35 @@ public class EvaluationsRepositoryTests : IClassFixture<SqlTestFixture>
     [Fact]
     public void GetAppointmentsByDoctor_ReturnsEmpty_WhenNoneExistForDoctor()
     {
-        using var conn = db.OpenConnection();
-        var doctorId = db.InsertStaff(conn, "Doctor", "NoApp", "EvalDoc", "Surgery");
+        using var connection = database.OpenConnection();
+        var doctorId = database.InsertStaff(connection, "Doctor", "NoApp", "EvalDoc", "Surgery");
         try
         {
-            var repo = new EvaluationsRepository(db.ConnectionString);
+            var repository = new EvaluationsRepository(database.ConnectionString);
 
-            var result = repo.GetAppointmentsByDoctor(doctorId);
+            var result = repository.GetAppointmentsByDoctor(doctorId);
 
             Assert.Empty(result);
         }
         finally
         {
-            db.DeleteStaff(conn, doctorId);
+            database.DeleteStaff(connection, doctorId);
         }
     }
 
     [Fact]
     public void GetAppointmentsByDoctor_ReturnsConfirmedAppointment_WhenInserted()
     {
-        using var conn = db.OpenConnection();
-        var doctorId = db.InsertStaff(conn, "Doctor", "App", "EvalDoc", "ENT");
+        using var connection = database.OpenConnection();
+        var doctorId = database.InsertStaff(connection, "Doctor", "App", "EvalDoc", "ENT");
         int appointmentId = 0;
         try
         {
             var start = DateTime.Today.AddDays(5).AddHours(10);
-            appointmentId = db.InsertAppointment(conn, 1, doctorId, start, start.AddHours(1), "Confirmed");
-            var repo = new EvaluationsRepository(db.ConnectionString);
+            appointmentId = database.InsertAppointment(connection, 1, doctorId, start, start.AddHours(1), "Confirmed");
+            var repository = new EvaluationsRepository(database.ConnectionString);
 
-            var result = repo.GetAppointmentsByDoctor(doctorId);
+            var result = repository.GetAppointmentsByDoctor(doctorId);
 
             Assert.Single(result);
         }
@@ -350,10 +350,10 @@ public class EvaluationsRepositoryTests : IClassFixture<SqlTestFixture>
         {
             if (appointmentId > 0)
             {
-                db.DeleteAppointment(conn, appointmentId);
+                database.DeleteAppointment(connection, appointmentId);
             }
 
-            db.DeleteStaff(conn, doctorId);
+            database.DeleteStaff(connection, doctorId);
         }
     }
 
@@ -361,9 +361,9 @@ public class EvaluationsRepositoryTests : IClassFixture<SqlTestFixture>
     [Fact]
     public void CheckMedicineConflict_ReturnsNull_WhenNoHighRiskAndNoHistory()
     {
-        var repo = new EvaluationsRepository(db.ConnectionString);
+        var repository = new EvaluationsRepository(database.ConnectionString);
 
-        var result = repo.CheckMedicineConflict("99999", "SomeSafeUnknownMed_XYZ");
+        var result = repository.CheckMedicineConflict("99999", "SomeSafeUnknownMed_XYZ");
 
         Assert.Null(result);
     }
@@ -371,9 +371,9 @@ public class EvaluationsRepositoryTests : IClassFixture<SqlTestFixture>
     [Fact]
     public void CheckPatientHistoryForRisk_ReturnsNull_WhenNoHistoryFound()
     {
-        var repo = new EvaluationsRepository(db.ConnectionString);
+        var repository = new EvaluationsRepository(database.ConnectionString);
 
-        var result = repo.CheckPatientHistoryForRisk("99999", "SafeMed");
+        var result = repository.CheckPatientHistoryForRisk("99999", "SafeMed");
 
         Assert.Null(result);
     }
@@ -381,21 +381,21 @@ public class EvaluationsRepositoryTests : IClassFixture<SqlTestFixture>
     [Fact]
     public void CheckPatientHistoryForRisk_ReturnsAlert_WhenPatientHadAdverseReactionToSameMed()
     {
-        using var conn = db.OpenConnection();
-        var doctorId = db.InsertStaff(conn, "Doctor", "Risk", "HistDoc", "Allergy");
+        using var connection = database.OpenConnection();
+        var doctorId = database.InsertStaff(connection, "Doctor", "Risk", "HistDoc", "Allergy");
         int evalId = 0;
         try
         {
-            evalId = db.InsertMedicalEvaluation(
-                conn,
+            evalId = database.InsertMedicalEvaluation(
+                connection,
                 doctorId,
                 patientId: 98765,
                 diagnosis: "Allergy to penicillin",
                 notes: "Patient had Adverse reaction",
                 meds: "Penicillin");
-            var repo = new EvaluationsRepository(db.ConnectionString);
+            var repository = new EvaluationsRepository(database.ConnectionString);
 
-            var result = repo.CheckPatientHistoryForRisk("98765", "Penicillin");
+            var result = repository.CheckPatientHistoryForRisk("98765", "Penicillin");
 
             Assert.NotNull(result);
             Assert.Contains("HISTORY ALERT", result);
@@ -405,10 +405,10 @@ public class EvaluationsRepositoryTests : IClassFixture<SqlTestFixture>
         {
             if (evalId > 0)
             {
-                db.DeleteMedicalEvaluation(conn, evalId);
+                database.DeleteMedicalEvaluation(connection, evalId);
             }
 
-            db.DeleteStaff(conn, doctorId);
+            database.DeleteStaff(connection, doctorId);
         }
     }
 }

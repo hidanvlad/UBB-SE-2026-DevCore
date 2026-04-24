@@ -59,7 +59,7 @@ public class SalaryComputationViewModelTests
     public async Task ComputeSalaryAsync_DoctorPath_SetsSalaryResultAndClearsLoading()
     {
         var salaryService = new Mock<ISalaryComputationService>();
-        salaryService.Setup(s => s.ComputeSalaryDoctorAsync(It.IsAny<Doctor>(), It.IsAny<List<Shift>>(), 5, 2026))
+        salaryService.Setup(service => service.ComputeSalaryDoctorAsync(It.IsAny<Doctor>(), It.IsAny<List<Shift>>(), 5, 2026))
             .ReturnsAsync(1234.5);
 
         var doctor = new Doctor { StaffID = 1, FirstName = "A", LastName = "B", YearsOfExperience = 3 };
@@ -84,8 +84,9 @@ public class SalaryComputationViewModelTests
         var salaryService = new Mock<ISalaryComputationService>();
         List<Shift>? capturedShifts = null;
 
-        salaryService.Setup(s => s.ComputeSalaryDoctorAsync(It.IsAny<Doctor>(), It.IsAny<List<Shift>>(), 5, 2026))
-            .Callback<Doctor, List<Shift>, int, int>((_, shifts, _, _) => capturedShifts = shifts)
+        void CaptureShifts(Doctor _, List<Shift> shifts, int month, int year) { capturedShifts = shifts; }
+        salaryService.Setup(service => service.ComputeSalaryDoctorAsync(It.IsAny<Doctor>(), It.IsAny<List<Shift>>(), 5, 2026))
+            .Callback<Doctor, List<Shift>, int, int>(CaptureShifts)
             .ReturnsAsync(1000);
 
         var selectedDoctor = new Doctor { StaffID = 21, FirstName = "Sel", LastName = "Doc" };
@@ -117,7 +118,7 @@ public class SalaryComputationViewModelTests
     public async Task ComputeSalaryAsync_PharmacistPath_SetsSalaryResult()
     {
         var salaryService = new Mock<ISalaryComputationService>();
-        salaryService.Setup(s => s.ComputeSalaryPharmacistAsync(It.IsAny<Pharmacyst>(), It.IsAny<List<Shift>>(), 6, 2026))
+        salaryService.Setup(service => service.ComputeSalaryPharmacistAsync(It.IsAny<Pharmacyst>(), It.IsAny<List<Shift>>(), 6, 2026))
             .ReturnsAsync(987.65);
 
         var pharmacist = new Pharmacyst { StaffID = 2, FirstName = "P", LastName = "H", YearsOfExperience = 4 };
@@ -158,7 +159,7 @@ public class SalaryComputationViewModelTests
     public async Task ComputeSalaryAsync_WhenServiceThrows_SetsComputationFailedError()
     {
         var salaryService = new Mock<ISalaryComputationService>();
-        salaryService.Setup(s => s.ComputeSalaryDoctorAsync(It.IsAny<Doctor>(), It.IsAny<List<Shift>>(), 8, 2026))
+        salaryService.Setup(service => service.ComputeSalaryDoctorAsync(It.IsAny<Doctor>(), It.IsAny<List<Shift>>(), 8, 2026))
             .ThrowsAsync(new InvalidOperationException("boom"));
 
         var doctor = new Doctor { StaffID = 40, FirstName = "Err", LastName = "Doc" };
@@ -182,7 +183,7 @@ public class SalaryComputationViewModelTests
     {
         var tcs = new TaskCompletionSource<double>();
         var salaryService = new Mock<ISalaryComputationService>();
-        salaryService.Setup(s => s.ComputeSalaryDoctorAsync(It.IsAny<Doctor>(), It.IsAny<List<Shift>>(), 7, 2026))
+        salaryService.Setup(service => service.ComputeSalaryDoctorAsync(It.IsAny<Doctor>(), It.IsAny<List<Shift>>(), 7, 2026))
             .Returns(tcs.Task);
 
         var doctor = new Doctor { StaffID = 4, YearsOfExperience = 2 };

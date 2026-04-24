@@ -24,20 +24,29 @@ namespace DevCoreHospital.Repositories
         {
             var now = DateTime.Now;
 
+            bool IsOnCurrentShiftNow(DoctorRosterEntry entry) => IsOnCurrentShift(entry, now);
+            DoctorRosterEntry SelectFirstByScheduleEnd(IGrouping<int, DoctorRosterEntry> doctorGroup)
+                => doctorGroup.OrderBy(GetScheduleEnd).First();
+            DateTime GetScheduleEnd(DoctorRosterEntry rosterEntry) => rosterEntry.ScheduleEnd ?? DateTime.MaxValue;
+            int GetDoctorId(DoctorRosterEntry entry) => entry.DoctorId;
+
             return FetchRosterEntries()
                 .Where(IsDoctor)
-                .Where(entry => IsOnCurrentShift(entry, now))
+                .Where(IsOnCurrentShiftNow)
                 .Select(NormalizeRosterEntry)
-                .GroupBy(entry => entry.DoctorId)
-                .Select(doctorGroup => doctorGroup.OrderBy(rosterEntry => rosterEntry.ScheduleEnd ?? DateTime.MaxValue).First())
+                .GroupBy(GetDoctorId)
+                .Select(SelectFirstByScheduleEnd)
                 .ToList();
         }
 
         public IReadOnlyList<ERRequest> GetPendingRequests()
         {
+            bool IsPending(ERRequest request) => string.Equals(Normalize(request.Status), "PENDING", StringComparison.OrdinalIgnoreCase);
+            DateTime GetCreatedAt(ERRequest request) => request.CreatedAt;
+
             return FetchRequests()
-                .Where(request => string.Equals(Normalize(request.Status), "PENDING", StringComparison.OrdinalIgnoreCase))
-                .OrderBy(request => request.CreatedAt)
+                .Where(IsPending)
+                .OrderBy(GetCreatedAt)
                 .ToList();
         }
 
@@ -51,11 +60,14 @@ namespace DevCoreHospital.Repositories
         {
             var now = DateTime.Now;
 
+            bool IsOnCurrentShiftNow(DoctorRosterEntry entry) => IsOnCurrentShift(entry, now);
+            DateTime GetScheduleEnd(DoctorRosterEntry entry) => entry.ScheduleEnd ?? DateTime.MaxValue;
+
             return FetchRosterEntriesByStaffId(doctorId)
                 .Where(IsDoctor)
-                .Where(entry => IsOnCurrentShift(entry, now))
+                .Where(IsOnCurrentShiftNow)
                 .Select(NormalizeRosterEntry)
-                .OrderBy(entry => entry.ScheduleEnd ?? DateTime.MaxValue)
+                .OrderBy(GetScheduleEnd)
                 .FirstOrDefault();
         }
 
