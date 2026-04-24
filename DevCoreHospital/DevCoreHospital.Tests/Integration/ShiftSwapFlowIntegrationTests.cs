@@ -25,7 +25,7 @@ public class ShiftSwapFlowIntegrationTests : IClassFixture<SqlTestFixture>
         try
         {
             var staffRepo = new StaffRepository(database.ConnectionString);
-            var shiftRepo = new ShiftRepository(database.ConnectionString, staffRepo);
+            var shiftRepo = new ShiftRepository(database.ConnectionString);
             var swapRepo  = new ShiftSwapRepository(database.ConnectionString);
             var service   = new ShiftSwapService(staffRepo, shiftRepo, swapRepo);
 
@@ -55,7 +55,7 @@ public class ShiftSwapFlowIntegrationTests : IClassFixture<SqlTestFixture>
             swapRequestId = InsertSwapRequest(connection, shiftId, requesterId, colleagueId);
 
             var staffRepo = new StaffRepository(database.ConnectionString);
-            var shiftRepo = new ShiftRepository(database.ConnectionString, staffRepo);
+            var shiftRepo = new ShiftRepository(database.ConnectionString);
             var swapRepo  = new ShiftSwapRepository(database.ConnectionString);
             var service   = new ShiftSwapService(staffRepo, shiftRepo, swapRepo);
 
@@ -85,7 +85,7 @@ public class ShiftSwapFlowIntegrationTests : IClassFixture<SqlTestFixture>
         try
         {
             var staffRepo = new StaffRepository(database.ConnectionString);
-            var shiftRepo = new ShiftRepository(database.ConnectionString, staffRepo);
+            var shiftRepo = new ShiftRepository(database.ConnectionString);
             var swapRepo  = new ShiftSwapRepository(database.ConnectionString);
             var service   = new ShiftSwapService(staffRepo, shiftRepo, swapRepo);
             var viewModel = new MyScheduleViewModel(service);
@@ -125,7 +125,7 @@ public class ShiftSwapFlowIntegrationTests : IClassFixture<SqlTestFixture>
         try
         {
             var staffRepo = new StaffRepository(database.ConnectionString);
-            var shiftRepo = new ShiftRepository(database.ConnectionString, staffRepo);
+            var shiftRepo = new ShiftRepository(database.ConnectionString);
             var swapRepo  = new ShiftSwapRepository(database.ConnectionString);
             var service   = new ShiftSwapService(staffRepo, shiftRepo, swapRepo);
             var viewModel = new MyScheduleViewModel(service);

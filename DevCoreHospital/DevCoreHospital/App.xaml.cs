@@ -62,7 +62,7 @@ namespace DevCoreHospital
 
             // ShiftRepository implements IShiftRepository, IShiftManagementShiftRepository, IPharmacyShiftRepository.
             static ShiftRepository CreateShiftRepository(IServiceProvider serviceProvider) =>
-                new ShiftRepository(AppSettings.ConnectionString, serviceProvider.GetRequiredService<StaffRepository>());
+                new ShiftRepository(AppSettings.ConnectionString);
             services.AddSingleton<ShiftRepository>(CreateShiftRepository);
             static ShiftRepository ResolveShiftRepository(IServiceProvider serviceProvider) => serviceProvider.GetRequiredService<ShiftRepository>();
             services.AddSingleton<IShiftRepository>(ResolveShiftRepository);

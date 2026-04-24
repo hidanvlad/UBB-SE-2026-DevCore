@@ -17,7 +17,7 @@ public class ShiftRepositoryTests : IClassFixture<SqlTestFixture>
     [Fact]
     public void GetShifts_WhenConnectionFails_ReturnsEmptyList()
     {
-        var shiftRepository = new ShiftRepository(InvalidConnectionString, new StaffRepository(InvalidConnectionString));
+        var shiftRepository = new ShiftRepository(InvalidConnectionString);
 
         Assert.Empty(shiftRepository.GetShifts());
     }
@@ -25,7 +25,7 @@ public class ShiftRepositoryTests : IClassFixture<SqlTestFixture>
     [Fact]
     public void GetShiftById_WhenConnectionFails_ReturnsNull()
     {
-        var shiftRepository = new ShiftRepository(InvalidConnectionString, new StaffRepository(InvalidConnectionString));
+        var shiftRepository = new ShiftRepository(InvalidConnectionString);
 
         Assert.Null(shiftRepository.GetShiftById(1));
     }
@@ -33,7 +33,7 @@ public class ShiftRepositoryTests : IClassFixture<SqlTestFixture>
     [Fact]
     public void GetShiftsByStaffID_WhenConnectionFails_ReturnsEmptyList()
     {
-        var shiftRepository = new ShiftRepository(InvalidConnectionString, new StaffRepository(InvalidConnectionString));
+        var shiftRepository = new ShiftRepository(InvalidConnectionString);
 
         Assert.Empty(shiftRepository.GetShiftsByStaffID(1));
     }
@@ -41,7 +41,7 @@ public class ShiftRepositoryTests : IClassFixture<SqlTestFixture>
     [Fact]
     public void AddShift_WhenConnectionFails_DoesNotThrow()
     {
-        var shiftRepository = new ShiftRepository(InvalidConnectionString, new StaffRepository(InvalidConnectionString));
+        var shiftRepository = new ShiftRepository(InvalidConnectionString);
         var doctor = new Doctor(1, "John", "Doe", string.Empty, string.Empty, true, "Cardiology", "L-1", DoctorStatus.AVAILABLE, 1);
         var shift = new Shift(0, doctor, "ER", DateTime.Today.AddHours(8), DateTime.Today.AddHours(12), ShiftStatus.SCHEDULED);
 
@@ -53,7 +53,7 @@ public class ShiftRepositoryTests : IClassFixture<SqlTestFixture>
     [Fact]
     public void UpdateShiftStatus_WhenConnectionFails_DoesNotThrow()
     {
-        var shiftRepository = new ShiftRepository(InvalidConnectionString, new StaffRepository(InvalidConnectionString));
+        var shiftRepository = new ShiftRepository(InvalidConnectionString);
 
         var exception = Record.Exception(() => shiftRepository.UpdateShiftStatus(1, ShiftStatus.ACTIVE));
 
@@ -63,7 +63,7 @@ public class ShiftRepositoryTests : IClassFixture<SqlTestFixture>
     [Fact]
     public void CancelShift_WhenConnectionFails_DoesNotThrow()
     {
-        var shiftRepository = new ShiftRepository(InvalidConnectionString, new StaffRepository(InvalidConnectionString));
+        var shiftRepository = new ShiftRepository(InvalidConnectionString);
 
         var exception = Record.Exception(() => shiftRepository.CancelShift(1));
 
@@ -80,7 +80,7 @@ public class ShiftRepositoryTests : IClassFixture<SqlTestFixture>
         var shiftId = database.InsertShift(connection, staffId, "Ward A", start, start.AddHours(8));
         try
         {
-            var shiftRepository = new ShiftRepository(database.ConnectionString, new StaffRepository(database.ConnectionString));
+            var shiftRepository = new ShiftRepository(database.ConnectionString);
 
             Assert.Contains(shiftRepository.GetShifts(), shift => shift.Id == shiftId);
         }
@@ -99,7 +99,7 @@ public class ShiftRepositoryTests : IClassFixture<SqlTestFixture>
         try
         {
             var staffRepository = new StaffRepository(database.ConnectionString);
-            var shiftRepository = new ShiftRepository(database.ConnectionString, staffRepository);
+            var shiftRepository = new ShiftRepository(database.ConnectionString);
             var staff = staffRepository.GetStaffById(staffId)!;
             var start = DateTime.Today.AddDays(40).AddHours(8);
             var shift = new Shift(0, staff, "Ward B", start, start.AddHours(8), ShiftStatus.SCHEDULED);
@@ -125,7 +125,7 @@ public class ShiftRepositoryTests : IClassFixture<SqlTestFixture>
         var shiftId = database.InsertShift(connection, staffId, "Ward C", start, start.AddHours(8), "SCHEDULED");
         try
         {
-            var shiftRepository = new ShiftRepository(database.ConnectionString, new StaffRepository(database.ConnectionString));
+            var shiftRepository = new ShiftRepository(database.ConnectionString);
 
             shiftRepository.UpdateShiftStatus(shiftId, ShiftStatus.ACTIVE);
 
@@ -147,7 +147,7 @@ public class ShiftRepositoryTests : IClassFixture<SqlTestFixture>
         var shiftId = database.InsertShift(connection, staffId, "Ward D", start, start.AddHours(8));
         try
         {
-            var shiftRepository = new ShiftRepository(database.ConnectionString, new StaffRepository(database.ConnectionString));
+            var shiftRepository = new ShiftRepository(database.ConnectionString);
 
             shiftRepository.CancelShift(shiftId);
 
@@ -168,7 +168,7 @@ public class ShiftRepositoryTests : IClassFixture<SqlTestFixture>
         var shiftId = database.InsertShift(connection, staffId, "Ward E", start, start.AddHours(8));
         try
         {
-            var shiftRepository = new ShiftRepository(database.ConnectionString, new StaffRepository(database.ConnectionString));
+            var shiftRepository = new ShiftRepository(database.ConnectionString);
 
             var result = shiftRepository.GetShiftById(shiftId);
 
@@ -185,7 +185,7 @@ public class ShiftRepositoryTests : IClassFixture<SqlTestFixture>
     [Fact]
     public void GetShiftById_WhenShiftDoesNotExist_ReturnsNull()
     {
-        var shiftRepository = new ShiftRepository(database.ConnectionString, new StaffRepository(database.ConnectionString));
+        var shiftRepository = new ShiftRepository(database.ConnectionString);
 
         Assert.Null(shiftRepository.GetShiftById(int.MaxValue));
     }
@@ -201,7 +201,7 @@ public class ShiftRepositoryTests : IClassFixture<SqlTestFixture>
         var shiftBId = database.InsertShift(connection, doctorTwoId, "Ward F", start.AddHours(4), start.AddHours(8));
         try
         {
-            var shiftRepository = new ShiftRepository(database.ConnectionString, new StaffRepository(database.ConnectionString));
+            var shiftRepository = new ShiftRepository(database.ConnectionString);
 
             var result = shiftRepository.GetShiftsByStaffID(doctorOneId);
 
@@ -227,7 +227,7 @@ public class ShiftRepositoryTests : IClassFixture<SqlTestFixture>
         var outRange = database.InsertShift(connection, staffId, "Ward D", baseDate.AddDays(10).AddHours(8), baseDate.AddDays(10).AddHours(16));
         try
         {
-            var shiftRepository = new ShiftRepository(database.ConnectionString, new StaffRepository(database.ConnectionString));
+            var shiftRepository = new ShiftRepository(database.ConnectionString);
 
             var result = shiftRepository.GetShiftsForStaffInRange(staffId, baseDate, baseDate.AddDays(2));
 

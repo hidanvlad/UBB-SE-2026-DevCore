@@ -23,7 +23,7 @@ namespace DevCoreHospital.Tests.Integration
             try
             {
                 var staffRepo = new StaffRepository(database.ConnectionString);
-                var shiftRepo = new ShiftRepository(database.ConnectionString, staffRepo);
+                var shiftRepo = new ShiftRepository(database.ConnectionString);
                 var service = new ShiftManagementService(staffRepo, shiftRepo);
                 var staff = staffRepo.GetStaffById(staffId)!;
                 var start = DateTime.Today.AddDays(30).AddHours(8);
@@ -53,7 +53,7 @@ namespace DevCoreHospital.Tests.Integration
             try
             {
                 var staffRepo = new StaffRepository(database.ConnectionString);
-                var shiftRepo = new ShiftRepository(database.ConnectionString, staffRepo);
+                var shiftRepo = new ShiftRepository(database.ConnectionString);
                 var service = new ShiftManagementService(staffRepo, shiftRepo);
 
                 var result = service.ValidateNoOverlap(staffId, start.AddHours(2), start.AddHours(6));
@@ -77,7 +77,7 @@ namespace DevCoreHospital.Tests.Integration
             try
             {
                 var staffRepo = new StaffRepository(database.ConnectionString);
-                var shiftRepo = new ShiftRepository(database.ConnectionString, staffRepo);
+                var shiftRepo = new ShiftRepository(database.ConnectionString);
                 var service = new ShiftManagementService(staffRepo, shiftRepo);
 
                 var result = service.ValidateNoOverlap(staffId, start.AddHours(4), start.AddHours(8));
@@ -101,7 +101,7 @@ namespace DevCoreHospital.Tests.Integration
             try
             {
                 var staffRepo = new StaffRepository(database.ConnectionString);
-                var shiftRepo = new ShiftRepository(database.ConnectionString, staffRepo);
+                var shiftRepo = new ShiftRepository(database.ConnectionString);
                 var service = new ShiftManagementService(staffRepo, shiftRepo);
 
                 service.SetShiftActive(shiftId);
@@ -128,7 +128,7 @@ namespace DevCoreHospital.Tests.Integration
             try
             {
                 var staffRepo = new StaffRepository(database.ConnectionString);
-                var shiftRepo = new ShiftRepository(database.ConnectionString, staffRepo);
+                var shiftRepo = new ShiftRepository(database.ConnectionString);
                 var service = new ShiftManagementService(staffRepo, shiftRepo);
 
                 service.CancelShift(shiftId);
@@ -156,7 +156,7 @@ namespace DevCoreHospital.Tests.Integration
             try
             {
                 var staffRepo = new StaffRepository(database.ConnectionString);
-                var shiftRepo = new ShiftRepository(database.ConnectionString, staffRepo);
+                var shiftRepo = new ShiftRepository(database.ConnectionString);
                 var service = new ShiftManagementService(staffRepo, shiftRepo);
                 var shift = shiftRepo.GetShiftById(shiftId)!;
                 var replacement = staffRepo.GetStaffById(replacementStaffId)!;
