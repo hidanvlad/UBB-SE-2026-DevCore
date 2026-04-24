@@ -15,7 +15,8 @@ public class AppointmentRepositoryTests : IClassFixture<SqlTestFixture>
     [Fact]
     public async Task GetUpcomingAppointmentsAsync_WhenConnectionFails_ThrowsException()
         => await Assert.ThrowsAnyAsync<Exception>(() =>
-            new AppointmentRepository(InvalidConnectionString).GetUpcomingAppointmentsAsync(1, DateTime.Today, 0, 10));
+            new AppointmentRepository(InvalidConnectionString)
+                .GetAppointmentsInRangeAsync(1, DateTime.Today, DateTime.Today.AddDays(31), 0, 10));
 
     [Fact]
     public async Task GetAllDoctorsAsync_WhenConnectionFails_ThrowsException()
@@ -35,15 +36,9 @@ public class AppointmentRepositoryTests : IClassFixture<SqlTestFixture>
     [Fact]
     public async Task AddAppointmentAsync_WhenConnectionFails_ThrowsException()
     {
-        var appointment = new Appointment
-        {
-            Id = 1, DoctorId = 10, PatientName = "PAT-5", Date = DateTime.Today,
-            StartTime = new TimeSpan(9, 0, 0), EndTime = new TimeSpan(10, 0, 0),
-            Status = "Scheduled", Type = string.Empty, Location = string.Empty,
-        };
-
         await Assert.ThrowsAnyAsync<Exception>(() =>
-            new AppointmentRepository(InvalidConnectionString).AddAppointmentAsync(appointment));
+            new AppointmentRepository(InvalidConnectionString)
+                .AddAppointmentAsync(5, 10, DateTime.Today.AddHours(9), DateTime.Today.AddHours(10), "Scheduled"));
     }
 
     [Fact]
@@ -54,7 +49,8 @@ public class AppointmentRepositoryTests : IClassFixture<SqlTestFixture>
     [Fact]
     public async Task GetActiveAppointmentsCountForDoctorAsync_WhenConnectionFails_ThrowsException()
         => await Assert.ThrowsAnyAsync<Exception>(() =>
-            new AppointmentRepository(InvalidConnectionString).GetActiveAppointmentsCountForDoctorAsync(1));
+            new AppointmentRepository(InvalidConnectionString)
+                .GetAppointmentsCountForDoctorByStatusAsync(1, "Scheduled"));
 
     [Fact]
     public async Task UpdateDoctorStatusAsync_WhenConnectionFails_ThrowsException()
@@ -130,13 +126,9 @@ public class AppointmentRepositoryTests : IClassFixture<SqlTestFixture>
         try
         {
             var repository = new AppointmentRepository(database.ConnectionString);
-            await repository.AddAppointmentAsync(new Appointment
-            {
-                DoctorId = doctorId, PatientName = "PAT-777",
-                Date = DateTime.Today.AddDays(3),
-                StartTime = new TimeSpan(11, 0, 0), EndTime = new TimeSpan(12, 0, 0),
-                Status = "Scheduled", Type = string.Empty, Location = string.Empty,
-            });
+            var start = DateTime.Today.AddDays(3).AddHours(11);
+            var end = DateTime.Today.AddDays(3).AddHours(12);
+            await repository.AddAppointmentAsync(777, doctorId, start, end, "Scheduled");
 
             var all = await repository.GetAppointmentsForAdminAsync(doctorId);
             bool AppointmentBelongsToDoctor(Appointment appointment) => appointment.DoctorId == doctorId;
@@ -180,7 +172,8 @@ public class AppointmentRepositoryTests : IClassFixture<SqlTestFixture>
         var appointmentThreeId = database.InsertAppointment(connection, 444, doctorId, start.AddHours(4), start.AddHours(5), "Completed");
         try
         {
-            Assert.Equal(2, await new AppointmentRepository(database.ConnectionString).GetActiveAppointmentsCountForDoctorAsync(doctorId));
+            Assert.Equal(2, await new AppointmentRepository(database.ConnectionString)
+                .GetAppointmentsCountForDoctorByStatusAsync(doctorId, "Scheduled"));
         }
         finally
         {
@@ -200,7 +193,8 @@ public class AppointmentRepositoryTests : IClassFixture<SqlTestFixture>
         var appointmentId = database.InsertAppointment(connection, 555, doctorId, start, start.AddHours(1));
         try
         {
-            var result = await new AppointmentRepository(database.ConnectionString).GetUpcomingAppointmentsAsync(doctorId, DateTime.Today, 0, 100);
+            var result = await new AppointmentRepository(database.ConnectionString)
+                .GetAppointmentsInRangeAsync(doctorId, DateTime.Today, DateTime.Today.AddDays(31), 0, 100);
 
             bool AppointmentMatchesInserted(Appointment appointment) => appointment.Id == appointmentId;
             Assert.Contains(result, AppointmentMatchesInserted);
