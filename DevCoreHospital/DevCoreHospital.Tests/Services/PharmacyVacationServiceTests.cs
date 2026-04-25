@@ -53,7 +53,7 @@ namespace DevCoreHospital.Tests.Services
                 new DateTime(2025, 6, 8), new DateTime(2025, 6, 12), ShiftStatus.SCHEDULED);
 
             mockStaffRepository.Setup(pharmacyStaffRepository => pharmacyStaffRepository.GetPharmacists()).Returns(new List<Pharmacyst> { pharmacist });
-            mockShiftRepository.Setup(pharmacyShiftRepository => pharmacyShiftRepository.GetShiftsByStaffID(pharmacist.StaffID)).Returns(new List<Shift> { existingShift });
+            mockShiftRepository.Setup(pharmacyShiftRepository => pharmacyShiftRepository.GetAllShifts()).Returns(new List<Shift> { existingShift });
 
             var exception = Assert.Throws<InvalidOperationException>(() =>
                 service.RegisterVacation(pharmacist.StaffID, new DateTime(2025, 6, 10), new DateTime(2025, 6, 15)));
@@ -68,7 +68,7 @@ namespace DevCoreHospital.Tests.Services
                 new DateTime(2025, 6, 1), new DateTime(2025, 6, 4), ShiftStatus.VACATION);
 
             mockStaffRepository.Setup(pharmacyStaffRepository => pharmacyStaffRepository.GetPharmacists()).Returns(new List<Pharmacyst> { pharmacist });
-            mockShiftRepository.Setup(pharmacyShiftRepository => pharmacyShiftRepository.GetShiftsByStaffID(pharmacist.StaffID)).Returns(new List<Shift> { existingVacation });
+            mockShiftRepository.Setup(pharmacyShiftRepository => pharmacyShiftRepository.GetAllShifts()).Returns(new List<Shift> { existingVacation });
 
             var exception = Assert.Throws<InvalidOperationException>(() =>
                 service.RegisterVacation(pharmacist.StaffID, new DateTime(2025, 6, 20), new DateTime(2025, 6, 21)));
@@ -80,8 +80,8 @@ namespace DevCoreHospital.Tests.Services
         public void RegisterVacation_AddsVacationShift_WhenAllConditionsAreMet()
         {
             mockStaffRepository.Setup(pharmacyStaffRepository => pharmacyStaffRepository.GetPharmacists()).Returns(new List<Pharmacyst> { pharmacist });
-            mockShiftRepository.Setup(pharmacyShiftRepository => pharmacyShiftRepository.GetShiftsByStaffID(pharmacist.StaffID)).Returns(new List<Shift>());
-            mockShiftRepository.Setup(pharmacyShiftRepository => pharmacyShiftRepository.GetShifts()).Returns(new List<Shift>());
+            mockShiftRepository.Setup(pharmacyShiftRepository => pharmacyShiftRepository.GetAllShifts()).Returns(new List<Shift>());
+            mockShiftRepository.Setup(pharmacyShiftRepository => pharmacyShiftRepository.GetAllShifts()).Returns(new List<Shift>());
 
             service.RegisterVacation(pharmacist.StaffID, new DateTime(2025, 7, 1), new DateTime(2025, 7, 3));
 
@@ -92,8 +92,8 @@ namespace DevCoreHospital.Tests.Services
         public void RegisterVacation_AddsShiftWithVacationStatus_WhenAllConditionsAreMet()
         {
             mockStaffRepository.Setup(pharmacyStaffRepository => pharmacyStaffRepository.GetPharmacists()).Returns(new List<Pharmacyst> { pharmacist });
-            mockShiftRepository.Setup(pharmacyShiftRepository => pharmacyShiftRepository.GetShiftsByStaffID(pharmacist.StaffID)).Returns(new List<Shift>());
-            mockShiftRepository.Setup(pharmacyShiftRepository => pharmacyShiftRepository.GetShifts()).Returns(new List<Shift>());
+            mockShiftRepository.Setup(pharmacyShiftRepository => pharmacyShiftRepository.GetAllShifts()).Returns(new List<Shift>());
+            mockShiftRepository.Setup(pharmacyShiftRepository => pharmacyShiftRepository.GetAllShifts()).Returns(new List<Shift>());
 
             service.RegisterVacation(pharmacist.StaffID, new DateTime(2025, 7, 1), new DateTime(2025, 7, 3));
 
@@ -105,8 +105,8 @@ namespace DevCoreHospital.Tests.Services
         public void RegisterVacation_AllowsVacation_WhenExactlyAtMonthlyLimit()
         {
             mockStaffRepository.Setup(pharmacyStaffRepository => pharmacyStaffRepository.GetPharmacists()).Returns(new List<Pharmacyst> { pharmacist });
-            mockShiftRepository.Setup(pharmacyShiftRepository => pharmacyShiftRepository.GetShiftsByStaffID(pharmacist.StaffID)).Returns(new List<Shift>());
-            mockShiftRepository.Setup(pharmacyShiftRepository => pharmacyShiftRepository.GetShifts()).Returns(new List<Shift>());
+            mockShiftRepository.Setup(pharmacyShiftRepository => pharmacyShiftRepository.GetAllShifts()).Returns(new List<Shift>());
+            mockShiftRepository.Setup(pharmacyShiftRepository => pharmacyShiftRepository.GetAllShifts()).Returns(new List<Shift>());
 
             service.RegisterVacation(pharmacist.StaffID, new DateTime(2025, 6, 1), new DateTime(2025, 6, 4));
 
@@ -120,7 +120,7 @@ namespace DevCoreHospital.Tests.Services
                 new DateTime(2025, 7, 1), new DateTime(2025, 7, 4), ShiftStatus.VACATION);
 
             mockStaffRepository.Setup(pharmacyStaffRepository => pharmacyStaffRepository.GetPharmacists()).Returns(new List<Pharmacyst> { pharmacist });
-            mockShiftRepository.Setup(pharmacyShiftRepository => pharmacyShiftRepository.GetShiftsByStaffID(pharmacist.StaffID)).Returns(new List<Shift> { existingVacation });
+            mockShiftRepository.Setup(pharmacyShiftRepository => pharmacyShiftRepository.GetAllShifts()).Returns(new List<Shift> { existingVacation });
 
             Assert.Throws<InvalidOperationException>(() =>
                 service.RegisterVacation(pharmacist.StaffID, new DateTime(2025, 7, 28), new DateTime(2025, 7, 31)));
@@ -130,8 +130,8 @@ namespace DevCoreHospital.Tests.Services
         public void RegisterVacation_Succeeds_WhenStartDateEqualsEndDate()
         {
             mockStaffRepository.Setup(pharmacyStaffRepository => pharmacyStaffRepository.GetPharmacists()).Returns(new List<Pharmacyst> { pharmacist });
-            mockShiftRepository.Setup(pharmacyShiftRepository => pharmacyShiftRepository.GetShiftsByStaffID(pharmacist.StaffID)).Returns(new List<Shift>());
-            mockShiftRepository.Setup(pharmacyShiftRepository => pharmacyShiftRepository.GetShifts()).Returns(new List<Shift>());
+            mockShiftRepository.Setup(pharmacyShiftRepository => pharmacyShiftRepository.GetAllShifts()).Returns(new List<Shift>());
+            mockShiftRepository.Setup(pharmacyShiftRepository => pharmacyShiftRepository.GetAllShifts()).Returns(new List<Shift>());
 
             service.RegisterVacation(pharmacist.StaffID, new DateTime(2025, 7, 10), new DateTime(2025, 7, 10));
 
@@ -142,8 +142,8 @@ namespace DevCoreHospital.Tests.Services
         public void RegisterVacation_Succeeds_WhenVacationSpansTwoMonthsButNeitherExceedsLimit()
         {
             mockStaffRepository.Setup(pharmacyStaffRepository => pharmacyStaffRepository.GetPharmacists()).Returns(new List<Pharmacyst> { pharmacist });
-            mockShiftRepository.Setup(pharmacyShiftRepository => pharmacyShiftRepository.GetShiftsByStaffID(pharmacist.StaffID)).Returns(new List<Shift>());
-            mockShiftRepository.Setup(pharmacyShiftRepository => pharmacyShiftRepository.GetShifts()).Returns(new List<Shift>());
+            mockShiftRepository.Setup(pharmacyShiftRepository => pharmacyShiftRepository.GetAllShifts()).Returns(new List<Shift>());
+            mockShiftRepository.Setup(pharmacyShiftRepository => pharmacyShiftRepository.GetAllShifts()).Returns(new List<Shift>());
 
             service.RegisterVacation(pharmacist.StaffID, new DateTime(2025, 6, 30), new DateTime(2025, 7, 2));
 
@@ -178,7 +178,7 @@ namespace DevCoreHospital.Tests.Services
                 new DateTime(2025, 7, 1), new DateTime(2025, 7, 4), ShiftStatus.VACATION);
 
             mockStaffRepository.Setup(pharmacyStaffRepository => pharmacyStaffRepository.GetPharmacists()).Returns(new List<Pharmacyst> { pharmacist });
-            mockShiftRepository.Setup(pharmacyShiftRepository => pharmacyShiftRepository.GetShiftsByStaffID(pharmacist.StaffID)).Returns(new List<Shift> { existingVacation });
+            mockShiftRepository.Setup(pharmacyShiftRepository => pharmacyShiftRepository.GetAllShifts()).Returns(new List<Shift> { existingVacation });
 
             Assert.Throws<InvalidOperationException>(() =>
                 service.RegisterVacation(pharmacist.StaffID, new DateTime(2025, 6, 30), new DateTime(2025, 7, 3)));

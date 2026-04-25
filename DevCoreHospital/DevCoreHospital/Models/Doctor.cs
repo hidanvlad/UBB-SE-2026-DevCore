@@ -16,7 +16,7 @@
         {
         }
 
-        public Doctor(int staffID, string firstName, string lastName, string contactInfo, string v, bool available,
+        public Doctor(int staffID, string firstName, string lastName, string contactInfo, bool available,
             string specialization, string licenseNumber, DoctorStatus doctorStatus, int yearsExp)
         {
             this.StaffID = staffID;

@@ -15,7 +15,7 @@ namespace DevCoreHospital.Tests.ViewModels
             DateTime? end = null,
             ShiftStatus status = ShiftStatus.SCHEDULED)
         {
-            var staff = new Doctor(1, "First", "Last", string.Empty, string.Empty, true, "General", "LIC-1", DoctorStatus.AVAILABLE, 1);
+            var staff = new Doctor(1, "First", "Last", string.Empty, true, "General", "LIC-1", DoctorStatus.AVAILABLE, 1);
             var shift = new Shift(1, staff, location, start ?? DefaultStart, end ?? DefaultEnd, status);
             return new DoctorShiftItemViewModel(shift);
         }
@@ -83,7 +83,7 @@ namespace DevCoreHospital.Tests.ViewModels
         [Fact]
         public void Constructor_SetsId_FromShift()
         {
-            var staff = new Doctor(1, "F", "L", string.Empty, string.Empty, true, "G", "L", DoctorStatus.AVAILABLE, 1);
+            var staff = new Doctor(1, "F", "L", string.Empty, true, "G", "L", DoctorStatus.AVAILABLE, 1);
             var shift = new Shift(99, staff, "ER", DefaultStart, DefaultEnd, ShiftStatus.SCHEDULED);
 
             var viewModel = new DoctorShiftItemViewModel(shift);

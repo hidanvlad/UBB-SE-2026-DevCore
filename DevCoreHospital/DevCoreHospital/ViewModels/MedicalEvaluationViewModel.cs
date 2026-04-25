@@ -356,7 +356,7 @@ namespace DevCoreHospital.ViewModels
                     EvaluationDate = DateTime.Now,
                     Evaluator = new DevCoreHospital.Models.Doctor(
                         currentUserService.UserId,
-                        string.Empty, string.Empty, string.Empty, string.Empty,
+                        string.Empty, string.Empty, string.Empty,
                         true, string.Empty, "Available", DoctorStatus.AVAILABLE, 0),
                 };
 

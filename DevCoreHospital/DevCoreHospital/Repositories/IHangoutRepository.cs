@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using DevCoreHospital.Models;
 
@@ -6,10 +5,8 @@ namespace DevCoreHospital.Repositories
 {
     public interface IHangoutRepository
     {
-        int AddHangout(Hangout hangout);
-        void AddParticipant(int hangoutId, int staffId);
+        int AddHangout(string title, string description, System.DateTime date, int maxParticipants);
         List<Hangout> GetAllHangouts();
-        Hangout? GetHangoutById(int id);
-        IReadOnlyList<string> GetAppointmentStatusesForStaffOnDate(int staffId, DateTime date);
+        Hangout? GetHangoutById(int hangoutId);
     }
 }

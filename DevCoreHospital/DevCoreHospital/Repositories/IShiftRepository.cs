@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using DevCoreHospital.Models;
 
@@ -6,9 +5,13 @@ namespace DevCoreHospital.Repositories;
 
 public interface IShiftRepository
 {
-    IReadOnlyList<Shift> GetShiftsForStaffInRange(int staffId, DateTime rangeStart, DateTime rangeEnd);
+    IReadOnlyList<Shift> GetAllShifts();
 
-    Shift? GetShiftById(int shiftId);
+    void AddShift(Shift newShift);
 
-    List<Shift> GetShiftsByStaffID(int staffId);
+    void UpdateShiftStatus(int shiftId, ShiftStatus status);
+
+    void UpdateShiftStaffId(int shiftId, int newStaffId);
+
+    void DeleteShift(int shiftId);
 }

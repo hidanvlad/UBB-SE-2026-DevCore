@@ -44,7 +44,8 @@ namespace DevCoreHospital.Services
                 .FirstOrDefault(HasMatchingStaffId)
                 ?? throw new ArgumentException("Pharmacist not found.");
 
-            var pharmacistShifts = shiftRepository.GetShiftsByStaffID(pharmacistStaffId);
+            bool IsForPharmacist(Shift existingShift) => existingShift.AppointedStaff.StaffID == pharmacistStaffId;
+            var pharmacistShifts = shiftRepository.GetAllShifts().Where(IsForPharmacist).ToList();
 
             bool OverlapsVacationPeriod(Shift shift) => start < shift.EndTime && endExclusive > shift.StartTime;
             var overlappingShift = pharmacistShifts.FirstOrDefault(OverlapsVacationPeriod);
@@ -61,7 +62,7 @@ namespace DevCoreHospital.Services
                     $"Cannot add vacation: pharmacist would exceed {MaxVacationDaysPerMonth} vacation days in a month.");
             }
 
-            var allShifts = shiftRepository.GetShifts();
+            var allShifts = shiftRepository.GetAllShifts();
             var nextId = allShifts.Count == 0 ? 1 : allShifts.Max(shift => shift.Id) + 1;
 
             var vacationShift = new Shift(

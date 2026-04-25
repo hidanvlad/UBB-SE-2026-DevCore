@@ -360,7 +360,7 @@ namespace DevCoreHospital.Tests.ViewModels
         }
 
         private static Doctor BuildDoctor(int staffId, string specialization)
-            => new Doctor(staffId, "John", "Doe", "john.doe@example.com", string.Empty, false, specialization, "LIC-1", DoctorStatus.OFF_DUTY, 5);
+            => new Doctor(staffId, "John", "Doe", "john.doe@example.com", false, specialization, "LIC-1", DoctorStatus.OFF_DUTY, 5);
 
         private static Shift BuildShift(int id, IStaff staff, string location, DateTime start, DateTime end)
             => new Shift(id, staff, location, start, end, ShiftStatus.SCHEDULED);

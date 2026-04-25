@@ -12,12 +12,25 @@ namespace DevCoreHospital.Services
         private const int MaxHangoutTitleLength = 25;
         private const int MaxHangoutDescriptionLength = 100;
         private const int MinDaysAheadForHangout = 7;
+        private const string FinishedAppointmentStatus = "Finished";
+        private const string CanceledAppointmentStatusUs = "Canceled";
+        private const string CancelledAppointmentStatusUk = "Cancelled";
 
         private readonly IHangoutRepository hangoutRepository;
+        private readonly IHangoutParticipantRepository hangoutParticipantRepository;
+        private readonly IAppointmentRepository appointmentRepository;
+        private readonly IStaffRepository staffRepository;
 
-        public HangoutService(IHangoutRepository hangoutRepository)
+        public HangoutService(
+            IHangoutRepository hangoutRepository,
+            IHangoutParticipantRepository hangoutParticipantRepository,
+            IAppointmentRepository appointmentRepository,
+            IStaffRepository staffRepository)
         {
             this.hangoutRepository = hangoutRepository;
+            this.hangoutParticipantRepository = hangoutParticipantRepository;
+            this.appointmentRepository = appointmentRepository;
+            this.staffRepository = staffRepository;
         }
 
         public int CreateHangout(string title, string description, DateTime date, int maxParticipants, IStaff creator)
@@ -37,15 +50,14 @@ namespace DevCoreHospital.Services
                 throw new ArgumentException("The hangout date must be at least 1 week away from today.");
             }
 
-            if (HasConflictsOnDate(creator.StaffID, date))
+            if (HasConflictingAppointmentOnDate(creator.StaffID, date))
             {
                 throw new InvalidOperationException("You cannot create a hangout on a day where you have active scheduled appointments.");
             }
 
-            Hangout newHangout = new Hangout(0, title, description ?? string.Empty, date, maxParticipants);
-            newHangout.ParticipantList.Add(creator);
-
-            return hangoutRepository.AddHangout(newHangout);
+            int newHangoutId = hangoutRepository.AddHangout(title, description ?? string.Empty, date, maxParticipants);
+            hangoutParticipantRepository.AddParticipant(newHangoutId, creator.StaffID);
+            return newHangoutId;
         }
 
         public void JoinHangout(int hangoutId, IStaff staff)
@@ -56,39 +68,63 @@ namespace DevCoreHospital.Services
                 throw new ArgumentException("Hangout not found.");
             }
 
-            if (hangout.ParticipantList.Count >= hangout.MaxParticipants)
+            var participantsForHangout = hangoutParticipantRepository.GetAllParticipants()
+                .Where(participant => participant.HangoutId == hangoutId)
+                .ToList();
+
+            if (participantsForHangout.Count >= hangout.MaxParticipants)
             {
                 throw new InvalidOperationException("This hangout is already full.");
             }
 
-            if (hangout.ParticipantList.Any(participant => participant.StaffID == staff.StaffID))
+            if (participantsForHangout.Any(participant => participant.StaffId == staff.StaffID))
             {
                 throw new InvalidOperationException("You have already joined this hangout.");
             }
 
-            if (HasConflictsOnDate(staff.StaffID, hangout.Date))
+            if (HasConflictingAppointmentOnDate(staff.StaffID, hangout.Date))
             {
                 throw new InvalidOperationException("You cannot join a hangout on a day where you have active scheduled appointments.");
             }
 
-            hangoutRepository.AddParticipant(hangoutId, staff.StaffID);
+            hangoutParticipantRepository.AddParticipant(hangoutId, staff.StaffID);
         }
 
         public List<Hangout> GetAllHangouts()
         {
-            return hangoutRepository.GetAllHangouts();
+            var hangouts = hangoutRepository.GetAllHangouts();
+            var allParticipants = hangoutParticipantRepository.GetAllParticipants();
+            var allStaffById = staffRepository.LoadAllStaff().ToDictionary(staffMember => staffMember.StaffID);
+
+            foreach (var hangout in hangouts)
+            {
+                var staffIdsForHangout = allParticipants
+                    .Where(participant => participant.HangoutId == hangout.HangoutID)
+                    .Select(participant => participant.StaffId);
+                foreach (var staffId in staffIdsForHangout)
+                {
+                    if (allStaffById.TryGetValue(staffId, out var staffMember))
+                    {
+                        hangout.ParticipantList.Add(staffMember);
+                    }
+                }
+            }
+            return hangouts;
         }
 
-        private bool HasConflictsOnDate(int staffId, DateTime date)
+        private bool HasConflictingAppointmentOnDate(int staffId, DateTime date)
         {
-            var statuses = hangoutRepository.GetAppointmentStatusesForStaffOnDate(staffId, date);
+            var allAppointments = System.Threading.Tasks.Task.Run(() => appointmentRepository.GetAllAppointmentsAsync()).GetAwaiter().GetResult();
 
             bool IsActiveStatus(string status) =>
-                !string.Equals(status, "Finished", StringComparison.OrdinalIgnoreCase) &&
-                !string.Equals(status, "Canceled", StringComparison.OrdinalIgnoreCase) &&
-                !string.Equals(status, "Cancelled", StringComparison.OrdinalIgnoreCase);
+                !string.Equals(status, FinishedAppointmentStatus, StringComparison.OrdinalIgnoreCase)
+                && !string.Equals(status, CanceledAppointmentStatusUs, StringComparison.OrdinalIgnoreCase)
+                && !string.Equals(status, CancelledAppointmentStatusUk, StringComparison.OrdinalIgnoreCase);
 
-            return statuses.Any(IsActiveStatus);
+            return allAppointments.Any(appointment =>
+                appointment.DoctorId == staffId
+                && appointment.Date.Date == date.Date
+                && IsActiveStatus(appointment.Status));
         }
     }
 }

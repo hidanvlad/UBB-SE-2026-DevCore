@@ -19,7 +19,7 @@ namespace DevCoreHospital.Services
 
         public void SetShiftActive(int shiftId)
         {
-            var shift = shiftRepository.GetShifts().FirstOrDefault(existingShift => existingShift.Id == shiftId);
+            var shift = shiftRepository.GetAllShifts().FirstOrDefault(existingShift => existingShift.Id == shiftId);
             if (shift != null)
             {
                 shiftRepository.UpdateShiftStatus(shiftId, ShiftStatus.ACTIVE);
@@ -29,7 +29,7 @@ namespace DevCoreHospital.Services
 
         public void CancelShift(int shiftId)
         {
-            var shift = shiftRepository.GetShifts().FirstOrDefault(existingShift => existingShift.Id == shiftId);
+            var shift = shiftRepository.GetAllShifts().FirstOrDefault(existingShift => existingShift.Id == shiftId);
             if (shift != null)
             {
                 staffRepository.UpdateStaffAvailability(shift.AppointedStaff.StaffID, false, DoctorStatus.OFF_DUTY);
@@ -43,7 +43,7 @@ namespace DevCoreHospital.Services
                 (shift.AppointedStaff.StaffID == staffId) &&
                 ((start >= shift.StartTime && start < shift.EndTime) || (end > shift.StartTime && end <= shift.EndTime));
 
-            return !shiftRepository.GetShifts().Any(OverlapsWithStaff);
+            return !shiftRepository.GetAllShifts().Any(OverlapsWithStaff);
         }
 
         public void AddShift(Shift shift) => shiftRepository.AddShift(shift);
@@ -65,7 +65,7 @@ namespace DevCoreHospital.Services
         public List<Shift> GetDailyShifts(DateTime date)
         {
             bool IsOnDate(Shift shift) => shift.StartTime.Date == date.Date;
-            return shiftRepository.GetShifts().Where(IsOnDate).ToList();
+            return GetHydratedShifts().Where(IsOnDate).ToList();
         }
 
         public List<Shift> GetWeeklyShifts(DateTime date)
@@ -74,7 +74,7 @@ namespace DevCoreHospital.Services
             var weekEnd = weekStart.AddDays(7);
 
             bool IsInWeek(Shift shift) => shift.StartTime >= weekStart && shift.StartTime < weekEnd;
-            return shiftRepository.GetShifts().Where(IsInWeek).ToList();
+            return GetHydratedShifts().Where(IsInWeek).ToList();
         }
 
         public bool ReassignShift(Shift shift, IStaff newStaff)
@@ -157,7 +157,7 @@ namespace DevCoreHospital.Services
             bool IsForStaffInWeek(Shift shift) => shift.AppointedStaff.StaffID == staffId && shift.StartTime >= weekStart && shift.StartTime < weekEnd;
             float ToShiftHours(Shift shift) => (float)(shift.EndTime - shift.StartTime).TotalHours;
 
-            return shiftRepository.GetShifts()
+            return shiftRepository.GetAllShifts()
                 .Where(IsForStaffInWeek)
                 .Sum(ToShiftHours);
         }
@@ -165,7 +165,22 @@ namespace DevCoreHospital.Services
         public List<Shift> GetActiveShifts()
         {
             bool IsActiveShift(Shift shift) => shift.Status == ShiftStatus.ACTIVE;
-            return shiftRepository.GetShifts().Where(IsActiveShift).ToList();
+            return GetHydratedShifts().Where(IsActiveShift).ToList();
+        }
+
+        private List<Shift> GetHydratedShifts()
+        {
+            var staffById = (staffRepository.LoadAllStaff() ?? new List<IStaff>())
+                .ToDictionary(staffMember => staffMember.StaffID);
+            var hydratedShifts = new List<Shift>();
+            foreach (var shift in shiftRepository.GetAllShifts() ?? new List<Shift>())
+            {
+                IStaff appointedStaff = staffById.TryGetValue(shift.AppointedStaff.StaffID, out var resolvedStaff)
+                    ? resolvedStaff
+                    : shift.AppointedStaff;
+                hydratedShifts.Add(new Shift(shift.Id, appointedStaff, shift.Location, shift.StartTime, shift.EndTime, shift.Status));
+            }
+            return hydratedShifts;
         }
 
         public bool IsStaffWorkingDuring(int staffId, DateTime startTime, DateTime endTime)
@@ -176,7 +191,7 @@ namespace DevCoreHospital.Services
                 shift.EndTime > startTime &&
                 (shift.Status == ShiftStatus.SCHEDULED || shift.Status == ShiftStatus.ACTIVE);
 
-            return shiftRepository.GetShifts().Any(IsWorkingDuring);
+            return shiftRepository.GetAllShifts().Any(IsWorkingDuring);
         }
     }
 }

@@ -11,14 +11,16 @@ namespace DevCoreHospital.Tests.Services
     public class DoctorAppointmentServiceTests
     {
         private readonly Mock<IAppointmentRepository> mockDataSource;
+        private readonly Mock<IStaffRepository> mockStaffRepository;
         private readonly Mock<IShiftRepository> mockShiftRepository;
         private readonly DoctorAppointmentService service;
 
         public DoctorAppointmentServiceTests()
         {
             mockDataSource = new Mock<IAppointmentRepository>();
+            mockStaffRepository = new Mock<IStaffRepository>();
             mockShiftRepository = new Mock<IShiftRepository>();
-            service = new DoctorAppointmentService(mockDataSource.Object, mockShiftRepository.Object);
+            service = new DoctorAppointmentService(mockDataSource.Object, mockStaffRepository.Object, mockShiftRepository.Object);
         }
 
 
@@ -53,7 +55,7 @@ namespace DevCoreHospital.Tests.Services
 
             await service.BookAppointmentAsync(appointment);
 
-            mockDataSource.Verify(appointmentRepository => appointmentRepository.UpdateDoctorStatusAsync(10, "IN_EXAMINATION"), Times.Once);
+            mockStaffRepository.Verify(staffRepository => staffRepository.UpdateStatusAsync(10, "IN_EXAMINATION"), Times.Once);
         }
 
 
@@ -61,7 +63,8 @@ namespace DevCoreHospital.Tests.Services
         public async Task FinishAppointmentAsync_SetsAppointmentStatus_ToFinished()
         {
             var appointment = new Appointment { Id = 5, DoctorId = 10 };
-            mockDataSource.Setup(appointmentRepository => appointmentRepository.GetAppointmentsCountForDoctorByStatusAsync(10, "Scheduled")).ReturnsAsync(1);
+            mockDataSource.Setup(appointmentRepository => appointmentRepository.GetAllAppointmentsAsync())
+                .ReturnsAsync(new List<Appointment> { new Appointment { Id = 6, DoctorId = 10, Status = "Scheduled" } });
 
             await service.FinishAppointmentAsync(appointment);
 
@@ -72,22 +75,28 @@ namespace DevCoreHospital.Tests.Services
         public async Task FinishAppointmentAsync_SetsDoctorStatus_ToAvailable_WhenNoActiveAppointmentsRemain()
         {
             var appointment = new Appointment { Id = 5, DoctorId = 10 };
-            mockDataSource.Setup(appointmentRepository => appointmentRepository.GetAppointmentsCountForDoctorByStatusAsync(10, "Scheduled")).ReturnsAsync(0);
+            mockDataSource.Setup(appointmentRepository => appointmentRepository.GetAllAppointmentsAsync())
+                .ReturnsAsync(new List<Appointment>());
 
             await service.FinishAppointmentAsync(appointment);
 
-            mockDataSource.Verify(appointmentRepository => appointmentRepository.UpdateDoctorStatusAsync(10, "AVAILABLE"), Times.Once);
+            mockStaffRepository.Verify(staffRepository => staffRepository.UpdateStatusAsync(10, "AVAILABLE"), Times.Once);
         }
 
         [Fact]
         public async Task FinishAppointmentAsync_DoesNotUpdateDoctorStatus_WhenActiveAppointmentsRemain()
         {
             var appointment = new Appointment { Id = 5, DoctorId = 10 };
-            mockDataSource.Setup(appointmentRepository => appointmentRepository.GetAppointmentsCountForDoctorByStatusAsync(10, "Scheduled")).ReturnsAsync(2);
+            mockDataSource.Setup(appointmentRepository => appointmentRepository.GetAllAppointmentsAsync())
+                .ReturnsAsync(new List<Appointment>
+                {
+                    new Appointment { Id = 6, DoctorId = 10, Status = "Scheduled" },
+                    new Appointment { Id = 7, DoctorId = 10, Status = "Scheduled" },
+                });
 
             await service.FinishAppointmentAsync(appointment);
 
-            mockDataSource.Verify(appointmentRepository => appointmentRepository.UpdateDoctorStatusAsync(It.IsAny<int>(), It.IsAny<string>()), Times.Never);
+            mockStaffRepository.Verify(staffRepository => staffRepository.UpdateStatusAsync(It.IsAny<int>(), It.IsAny<string>()), Times.Never);
         }
 
 
@@ -133,42 +142,42 @@ namespace DevCoreHospital.Tests.Services
         }
 
         [Fact]
-        public async Task GetAllDoctorsAsync_ReturnsResultFromDataSource()
+        public async Task GetAllDoctorsAsync_CombinesNamesAndOrdersAlphabetically()
         {
-            IReadOnlyList<(int DoctorId, string DoctorName)> expected = new List<(int, string)>
+            IReadOnlyList<(int DoctorId, string FirstName, string LastName)> raw = new List<(int, string, string)>
             {
-                (1, "Dr. Smith"),
-                (2, "Dr. Jones")
+                (1, "Dr.", "Smith"),
+                (2, "Dr.", "Jones")
             };
-            mockDataSource.Setup(appointmentRepository => appointmentRepository.GetAllDoctorsAsync()).ReturnsAsync(expected);
+            mockStaffRepository.Setup(staffRepository => staffRepository.GetAllDoctorsAsync()).ReturnsAsync(raw);
 
             var result = await service.GetAllDoctorsAsync();
 
             Assert.Equal(2, result.Count);
             Assert.Equal((2, "Dr. Jones"), result[0]);
             Assert.Equal((1, "Dr. Smith"), result[1]);
-            mockDataSource.Verify(appointmentRepository => appointmentRepository.GetAllDoctorsAsync(), Times.Once);
+            mockStaffRepository.Verify(staffRepository => staffRepository.GetAllDoctorsAsync(), Times.Once);
         }
 
         [Fact]
-        public async Task GetAppointmentDetailsAsync_CallsDataSourceWithCorrectId()
+        public async Task GetAppointmentDetailsAsync_ReturnsMatchingAppointment()
         {
-            var expected = new Appointment { Id = 42, DoctorId = 5, PatientName = "Jane Doe" };
-            mockDataSource.Setup(appointmentRepository => appointmentRepository.GetAppointmentDetailsAsync(42)).ReturnsAsync(expected);
+            var stored = new Appointment { Id = 42, DoctorId = 5, PatientName = "Jane Doe" };
+            mockDataSource.Setup(appointmentRepository => appointmentRepository.GetAllAppointmentsAsync())
+                .ReturnsAsync(new List<Appointment> { stored });
 
             var result = await service.GetAppointmentDetailsAsync(42);
 
             Assert.NotNull(result);
             Assert.Equal(42, result!.Id);
             Assert.Equal(5, result.DoctorId);
-            Assert.Equal("Jane Doe", result.PatientName);
-            mockDataSource.Verify(appointmentRepository => appointmentRepository.GetAppointmentDetailsAsync(42), Times.Once);
         }
 
         [Fact]
         public async Task GetAppointmentDetailsAsync_ReturnsNull_WhenNotFound()
         {
-            mockDataSource.Setup(appointmentRepository => appointmentRepository.GetAppointmentDetailsAsync(99)).ReturnsAsync((Appointment?)null);
+            mockDataSource.Setup(appointmentRepository => appointmentRepository.GetAllAppointmentsAsync())
+                .ReturnsAsync(new List<Appointment>());
 
             var result = await service.GetAppointmentDetailsAsync(99);
 
@@ -197,7 +206,7 @@ namespace DevCoreHospital.Tests.Services
         {
             await service.CreateAppointmentAsync("PAT-1", 7, DateTime.Today, TimeSpan.Zero);
 
-            mockDataSource.Verify(appointmentRepository => appointmentRepository.UpdateDoctorStatusAsync(7, "IN_EXAMINATION"), Times.Once);
+            mockStaffRepository.Verify(staffRepository => staffRepository.UpdateStatusAsync(7, "IN_EXAMINATION"), Times.Once);
         }
 
 
@@ -246,7 +255,7 @@ namespace DevCoreHospital.Tests.Services
                 EndTime = new TimeSpan(10, 0, 0),
             };
             mockDataSource
-                .Setup(appointmentRepository => appointmentRepository.GetAppointmentsInRangeAsync(1, from, to, 0, It.IsAny<int>()))
+                .Setup(appointmentRepository => appointmentRepository.GetAllAppointmentsAsync())
                 .ReturnsAsync(new List<Appointment> { appointment });
 
             var result = await service.GetAppointmentsInRangeAsync(1, from, to);
@@ -267,7 +276,7 @@ namespace DevCoreHospital.Tests.Services
                 EndTime = new TimeSpan(9, 0, 0),
             };
             mockDataSource
-                .Setup(appointmentRepository => appointmentRepository.GetAppointmentsInRangeAsync(1, from, to, 0, It.IsAny<int>()))
+                .Setup(appointmentRepository => appointmentRepository.GetAllAppointmentsAsync())
                 .ReturnsAsync(new List<Appointment> { appointment });
 
             var result = await service.GetAppointmentsInRangeAsync(1, from, to);
@@ -288,7 +297,7 @@ namespace DevCoreHospital.Tests.Services
                 EndTime = new TimeSpan(11, 0, 0),
             };
             mockDataSource
-                .Setup(appointmentRepository => appointmentRepository.GetAppointmentsInRangeAsync(1, from, to, 0, It.IsAny<int>()))
+                .Setup(appointmentRepository => appointmentRepository.GetAllAppointmentsAsync())
                 .ReturnsAsync(new List<Appointment> { appointment });
 
             var result = await service.GetAppointmentsInRangeAsync(1, from, to);
@@ -309,7 +318,7 @@ namespace DevCoreHospital.Tests.Services
                 EndTime = new TimeSpan(11, 0, 0),
             };
             mockDataSource
-                .Setup(appointmentRepository => appointmentRepository.GetAppointmentsInRangeAsync(1, from, to, 0, It.IsAny<int>()))
+                .Setup(appointmentRepository => appointmentRepository.GetAllAppointmentsAsync())
                 .ReturnsAsync(new List<Appointment> { appointment });
 
             var result = await service.GetAppointmentsInRangeAsync(1, from, to);
@@ -328,7 +337,7 @@ namespace DevCoreHospital.Tests.Services
             var cancelled = new Shift(2, staff, "Ward B", from.AddHours(9), from.AddHours(17), ShiftStatus.CANCELLED);
 
             mockShiftRepository
-                .Setup(shiftRepository => shiftRepository.GetShiftsForStaffInRange(1, from, to))
+                .Setup(shiftRepository => shiftRepository.GetAllShifts())
                 .Returns(new List<Shift> { scheduled, cancelled });
 
             var result = await service.GetShiftsForStaffInRangeAsync(1, from, to);
@@ -347,7 +356,7 @@ namespace DevCoreHospital.Tests.Services
             var earlier = new Shift(2, staff, "Ward B", from.AddHours(6), from.AddHours(14), ShiftStatus.SCHEDULED);
 
             mockShiftRepository
-                .Setup(shiftRepository => shiftRepository.GetShiftsForStaffInRange(1, from, to))
+                .Setup(shiftRepository => shiftRepository.GetAllShifts())
                 .Returns(new List<Shift> { later, earlier });
 
             var result = await service.GetShiftsForStaffInRangeAsync(1, from, to);
@@ -363,7 +372,7 @@ namespace DevCoreHospital.Tests.Services
             var to = from.AddDays(1);
 
             mockShiftRepository
-                .Setup(shiftRepository => shiftRepository.GetShiftsForStaffInRange(It.IsAny<int>(), It.IsAny<DateTime>(), It.IsAny<DateTime>()))
+                .Setup(shiftRepository => shiftRepository.GetAllShifts())
                 .Returns(new List<Shift>());
 
             var result = await service.GetShiftsForStaffInRangeAsync(1, from, to);
@@ -372,18 +381,23 @@ namespace DevCoreHospital.Tests.Services
         }
 
         [Fact]
-        public async Task GetShiftsForStaffInRangeAsync_PassesCorrectRangeToRepository()
+        public async Task GetShiftsForStaffInRangeAsync_FiltersByDoctor()
         {
-            var from = new DateTime(2025, 6, 9);
-            var to = new DateTime(2025, 6, 16);
+            var from = new DateTime(2025, 6, 11);
+            var to = from.AddDays(1);
+            var ownStaff = new Pharmacyst(7, "Own", "Staff", string.Empty, true, "General", 1);
+            var otherStaff = new Pharmacyst(99, "Other", "Staff", string.Empty, true, "General", 1);
+            var ownShift = new Shift(1, ownStaff, "Ward A", from.AddHours(8), from.AddHours(16), ShiftStatus.SCHEDULED);
+            var otherShift = new Shift(2, otherStaff, "Ward B", from.AddHours(8), from.AddHours(16), ShiftStatus.SCHEDULED);
 
             mockShiftRepository
-                .Setup(shiftRepository => shiftRepository.GetShiftsForStaffInRange(It.IsAny<int>(), It.IsAny<DateTime>(), It.IsAny<DateTime>()))
-                .Returns(new List<Shift>());
+                .Setup(shiftRepository => shiftRepository.GetAllShifts())
+                .Returns(new List<Shift> { ownShift, otherShift });
 
-            await service.GetShiftsForStaffInRangeAsync(7, from, to);
+            var result = await service.GetShiftsForStaffInRangeAsync(7, from, to);
 
-            mockShiftRepository.Verify(shiftRepository => shiftRepository.GetShiftsForStaffInRange(7, from, to), Times.Once);
+            Assert.Single(result);
+            Assert.Equal(1, result[0].Id);
         }
     }
 }

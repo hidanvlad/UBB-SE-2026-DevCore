@@ -15,7 +15,7 @@ namespace DevCoreHospital.Tests.ViewModels
             DateTime? end = null,
             ShiftStatus status = ShiftStatus.SCHEDULED)
         {
-            var staff = new Doctor(1, "First", "Last", string.Empty, string.Empty, true, "General", "LIC-1", DoctorStatus.AVAILABLE, 1);
+            var staff = new Doctor(1, "First", "Last", string.Empty, true, "General", "LIC-1", DoctorStatus.AVAILABLE, 1);
             var shift = new Shift(1, staff, location, start ?? DefaultStart, end ?? DefaultEnd, status);
             return new PharmacyShiftItemViewModel(shift);
         }

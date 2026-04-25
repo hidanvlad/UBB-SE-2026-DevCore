@@ -17,16 +17,8 @@ namespace DevCoreHospital.Tests.Integration
         private sealed class InMemoryAppointmentDataSource : IAppointmentRepository
         {
             private readonly List<Appointment> appointments = new();
-            private readonly Dictionary<int, string> doctorStatuses = new();
-            private readonly List<(int DoctorId, string DoctorName)> doctors;
-
-            public InMemoryAppointmentDataSource(List<(int DoctorId, string DoctorName)>? doctors = null)
-                => this.doctors = doctors ?? new List<(int DoctorId, string DoctorName)>();
 
             public IReadOnlyList<Appointment> AllAppointments => appointments.AsReadOnly();
-
-            public string GetDoctorStatus(int doctorId) =>
-                doctorStatuses.TryGetValue(doctorId, out var status) ? status : string.Empty;
 
             public Task AddAppointmentAsync(int patientId, int doctorId, DateTime startTime, DateTime endTime, string status)
             {
@@ -55,54 +47,38 @@ namespace DevCoreHospital.Tests.Integration
                 return Task.CompletedTask;
             }
 
-            public Task<int> GetAppointmentsCountForDoctorByStatusAsync(int doctorId, string status)
+            public Task<IReadOnlyList<Appointment>> GetAllAppointmentsAsync()
             {
-                bool HasStatus(Appointment appointment) =>
-                    string.Equals(appointment.Status, status, StringComparison.OrdinalIgnoreCase);
-                int count = appointments.Count(appointment => appointment.DoctorId == doctorId && HasStatus(appointment));
-                return Task.FromResult(count);
+                IReadOnlyList<Appointment> result = appointments.ToList();
+                return Task.FromResult(result);
+            }
+        }
+
+        private sealed class InMemoryStaffRepository : IStaffRepository
+        {
+            private readonly Dictionary<int, string> staffStatuses = new();
+            private readonly List<(int DoctorId, string FirstName, string LastName)> doctors;
+
+            public InMemoryStaffRepository(List<(int DoctorId, string FirstName, string LastName)>? doctors = null)
+                => this.doctors = doctors ?? new List<(int, string, string)>();
+
+            public string GetStatus(int staffId) =>
+                staffStatuses.TryGetValue(staffId, out var status) ? status : string.Empty;
+
+            public List<IStaff> LoadAllStaff() => new();
+
+            public IStaff? GetStaffById(int staffId) => null;
+
+            public Task<IReadOnlyList<(int DoctorId, string FirstName, string LastName)>> GetAllDoctorsAsync()
+            {
+                IReadOnlyList<(int DoctorId, string FirstName, string LastName)> result = doctors;
+                return Task.FromResult(result);
             }
 
-            public Task UpdateDoctorStatusAsync(int doctorId, string status)
+            public Task UpdateStatusAsync(int staffId, string status)
             {
-                doctorStatuses[doctorId] = status;
+                staffStatuses[staffId] = status;
                 return Task.CompletedTask;
-            }
-
-            public Task<IReadOnlyList<Appointment>> GetAppointmentsInRangeAsync(
-                int doctorUserId, DateTime fromDate, DateTime toDate, int skip, int take)
-            {
-                bool IsInRangeForDoctor(Appointment appointment) =>
-                    appointment.DoctorId == doctorUserId
-                    && appointment.Date >= fromDate
-                    && appointment.Date < toDate;
-                IReadOnlyList<Appointment> result = appointments
-                    .Where(IsInRangeForDoctor)
-                    .Skip(skip).Take(take)
-                    .ToList();
-                return Task.FromResult(result);
-            }
-
-            public Task<IReadOnlyList<(int DoctorId, string DoctorName)>> GetAllDoctorsAsync()
-            {
-                IReadOnlyList<(int DoctorId, string DoctorName)> result = doctors;
-                return Task.FromResult(result);
-            }
-
-            public Task<Appointment?> GetAppointmentDetailsAsync(int appointmentId)
-            {
-                bool HasMatchingId(Appointment appointment) => appointment.Id == appointmentId;
-                Appointment? result = appointments.FirstOrDefault(HasMatchingId);
-                return Task.FromResult(result);
-            }
-
-            public Task<IReadOnlyList<Appointment>> GetAppointmentsForAdminAsync(int doctorId)
-            {
-                bool IsForDoctor(Appointment appointment) => appointment.DoctorId == doctorId;
-                IReadOnlyList<Appointment> result = appointments
-                    .Where(IsForDoctor)
-                    .ToList();
-                return Task.FromResult(result);
             }
         }
 
@@ -120,13 +96,7 @@ namespace DevCoreHospital.Tests.Integration
         {
             private readonly List<Shift> shifts = new();
 
-            public List<Shift> GetShifts() => shifts;
-
-            public List<Shift> GetShiftsByStaffID(int staffId)
-            {
-                bool IsForStaff(Shift shift) => shift.AppointedStaff.StaffID == staffId;
-                return shifts.Where(IsForStaff).ToList();
-            }
+            public IReadOnlyList<Shift> GetAllShifts() => shifts;
 
             public void AddShift(Shift shift) => shifts.Add(shift);
         }
@@ -137,26 +107,15 @@ namespace DevCoreHospital.Tests.Integration
 
             public InMemoryShiftRepository(List<Shift> shifts) => this.shifts = shifts;
 
-            public IReadOnlyList<Shift> GetShiftsForStaffInRange(int staffId, DateTime from, DateTime to)
-            {
-                bool IsInRangeForStaff(Shift shift) =>
-                    shift.AppointedStaff.StaffID == staffId
-                    && shift.StartTime < to
-                    && shift.EndTime > from;
-                return shifts.Where(IsInRangeForStaff).ToList();
-            }
+            public IReadOnlyList<Shift> GetAllShifts() => shifts;
 
-            public Shift? GetShiftById(int shiftId)
-            {
-                bool HasMatchingId(Shift shift) => shift.Id == shiftId;
-                return shifts.FirstOrDefault(HasMatchingId);
-            }
+            public void AddShift(Shift newShift) => shifts.Add(newShift);
 
-            public List<Shift> GetShiftsByStaffID(int staffId)
-            {
-                bool IsForStaff(Shift shift) => shift.AppointedStaff.StaffID == staffId;
-                return shifts.Where(IsForStaff).ToList();
-            }
+            public void UpdateShiftStatus(int shiftId, ShiftStatus status) { }
+
+            public void UpdateShiftStaffId(int shiftId, int newStaffId) { }
+
+            public void DeleteShift(int shiftId) { }
         }
 
 
@@ -178,11 +137,12 @@ namespace DevCoreHospital.Tests.Integration
             List<Shift>? shifts = null)
         {
             var dataSource = new InMemoryAppointmentDataSource();
+            var staffRepo = new InMemoryStaffRepository();
             var shiftRepo = new InMemoryShiftRepository(shifts ?? new List<Shift>());
             var mockUser = new Mock<ICurrentUserService>();
             mockUser.Setup(u => u.Role).Returns("Doctor");
             mockUser.Setup(u => u.UserId).Returns(1);
-            var service = new DoctorAppointmentService(dataSource, shiftRepo);
+            var service = new DoctorAppointmentService(dataSource, staffRepo, shiftRepo);
             var viewModel = new DoctorScheduleViewModel(
                 mockUser.Object,
                 service,
@@ -195,7 +155,8 @@ namespace DevCoreHospital.Tests.Integration
         public async Task BookThenFinish_AppointmentStatusIsFinished()
         {
             var dataSource = new InMemoryAppointmentDataSource();
-            var service = new DoctorAppointmentService(dataSource);
+            var staffRepo = new InMemoryStaffRepository();
+            var service = new DoctorAppointmentService(dataSource, staffRepo);
             var appointment = MakeAppointment();
 
             await service.BookAppointmentAsync(appointment);
@@ -208,20 +169,22 @@ namespace DevCoreHospital.Tests.Integration
         public async Task BookThenFinish_DoctorStatusIsAvailable_WhenLastActiveAppointmentDone()
         {
             var dataSource = new InMemoryAppointmentDataSource();
-            var service = new DoctorAppointmentService(dataSource);
+            var staffRepo = new InMemoryStaffRepository();
+            var service = new DoctorAppointmentService(dataSource, staffRepo);
             var appointment = MakeAppointment();
 
             await service.BookAppointmentAsync(appointment);
             await service.FinishAppointmentAsync(appointment);
 
-            Assert.Equal("AVAILABLE", dataSource.GetDoctorStatus(10));
+            Assert.Equal("AVAILABLE", staffRepo.GetStatus(10));
         }
 
         [Fact]
         public async Task BookThenFinish_DoctorRemainsInExamination_WhenSecondAppointmentStillActive()
         {
             var dataSource = new InMemoryAppointmentDataSource();
-            var service = new DoctorAppointmentService(dataSource);
+            var staffRepo = new InMemoryStaffRepository();
+            var service = new DoctorAppointmentService(dataSource, staffRepo);
             var first = MakeAppointment();
             var second = new Appointment { Id = 2, DoctorId = 10, Status = "Scheduled" };
 
@@ -229,7 +192,7 @@ namespace DevCoreHospital.Tests.Integration
             await service.BookAppointmentAsync(second);
             await service.FinishAppointmentAsync(first);
 
-            Assert.Equal("IN_EXAMINATION", dataSource.GetDoctorStatus(10));
+            Assert.Equal("IN_EXAMINATION", staffRepo.GetStatus(10));
         }
 
 
@@ -237,7 +200,8 @@ namespace DevCoreHospital.Tests.Integration
         public async Task BookThenCancel_AppointmentStatusIsCanceled()
         {
             var dataSource = new InMemoryAppointmentDataSource();
-            var service = new DoctorAppointmentService(dataSource);
+            var staffRepo = new InMemoryStaffRepository();
+            var service = new DoctorAppointmentService(dataSource, staffRepo);
             var appointment = MakeAppointment();
 
             await service.BookAppointmentAsync(appointment);
@@ -250,7 +214,8 @@ namespace DevCoreHospital.Tests.Integration
         public async Task BookFinishThenCancel_ThrowsInvalidOperationException()
         {
             var dataSource = new InMemoryAppointmentDataSource();
-            var service = new DoctorAppointmentService(dataSource);
+            var staffRepo = new InMemoryStaffRepository();
+            var service = new DoctorAppointmentService(dataSource, staffRepo);
             var appointment = MakeAppointment();
 
             await service.BookAppointmentAsync(appointment);
@@ -265,7 +230,8 @@ namespace DevCoreHospital.Tests.Integration
         public async Task AdminViewModel_AppointmentAppearsInList_AfterBookAndLoad()
         {
             var dataSource = new InMemoryAppointmentDataSource();
-            var service = new DoctorAppointmentService(dataSource);
+            var staffRepo = new InMemoryStaffRepository();
+            var service = new DoctorAppointmentService(dataSource, staffRepo);
             var viewModel = new AdminAppointmentsViewModel(service);
 
             await viewModel.BookAppointmentAsync("PAT-1", 10, new DateTime(2025, 8, 1), new TimeSpan(9, 0, 0));
@@ -278,7 +244,8 @@ namespace DevCoreHospital.Tests.Integration
         public async Task AdminViewModel_AppointmentHasCanceledStatus_AfterCancelViaViewModelAndLoad()
         {
             var dataSource = new InMemoryAppointmentDataSource();
-            var service = new DoctorAppointmentService(dataSource);
+            var staffRepo = new InMemoryStaffRepository();
+            var service = new DoctorAppointmentService(dataSource, staffRepo);
             var viewModel = new AdminAppointmentsViewModel(service);
 
             await service.BookAppointmentAsync(MakeAppointment());
@@ -292,7 +259,8 @@ namespace DevCoreHospital.Tests.Integration
         public async Task AdminViewModel_AppointmentHasFinishedStatus_AfterFinishViaViewModelAndLoad()
         {
             var dataSource = new InMemoryAppointmentDataSource();
-            var service = new DoctorAppointmentService(dataSource);
+            var staffRepo = new InMemoryStaffRepository();
+            var service = new DoctorAppointmentService(dataSource, staffRepo);
             var viewModel = new AdminAppointmentsViewModel(service);
 
             await service.BookAppointmentAsync(MakeAppointment());
@@ -360,7 +328,7 @@ namespace DevCoreHospital.Tests.Integration
 
             service.RegisterVacation(TestPharmacist.StaffID, new DateTime(2025, 7, 1), new DateTime(2025, 7, 4));
 
-            Assert.Single(shiftRepo.GetShifts());
+            Assert.Single(shiftRepo.GetAllShifts());
         }
 
         [Fact]
@@ -372,7 +340,7 @@ namespace DevCoreHospital.Tests.Integration
 
             service.RegisterVacation(TestPharmacist.StaffID, new DateTime(2025, 7, 1), new DateTime(2025, 7, 4));
 
-            Assert.Equal(ShiftStatus.VACATION, shiftRepo.GetShifts()[0].Status);
+            Assert.Equal(ShiftStatus.VACATION, shiftRepo.GetAllShifts()[0].Status);
         }
 
         [Fact]

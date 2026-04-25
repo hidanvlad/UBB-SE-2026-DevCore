@@ -1,4 +1,6 @@
+using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using DevCoreHospital.Models;
 using DevCoreHospital.Repositories;
 using DevCoreHospital.Services;
@@ -8,63 +10,92 @@ namespace DevCoreHospital.Tests.Services
 {
     public class MedicalEvaluationServiceTests
     {
-        private readonly Mock<IEvaluationsRepository> repositoryMock;
-        private readonly MedicalEvaluationService sut;
+        private readonly Mock<IEvaluationsRepository> evaluationsRepository = new();
+        private readonly Mock<IHighRiskMedicineRepository> highRiskMedicineRepository = new();
+        private readonly Mock<IAppointmentRepository> appointmentRepository = new();
+        private readonly Mock<IStaffRepository> staffRepository = new();
+        private readonly Mock<IShiftRepository> shiftRepository = new();
 
         public MedicalEvaluationServiceTests()
         {
-            repositoryMock = new Mock<IEvaluationsRepository>();
-            sut = new MedicalEvaluationService(repositoryMock.Object);
+            evaluationsRepository.Setup(repository => repository.GetAllEvaluations())
+                .Returns(new List<MedicalEvaluation>());
+            highRiskMedicineRepository.Setup(repository => repository.GetAllHighRiskMedicines())
+                .Returns(new List<(string MedicineName, string WarningMessage)>());
+            appointmentRepository.Setup(repository => repository.GetAllAppointmentsAsync())
+                .ReturnsAsync(new List<Appointment>());
+            staffRepository.Setup(repository => repository.LoadAllStaff()).Returns(new List<IStaff>());
+            shiftRepository.Setup(repository => repository.GetAllShifts()).Returns(new List<Shift>());
         }
 
-        [Fact]
-        public void GetAllDoctors_DelegatesToRepository()
-        {
-            var doctor = new Doctor(1, "Ana", "Pop", string.Empty, string.Empty, true, "Cardiology", "AVAILABLE", DoctorStatus.AVAILABLE, 3);
-            repositoryMock.Setup(evaluationsRepository => evaluationsRepository.GetAllDoctors()).Returns(new List<Doctor> { doctor });
+        private MedicalEvaluationService CreateService() =>
+            new MedicalEvaluationService(
+                evaluationsRepository.Object,
+                highRiskMedicineRepository.Object,
+                appointmentRepository.Object,
+                staffRepository.Object,
+                shiftRepository.Object);
 
-            var result = sut.GetAllDoctors();
+        [Fact]
+        public void GetAllDoctors_ReturnsDoctorsFromStaffRepository()
+        {
+            var doctor = new Doctor(1, "Ana", "Pop", string.Empty, true, "Cardiology", "LIC", DoctorStatus.AVAILABLE, 3);
+            var pharmacist = new Pharmacyst(2, "Test", "Staff", string.Empty, true, "General", 1);
+            staffRepository.Setup(repository => repository.LoadAllStaff()).Returns(new List<IStaff> { doctor, pharmacist });
+
+            var result = CreateService().GetAllDoctors();
 
             Assert.Single(result);
             Assert.Equal(1, result[0].StaffID);
-            repositoryMock.Verify(evaluationsRepository => evaluationsRepository.GetAllDoctors(), Times.Once);
         }
 
         [Fact]
-        public void GetAppointmentsByDoctor_DelegatesToRepository_WithCorrectId()
+        public void GetAppointmentsByDoctor_ReturnsConfirmedAppointmentsForDoctor()
         {
-            var appointment = new Appointment { Id = 5, DoctorId = 10 };
-            repositoryMock.Setup(evaluationsRepository => evaluationsRepository.GetAppointmentsByDoctor(10)).Returns(new List<Appointment> { appointment });
+            var matching = new Appointment { Id = 5, DoctorId = 10, Status = "Confirmed" };
+            var otherDoctor = new Appointment { Id = 6, DoctorId = 11, Status = "Confirmed" };
+            var notConfirmed = new Appointment { Id = 7, DoctorId = 10, Status = "Scheduled" };
+            appointmentRepository.Setup(repository => repository.GetAllAppointmentsAsync())
+                .ReturnsAsync(new List<Appointment> { matching, otherDoctor, notConfirmed });
 
-            var result = sut.GetAppointmentsByDoctor(10);
+            var result = CreateService().GetAppointmentsByDoctor(10);
 
             Assert.Single(result);
             Assert.Equal(5, result[0].Id);
-            repositoryMock.Verify(evaluationsRepository => evaluationsRepository.GetAppointmentsByDoctor(10), Times.Once);
         }
 
         [Fact]
-        public void GetEvaluationsByDoctor_DelegatesToRepository_WithCorrectDoctorId()
+        public void GetEvaluationsByDoctor_FiltersByEvaluatorStaffId()
         {
-            var evaluation = new MedicalEvaluation { PatientId = "P1" };
-            repositoryMock.Setup(evaluationsRepository => evaluationsRepository.GetEvaluationsByDoctor("10")).Returns(new List<MedicalEvaluation> { evaluation });
+            var matching = new MedicalEvaluation { EvaluationID = 1, Evaluator = new Doctor { StaffID = 10 } };
+            var notMatching = new MedicalEvaluation { EvaluationID = 2, Evaluator = new Doctor { StaffID = 11 } };
+            evaluationsRepository.Setup(repository => repository.GetAllEvaluations())
+                .Returns(new List<MedicalEvaluation> { matching, notMatching });
 
-            var result = sut.GetEvaluationsByDoctor("10");
+            var result = CreateService().GetEvaluationsByDoctor("10");
 
             Assert.Single(result);
-            repositoryMock.Verify(evaluationsRepository => evaluationsRepository.GetEvaluationsByDoctor("10"), Times.Once);
+            Assert.Equal(1, result[0].EvaluationID);
+        }
+
+        [Fact]
+        public void GetEvaluationsByDoctor_ReturnsEmpty_WhenDoctorIdNotParseable()
+        {
+            var result = CreateService().GetEvaluationsByDoctor("not-a-number");
+
+            Assert.Empty(result);
         }
 
         [Fact]
         public void SaveEvaluation_DelegatesToRepository()
         {
-            var evaluation = new MedicalEvaluation { PatientId = "P2" };
+            var evaluation = new MedicalEvaluation { PatientId = "42", Evaluator = new Doctor { StaffID = 7 } };
 
-            sut.SaveEvaluation(evaluation);
+            CreateService().SaveEvaluation(evaluation);
 
-            repositoryMock.Verify(evaluationsRepository => evaluationsRepository.ExecuteSaveEvaluation(
-                It.IsAny<int>(),
-                It.IsAny<int>(),
+            evaluationsRepository.Verify(repository => repository.AddEvaluation(
+                7,
+                42,
                 It.IsAny<string>(),
                 It.IsAny<string>(),
                 It.IsAny<string>(),
@@ -72,53 +103,72 @@ namespace DevCoreHospital.Tests.Services
         }
 
         [Fact]
-        public void DeleteEvaluation_DelegatesToRepository_WithCorrectId()
+        public void DeleteEvaluation_DelegatesToRepository()
         {
-            sut.DeleteEvaluation(42);
+            CreateService().DeleteEvaluation(42);
 
-            repositoryMock.Verify(evaluationsRepository => evaluationsRepository.DeleteEvaluation(42), Times.Once);
+            evaluationsRepository.Verify(repository => repository.DeleteEvaluation(42), Times.Once);
         }
 
         [Fact]
-        public void IsDoctorFatigued_ReturnsTrue_WhenRepositoryReturnsTrue()
+        public void IsDoctorFatigued_ReturnsTrue_WhenRecentShiftHoursExceedThreshold()
         {
-            repositoryMock.Setup(evaluationsRepository => evaluationsRepository.GetDoctorFatigueHours("5")).Returns(13.0);
+            var staff = new Doctor { StaffID = 5 };
+            var recentShift = new Shift(1, staff, "Ward A", DateTime.Now.AddHours(-15), DateTime.Now.AddHours(-2), ShiftStatus.SCHEDULED);
+            shiftRepository.Setup(repository => repository.GetAllShifts()).Returns(new List<Shift> { recentShift });
 
-            var result = sut.IsDoctorFatigued("5");
+            var result = CreateService().IsDoctorFatigued("5");
 
             Assert.True(result);
-            repositoryMock.Verify(evaluationsRepository => evaluationsRepository.GetDoctorFatigueHours("5"), Times.Once);
         }
 
         [Fact]
-        public void IsDoctorFatigued_ReturnsFalse_WhenRepositoryReturnsFalse()
+        public void IsDoctorFatigued_ReturnsFalse_WhenRecentHoursBelowThreshold()
         {
-            repositoryMock.Setup(evaluationsRepository => evaluationsRepository.GetDoctorFatigueHours("3")).Returns(11.0);
+            var staff = new Doctor { StaffID = 3 };
+            var recentShift = new Shift(1, staff, "Ward A", DateTime.Now.AddHours(-3), DateTime.Now.AddHours(-1), ShiftStatus.SCHEDULED);
+            shiftRepository.Setup(repository => repository.GetAllShifts()).Returns(new List<Shift> { recentShift });
 
-            var result = sut.IsDoctorFatigued("3");
+            var result = CreateService().IsDoctorFatigued("3");
 
             Assert.False(result);
         }
 
         [Fact]
-        public void CheckMedicineConflict_ReturnsWarning_WhenConflictExists()
+        public void CheckMedicineConflict_ReturnsWarning_WhenMedicineIsHighRisk()
         {
-            repositoryMock.Setup(evaluationsRepository => evaluationsRepository.GetHighRiskMedicineWarning("Aspirin")).Returns("Risk: bleeding");
+            highRiskMedicineRepository.Setup(repository => repository.GetAllHighRiskMedicines())
+                .Returns(new List<(string MedicineName, string WarningMessage)> { ("Aspirin", "Risk: bleeding") });
 
-            var result = sut.CheckMedicineConflict("P1", "Aspirin");
+            var result = CreateService().CheckMedicineConflict("P1", "Aspirin");
 
             Assert.Equal("Risk: bleeding", result);
-            repositoryMock.Verify(evaluationsRepository => evaluationsRepository.GetHighRiskMedicineWarning("Aspirin"), Times.Once);
         }
 
         [Fact]
         public void CheckMedicineConflict_ReturnsNull_WhenNoConflict()
         {
-            repositoryMock.Setup(evaluationsRepository => evaluationsRepository.CheckMedicineConflict("P2", "Ibuprofen")).Returns((string?)null);
-
-            var result = sut.CheckMedicineConflict("P2", "Ibuprofen");
+            var result = CreateService().CheckMedicineConflict("P2", "Ibuprofen");
 
             Assert.Null(result);
+        }
+
+        [Fact]
+        public void CheckMedicineConflict_ReturnsHistoryAlert_WhenPatientHadAllergyToSameMed()
+        {
+            var pastEvaluation = new MedicalEvaluation
+            {
+                PatientId = "P1",
+                Symptoms = "Allergy reported",
+                MedsList = "Penicillin",
+            };
+            evaluationsRepository.Setup(repository => repository.GetAllEvaluations())
+                .Returns(new List<MedicalEvaluation> { pastEvaluation });
+
+            var result = CreateService().CheckMedicineConflict("P1", "Penicillin");
+
+            Assert.NotNull(result);
+            Assert.Contains("HISTORY ALERT", result);
         }
     }
 }

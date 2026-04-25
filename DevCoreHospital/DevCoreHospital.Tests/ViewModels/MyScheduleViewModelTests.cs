@@ -16,8 +16,8 @@ public class MyScheduleViewModelTests
     [Fact]
     public void SelectedDoctor_WhenSwitchedToSecondDoctor_ReloadsFutureShiftsForThatDoctor()
     {
-        var doctorA = new MDoctor(1, "A", "A", string.Empty, string.Empty, true, "Card", "L", DoctorStatus.AVAILABLE, 1);
-        var doctorB = new MDoctor(2, "B", "B", string.Empty, string.Empty, true, "Card", "L", DoctorStatus.AVAILABLE, 1);
+        var doctorA = new MDoctor(1, "A", "A", string.Empty, true, "Card", "L", DoctorStatus.AVAILABLE, 1);
+        var doctorB = new MDoctor(2, "B", "B", string.Empty, true, "Card", "L", DoctorStatus.AVAILABLE, 1);
         var futureTime = DateTime.UtcNow.AddDays(3);
         var shiftForDoctorA = new Shift(10, doctorA, "ER", futureTime, futureTime.AddHours(4), ShiftStatus.SCHEDULED);
         var service = new FakeShiftSwapService();
@@ -39,8 +39,8 @@ public class MyScheduleViewModelTests
     [Fact]
     public void SelectedShift_WhenSet_LoadsColleagueCountFromService()
     {
-        var doctorA = new MDoctor(1, "A", "A", string.Empty, string.Empty, true, "Neuro", "L", DoctorStatus.AVAILABLE, 1);
-        var doctorC = new MDoctor(2, "C", "C", string.Empty, string.Empty, true, "Neuro", "L", DoctorStatus.AVAILABLE, 1);
+        var doctorA = new MDoctor(1, "A", "A", string.Empty, true, "Neuro", "L", DoctorStatus.AVAILABLE, 1);
+        var doctorC = new MDoctor(2, "C", "C", string.Empty, true, "Neuro", "L", DoctorStatus.AVAILABLE, 1);
         var futureTime = DateTime.UtcNow.AddDays(4);
         var shiftOne = new Shift(10, doctorA, "W", futureTime, futureTime.AddHours(5), ShiftStatus.SCHEDULED);
         var service = new FakeShiftSwapService
@@ -61,7 +61,7 @@ public class MyScheduleViewModelTests
     [Fact]
     public void RequestSwapCommand_CanExecuteIsFalseWhenColleagueMissing()
     {
-        var doctorA = new MDoctor(1, "A", "A", string.Empty, string.Empty, true, "E", "L", DoctorStatus.AVAILABLE, 1);
+        var doctorA = new MDoctor(1, "A", "A", string.Empty, true, "E", "L", DoctorStatus.AVAILABLE, 1);
         var futureTime = DateTime.UtcNow.AddDays(5);
         var shiftOne = new Shift(10, doctorA, "W", futureTime, futureTime.AddHours(3), ShiftStatus.SCHEDULED);
         var service = new FakeShiftSwapService { EligibleError = string.Empty };
@@ -79,7 +79,7 @@ public class MyScheduleViewModelTests
     [Fact]
     public void RequestSwap_PropagatesServiceMessage()
     {
-        var doctorA = new MDoctor(1, "A", "A", string.Empty, string.Empty, true, "E", "L", DoctorStatus.AVAILABLE, 1);
+        var doctorA = new MDoctor(1, "A", "A", string.Empty, true, "E", "L", DoctorStatus.AVAILABLE, 1);
         var futureTime = DateTime.UtcNow.AddDays(6);
         var shiftOne = new Shift(10, doctorA, "W", futureTime, futureTime.AddHours(2), ShiftStatus.SCHEDULED);
         var service = new FakeShiftSwapService
@@ -110,7 +110,7 @@ public class MyScheduleViewModelTests
     [Fact]
     public void LoadFutureShifts_WhenDoctorHasNoFutureSlots_SetsNoFutureShiftMessage()
     {
-        var doc = new MDoctor(1, "A", "A", string.Empty, string.Empty, true, "S", "L", DoctorStatus.AVAILABLE, 1);
+        var doc = new MDoctor(1, "A", "A", string.Empty, true, "S", "L", DoctorStatus.AVAILABLE, 1);
         var past = new Shift(1, doc, "W", DateTime.UtcNow.AddDays(-2), DateTime.UtcNow.AddDays(-2).AddHours(1), ShiftStatus.SCHEDULED);
         var service = new FakeShiftSwapService();
         service.AllDoctors.Add(doc);
@@ -123,7 +123,7 @@ public class MyScheduleViewModelTests
     [Fact]
     public void LoadEligibleColleagues_WhenServiceReturnsError_ShowsServiceError()
     {
-        var doc = new MDoctor(1, "A", "A", string.Empty, string.Empty, true, "S", "L", DoctorStatus.AVAILABLE, 1);
+        var doc = new MDoctor(1, "A", "A", string.Empty, true, "S", "L", DoctorStatus.AVAILABLE, 1);
         var when = DateTime.UtcNow.AddDays(2);
         var shiftOne = new Shift(8, doc, "W", when, when.AddHours(1), ShiftStatus.SCHEDULED);
         var service = new FakeShiftSwapService { EligibleError = "Shift not found." };
@@ -139,7 +139,7 @@ public class MyScheduleViewModelTests
     [Fact]
     public void LoadEligibleColleagues_WhenNoPeersInProfile_ExplainsNoColleagues()
     {
-        var doc = new MDoctor(1, "A", "A", string.Empty, string.Empty, true, "S", "L", DoctorStatus.AVAILABLE, 1);
+        var doc = new MDoctor(1, "A", "A", string.Empty, true, "S", "L", DoctorStatus.AVAILABLE, 1);
         var when = DateTime.UtcNow.AddDays(2);
         var shiftOne = new Shift(8, doc, "W", when, when.AddHours(1), ShiftStatus.SCHEDULED);
         var service = new FakeShiftSwapService { EligibleError = string.Empty };
@@ -155,7 +155,7 @@ public class MyScheduleViewModelTests
     [Fact]
     public void RequestSwapCommand_CanExecuteIsFalseWhenShiftMissing()
     {
-        var doc = new MDoctor(1, "A", "A", string.Empty, string.Empty, true, "E", "L", DoctorStatus.AVAILABLE, 1);
+        var doc = new MDoctor(1, "A", "A", string.Empty, true, "E", "L", DoctorStatus.AVAILABLE, 1);
         var when = DateTime.UtcNow.AddDays(3);
         var shiftOne = new Shift(10, doc, "W", when, when.AddHours(2), ShiftStatus.SCHEDULED);
         var service = new FakeShiftSwapService { EligibleError = string.Empty };
@@ -173,7 +173,7 @@ public class MyScheduleViewModelTests
     [Fact]
     public void RequestSwap_ClearsSelectedColleague_WhenServiceSucceeds()
     {
-        var doctorA = new MDoctor(1, "A", "A", string.Empty, string.Empty, true, "E", "L", DoctorStatus.AVAILABLE, 1);
+        var doctorA = new MDoctor(1, "A", "A", string.Empty, true, "E", "L", DoctorStatus.AVAILABLE, 1);
         var futureTime = DateTime.UtcNow.AddDays(6);
         var shiftOne = new Shift(10, doctorA, "W", futureTime, futureTime.AddHours(2), ShiftStatus.SCHEDULED);
         var service = new FakeShiftSwapService
@@ -195,7 +195,7 @@ public class MyScheduleViewModelTests
     [Fact]
     public void RequestSwap_WhenRequiredSelectionMissing_ExplainsAllThree()
     {
-        var doc = new MDoctor(1, "A", "A", string.Empty, string.Empty, true, "E", "L", DoctorStatus.AVAILABLE, 1);
+        var doc = new MDoctor(1, "A", "A", string.Empty, true, "E", "L", DoctorStatus.AVAILABLE, 1);
         var when = DateTime.UtcNow.AddDays(3);
         var shiftOne = new Shift(10, doc, "W", when, when.AddHours(2), ShiftStatus.SCHEDULED);
         var service = new FakeShiftSwapService();

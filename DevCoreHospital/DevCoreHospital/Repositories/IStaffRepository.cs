@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using DevCoreHospital.Models;
 
 namespace DevCoreHospital.Repositories
@@ -8,5 +9,9 @@ namespace DevCoreHospital.Repositories
         List<IStaff> LoadAllStaff();
 
         IStaff? GetStaffById(int staffId);
+
+        Task<IReadOnlyList<(int DoctorId, string FirstName, string LastName)>> GetAllDoctorsAsync();
+
+        Task UpdateStatusAsync(int staffId, string status);
     }
 }

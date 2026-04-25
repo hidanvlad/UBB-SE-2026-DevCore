@@ -1,6 +1,7 @@
-using System.Collections.Generic;
-using System.Threading.Tasks;
 using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 using DevCoreHospital.Models;
 using DevCoreHospital.Repositories;
 
@@ -19,8 +20,16 @@ public sealed class PharmacyScheduleService : IPharmacyScheduleService
 
     public Task<IReadOnlyList<Shift>> GetShiftsAsync(int pharmacistStaffId, DateTime rangeStart, DateTime rangeEnd)
     {
+        bool IsForStaffInRange(Shift shift) =>
+            shift.AppointedStaff.StaffID == pharmacistStaffId
+            && shift.StartTime < rangeEnd
+            && shift.EndTime > rangeStart;
+
         return Task.Run<IReadOnlyList<Shift>>(
-            () => shiftRepository.GetShiftsForStaffInRange(pharmacistStaffId, rangeStart, rangeEnd));
+            () => shiftRepository.GetAllShifts()
+                .Where(IsForStaffInRange)
+                .OrderBy(shift => shift.StartTime)
+                .ToList());
     }
 
     public List<Pharmacyst> GetPharmacists() => staffRepository.GetPharmacists();

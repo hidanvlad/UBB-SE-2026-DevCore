@@ -8,9 +8,9 @@ namespace DevCoreHospital.Converters
     {
         public object Convert(object value, Type targetType, object parameter, string language)
         {
-            if (value is bool b)
+            if (value is bool booleanValue)
             {
-                return b ? Visibility.Visible : Visibility.Collapsed;
+                return booleanValue ? Visibility.Visible : Visibility.Collapsed;
             }
             return Visibility.Collapsed;
         }

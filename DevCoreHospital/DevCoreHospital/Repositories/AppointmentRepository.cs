@@ -22,81 +22,39 @@ namespace DevCoreHospital.Repositories
             command.Parameters.Add(new SqlParameter(name, value ?? DBNull.Value));
         }
 
-        public async Task<IReadOnlyList<Appointment>> GetAppointmentsInRangeAsync(int doctorUserId, DateTime fromDate, DateTime toDate, int skip, int take)
+        public async Task<IReadOnlyList<Appointment>> GetAllAppointmentsAsync()
         {
             var appointments = new List<Appointment>();
 
             using var connection = GetConnection();
             await connection.OpenAsync();
-            using var command = new SqlCommand(@"
-                SELECT a.appointment_id, a.doctor_id,
-                       CONCAT(COALESCE(s.first_name, ''), ' ', COALESCE(s.last_name, '')) AS DoctorName,
-                       a.patient_id, a.start_time, a.end_time, a.status
-                FROM Appointments a
-                INNER JOIN Staff s ON s.staff_id = a.doctor_id
-                WHERE a.doctor_id = @DocId AND a.start_time >= @From AND a.start_time < @To
-                ORDER BY a.start_time
-                OFFSET @Skip ROWS FETCH NEXT @Take ROWS ONLY;", connection);
-
-            AddParameter(command, "@DocId", doctorUserId);
-            AddParameter(command, "@From", fromDate);
-            AddParameter(command, "@To", toDate);
-            AddParameter(command, "@Skip", skip);
-            AddParameter(command, "@Take", take);
+            using var command = new SqlCommand(
+                "SELECT appointment_id, doctor_id, patient_id, start_time, end_time, status FROM Appointments;",
+                connection);
 
             using var reader = await command.ExecuteReaderAsync();
+            int idOrdinal = reader.GetOrdinal("appointment_id");
+            int doctorIdOrdinal = reader.GetOrdinal("doctor_id");
+            int patientIdOrdinal = reader.GetOrdinal("patient_id");
+            int startOrdinal = reader.GetOrdinal("start_time");
+            int endOrdinal = reader.GetOrdinal("end_time");
+            int statusOrdinal = reader.GetOrdinal("status");
+
             while (await reader.ReadAsync())
             {
-                appointments.Add(MapReaderToAppointment(reader, hasDoctorName: true));
-            }
-            return appointments;
-        }
-
-        public async Task<IReadOnlyList<(int DoctorId, string DoctorName)>> GetAllDoctorsAsync()
-        {
-            var doctors = new List<(int, string)>();
-            using var connection = GetConnection();
-            await connection.OpenAsync();
-            using var command = new SqlCommand(@"
-                SELECT staff_id,
-                       CONCAT(COALESCE(first_name, ''), ' ', COALESCE(last_name, ''))
-                FROM Staff
-                WHERE role = 'Doctor';", connection);
-            using var reader = await command.ExecuteReaderAsync();
-            while (await reader.ReadAsync())
-            {
-                doctors.Add((reader.GetInt32(0), reader.IsDBNull(1) ? string.Empty : reader.GetString(1)));
-            }
-            return doctors;
-        }
-
-        public async Task<Appointment?> GetAppointmentDetailsAsync(int appointmentId)
-        {
-            using var connection = GetConnection();
-            await connection.OpenAsync();
-            using var command = new SqlCommand("SELECT appointment_id, doctor_id, patient_id, start_time, end_time, status FROM Appointments WHERE appointment_id = @Id;", connection);
-            AddParameter(command, "@Id", appointmentId);
-
-            using var reader = await command.ExecuteReaderAsync();
-            if (await reader.ReadAsync())
-            {
-                return MapReaderToAppointment(reader, hasDoctorName: false);
-            }
-            return null;
-        }
-
-        public async Task<IReadOnlyList<Appointment>> GetAppointmentsForAdminAsync(int doctorId)
-        {
-            var appointments = new List<Appointment>();
-            using var connection = GetConnection();
-            await connection.OpenAsync();
-            using var command = new SqlCommand("SELECT appointment_id, doctor_id, patient_id, start_time, end_time, status FROM Appointments WHERE doctor_id = @DocId ORDER BY start_time;", connection);
-            AddParameter(command, "@DocId", doctorId);
-
-            using var reader = await command.ExecuteReaderAsync();
-            while (await reader.ReadAsync())
-            {
-                appointments.Add(MapReaderToAppointment(reader, hasDoctorName: false));
+                DateTime startDateTime = reader.GetDateTime(startOrdinal);
+                DateTime endDateTime = reader.GetDateTime(endOrdinal);
+                appointments.Add(new Appointment
+                {
+                    Id = reader.GetInt32(idOrdinal),
+                    DoctorId = reader.GetInt32(doctorIdOrdinal),
+                    DoctorName = string.Empty,
+                    PatientName = reader.GetInt32(patientIdOrdinal).ToString(),
+                    Date = startDateTime.Date,
+                    StartTime = startDateTime.TimeOfDay,
+                    EndTime = endDateTime.TimeOfDay,
+                    Status = reader.GetString(statusOrdinal),
+                });
             }
             return appointments;
         }
@@ -105,7 +63,9 @@ namespace DevCoreHospital.Repositories
         {
             using var connection = GetConnection();
             await connection.OpenAsync();
-            using var command = new SqlCommand("INSERT INTO Appointments (patient_id, doctor_id, start_time, end_time, status) VALUES (@PatId, @DocId, @Start, @End, @Status);", connection);
+            using var command = new SqlCommand(
+                "INSERT INTO Appointments (patient_id, doctor_id, start_time, end_time, status) VALUES (@PatId, @DocId, @Start, @End, @Status);",
+                connection);
             AddParameter(command, "@PatId", patientId);
             AddParameter(command, "@DocId", doctorId);
             AddParameter(command, "@Start", startTime);
@@ -118,55 +78,12 @@ namespace DevCoreHospital.Repositories
         {
             using var connection = GetConnection();
             await connection.OpenAsync();
-            using var command = new SqlCommand("UPDATE Appointments SET status = @Status WHERE appointment_id = @Id;", connection);
+            using var command = new SqlCommand(
+                "UPDATE Appointments SET status = @Status WHERE appointment_id = @Id;",
+                connection);
             AddParameter(command, "@Status", status);
             AddParameter(command, "@Id", id);
             await command.ExecuteNonQueryAsync();
-        }
-
-        public async Task<int> GetAppointmentsCountForDoctorByStatusAsync(int doctorId, string status)
-        {
-            using var connection = GetConnection();
-            await connection.OpenAsync();
-            using var command = new SqlCommand("SELECT COUNT(*) FROM Appointments WHERE doctor_id = @DocId AND status = @Status;", connection);
-            AddParameter(command, "@DocId", doctorId);
-            AddParameter(command, "@Status", status);
-            return Convert.ToInt32(await command.ExecuteScalarAsync());
-        }
-
-        public async Task UpdateDoctorStatusAsync(int doctorId, string status)
-        {
-            using var connection = GetConnection();
-            await connection.OpenAsync();
-            using var command = new SqlCommand("UPDATE Staff SET status = @Status WHERE staff_id = @DocId;", connection);
-            AddParameter(command, "@Status", status);
-            AddParameter(command, "@DocId", doctorId);
-            await command.ExecuteNonQueryAsync();
-        }
-
-        private static Appointment MapReaderToAppointment(SqlDataReader reader, bool hasDoctorName)
-        {
-            int startOrdinal = reader.GetOrdinal("start_time");
-            int endOrdinal = reader.GetOrdinal("end_time");
-            int patientOrdinal = reader.GetOrdinal("patient_id");
-            int statusOrdinal = reader.GetOrdinal("status");
-            int doctorNameOrdinal = hasDoctorName ? reader.GetOrdinal("DoctorName") : -1;
-
-            DateTime startDateTime = reader.GetDateTime(startOrdinal);
-            DateTime endDateTime = reader.GetDateTime(endOrdinal);
-            int patientId = reader.GetInt32(patientOrdinal);
-
-            return new Appointment
-            {
-                Id = reader.GetInt32(reader.GetOrdinal("appointment_id")),
-                DoctorId = reader.GetInt32(reader.GetOrdinal("doctor_id")),
-                DoctorName = hasDoctorName && !reader.IsDBNull(doctorNameOrdinal) ? reader.GetString(doctorNameOrdinal) : string.Empty,
-                PatientName = patientId.ToString(),
-                Date = startDateTime.Date,
-                StartTime = startDateTime.TimeOfDay,
-                EndTime = endDateTime.TimeOfDay,
-                Status = reader.GetString(statusOrdinal)
-            };
         }
     }
 }

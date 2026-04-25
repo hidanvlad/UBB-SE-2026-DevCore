@@ -8,22 +8,35 @@ namespace DevCoreHospital.Services
 {
     public class ShiftSwapService : IShiftSwapService
     {
+        private const string AcceptedStatus = "ACCEPTED";
+        private const string RejectedStatus = "REJECTED";
+        private const string SwapRequestNotificationTitle = "New Shift Swap Request";
+        private const string SwapAcceptedNotificationTitle = "Shift Swap Accepted";
+        private const string SwapRejectedNotificationTitle = "Shift Swap Rejected";
+
         private readonly IStaffRepository staffRepository;
         private readonly IShiftRepository shiftRepository;
         private readonly IShiftSwapRepository shiftSwapRepository;
+        private readonly INotificationRepository notificationRepository;
 
-        public ShiftSwapService(IStaffRepository staffRepository, IShiftRepository shiftRepository, IShiftSwapRepository shiftSwapRepository)
+        public ShiftSwapService(
+            IStaffRepository staffRepository,
+            IShiftRepository shiftRepository,
+            IShiftSwapRepository shiftSwapRepository,
+            INotificationRepository notificationRepository)
         {
             this.staffRepository = staffRepository;
             this.shiftRepository = shiftRepository;
             this.shiftSwapRepository = shiftSwapRepository;
+            this.notificationRepository = notificationRepository;
         }
 
         public List<Shift> GetFutureShiftsForStaff(int staffId)
         {
-            bool IsFutureShift(Shift shift) => shift.StartTime > DateTime.Now;
-            return shiftRepository.GetShiftsByStaffID(staffId)
-                .Where(IsFutureShift)
+            bool IsFutureShiftForStaff(Shift shift) =>
+                shift.AppointedStaff.StaffID == staffId && shift.StartTime > DateTime.Now;
+            return shiftRepository.GetAllShifts()
+                .Where(IsFutureShiftForStaff)
                 .ToList();
         }
 
@@ -33,7 +46,8 @@ namespace DevCoreHospital.Services
         {
             error = string.Empty;
 
-            var shift = shiftRepository.GetShiftById(shiftId);
+            var allShifts = shiftRepository.GetAllShifts();
+            var shift = allShifts.FirstOrDefault(existingShift => existingShift.Id == shiftId);
             if (shift == null)
             {
                 error = "Shift not found.";
@@ -91,8 +105,11 @@ namespace DevCoreHospital.Services
             }
 
             bool HasNoOverlappingShifts(IStaff colleague) =>
-                !shiftRepository.GetShiftsForStaffInRange(colleague.StaffID, shift.StartTime, shift.EndTime)
-                    .Any(IsScheduledOrActive);
+                !allShifts.Any(existingShift =>
+                    existingShift.AppointedStaff.StaffID == colleague.StaffID
+                    && existingShift.StartTime < shift.EndTime
+                    && existingShift.EndTime > shift.StartTime
+                    && IsScheduledOrActive(existingShift));
 
             return colleaguesWithSameProfile
                 .Where(HasNoOverlappingShifts)
@@ -117,7 +134,7 @@ namespace DevCoreHospital.Services
                 return false;
             }
 
-            var shift = shiftRepository.GetShiftById(shiftId);
+            var shift = shiftRepository.GetAllShifts().FirstOrDefault(existingShift => existingShift.Id == shiftId);
             var requester = staffRepository.GetStaffById(requesterId);
             if (requester == null)
             {
@@ -134,17 +151,17 @@ namespace DevCoreHospital.Services
                 Status = ShiftSwapRequestStatus.PENDING,
             };
 
-            var swapId = shiftSwapRepository.CreateShiftSwapRequest(swapRequest);
+            var swapId = shiftSwapRepository.AddShiftSwapRequest(swapRequest);
             if (swapId <= 0)
             {
                 message = "Failed to create shift swap request.";
                 return false;
             }
 
-            shiftSwapRepository.AddNotification(
+            notificationRepository.AddNotification(
                 colleagueId,
-                "New Shift Swap Request",
-                $"You received a shift swap request from {requester.FirstName} {requester.LastName} for shift #{shiftId} ({shift.StartTime:yyyy-MM-dd HH:mm} - {shift.EndTime:HH:mm}).");
+                SwapRequestNotificationTitle,
+                $"You received a shift swap request from {requester.FirstName} {requester.LastName} for shift #{shiftId} ({shift!.StartTime:yyyy-MM-dd HH:mm} - {shift.EndTime:HH:mm}).");
 
             message = "Shift swap request sent successfully.";
             return true;
@@ -152,9 +169,11 @@ namespace DevCoreHospital.Services
 
         public List<ShiftSwapRequest> GetIncomingSwapRequests(int colleagueId)
         {
-            bool IsPendingRequest(ShiftSwapRequest swapRequest) => swapRequest.Status == ShiftSwapRequestStatus.PENDING;
-            return shiftSwapRepository.GetSwapRequestsForColleague(colleagueId)
-                .Where(IsPendingRequest)
+            bool IsPendingForColleague(ShiftSwapRequest swapRequest) =>
+                swapRequest.ColleagueId == colleagueId && swapRequest.Status == ShiftSwapRequestStatus.PENDING;
+            return shiftSwapRepository.GetAllShiftSwapRequests()
+                .Where(IsPendingForColleague)
+                .OrderByDescending(swapRequest => swapRequest.RequestedAt)
                 .ToList();
         }
 
@@ -181,7 +200,8 @@ namespace DevCoreHospital.Services
                 return false;
             }
 
-            var shift = shiftRepository.GetShiftById(swapRequest.ShiftId);
+            var allShifts = shiftRepository.GetAllShifts();
+            var shift = allShifts.FirstOrDefault(existingShift => existingShift.Id == swapRequest.ShiftId);
             if (shift == null)
             {
                 message = "Shift not found.";
@@ -191,21 +211,22 @@ namespace DevCoreHospital.Services
             bool IsScheduledOrActive(Shift scheduledShift) =>
                 scheduledShift.Status == ShiftStatus.SCHEDULED || scheduledShift.Status == ShiftStatus.ACTIVE;
 
-            if (shiftRepository.GetShiftsForStaffInRange(colleagueId, shift.StartTime, shift.EndTime)
-                    .Any(IsScheduledOrActive))
+            if (allShifts.Any(existingShift =>
+                    existingShift.AppointedStaff.StaffID == colleagueId
+                    && existingShift.StartTime < shift.EndTime
+                    && existingShift.EndTime > shift.StartTime
+                    && IsScheduledOrActive(existingShift)))
             {
                 message = "You are already scheduled to work in that interval.";
                 return false;
             }
 
-            if (!shiftSwapRepository.ReassignShiftToStaff(swapRequest.ShiftId, colleagueId))
-            {
-                message = "Failed to reassign shift.";
-                return false;
-            }
-
-            shiftSwapRepository.UpdateShiftSwapRequestStatus(swapId, "ACCEPTED");
-            shiftSwapRepository.AddNotification(swapRequest.RequesterId, "Shift Swap Accepted", $"Your swap request #{swapId} was accepted.");
+            shiftRepository.UpdateShiftStaffId(swapRequest.ShiftId, colleagueId);
+            shiftSwapRepository.UpdateShiftSwapRequestStatus(swapId, AcceptedStatus);
+            notificationRepository.AddNotification(
+                swapRequest.RequesterId,
+                SwapAcceptedNotificationTitle,
+                $"Your swap request #{swapId} was accepted.");
 
             message = "Swap accepted.";
             return true;
@@ -237,8 +258,11 @@ namespace DevCoreHospital.Services
                 return false;
             }
 
-            shiftSwapRepository.UpdateShiftSwapRequestStatus(swapId, "REJECTED");
-            shiftSwapRepository.AddNotification(swapRequest.RequesterId, "Shift Swap Rejected", $"Your swap request #{swapId} was rejected.");
+            shiftSwapRepository.UpdateShiftSwapRequestStatus(swapId, RejectedStatus);
+            notificationRepository.AddNotification(
+                swapRequest.RequesterId,
+                SwapRejectedNotificationTitle,
+                $"Your swap request #{swapId} was rejected.");
             message = "Swap rejected.";
             return true;
         }

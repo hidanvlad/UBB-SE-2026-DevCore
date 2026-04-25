@@ -5,7 +5,7 @@ namespace DevCoreHospital.Repositories
 {
     public interface IShiftManagementShiftRepository
     {
-        List<Shift> GetShifts();
+        IReadOnlyList<Shift> GetAllShifts();
         void AddShift(Shift newShift);
         void UpdateShiftStatus(int shiftId, ShiftStatus status);
     }

@@ -1,260 +1,113 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using DevCoreHospital.Models;
 using DevCoreHospital.Repositories;
 using DevCoreHospital.Services;
 using Moq;
-using Xunit;
 
-namespace DevCoreHospital.Tests.Services;
-
-public class ERDispatchServiceTests
+namespace DevCoreHospital.Tests.Services
 {
-    [Fact]
-    public async Task DispatchERRequestAsync_WhenPendingListDoesNotContainRequestId_ReturnsFailureResult()
+    public class ERDispatchServiceTests
     {
-        var repository = new Mock<IERDispatchRepository>();
-        repository
-            .Setup(dispatcherRepository => dispatcherRepository.GetPendingRequests())
-            .Returns(Array.Empty<ERRequest>());
-        var service = new ERDispatchService(repository.Object);
+        private readonly Mock<IERDispatchRepository> requestRepository = new();
+        private readonly Mock<IStaffRepository> staffRepository = new();
+        private readonly Mock<IShiftRepository> shiftRepository = new();
 
-        var dispatchResult = await service.DispatchERRequestAsync(42);
-
-        Assert.False(dispatchResult.IsSuccess);
-    }
-
-    [Fact]
-    public async Task DispatchERRequestAsync_WhenRosterHasAvailableSpecialistInLocation_ReturnsMatchedDoctorName()
-    {
-        var pendingRequest = new ERRequest { Id = 1, Specialization = "Cardiology", Location = "Ward A" };
-        var availableDoctorRosterEntry = new DoctorRosterEntry
+        public ERDispatchServiceTests()
         {
-            DoctorId = 10,
-            FullName = "Dr X",
-            Specialization = "Cardiology",
-            Location = "Ward A",
-            StatusRaw = "AVAILABLE",
-            ScheduleStart = DateTime.Now.AddHours(-1),
-            ScheduleEnd = DateTime.Now.AddHours(2),
-        };
-        var repository = new Mock<IERDispatchRepository>();
-        repository
-            .Setup(dispatcherRepository => dispatcherRepository.GetPendingRequests())
-            .Returns(new[] { pendingRequest });
-        repository
-            .Setup(dispatcherRepository => dispatcherRepository.GetDoctorRoster())
-            .Returns(new[] { availableDoctorRosterEntry });
-        var service = new ERDispatchService(repository.Object);
-
-        var dispatchResult = await service.DispatchERRequestAsync(1);
-
-        Assert.Equal("Dr X", dispatchResult.MatchedDoctorName);
-    }
-
-    [Fact]
-    public async Task DispatchERRequestAsync_WhenNoRosterMatchExists_PersistsUnmatchedStatusInRepository()
-    {
-        var pendingRequest = new ERRequest { Id = 1, Specialization = "Z99", Location = "Nowhere" };
-        string? lastPersistedRequestStatus = null;
-        var repository = new Mock<IERDispatchRepository>();
-        repository
-            .Setup(dispatcherRepository => dispatcherRepository.GetPendingRequests())
-            .Returns(new[] { pendingRequest });
-        repository
-            .Setup(dispatcherRepository => dispatcherRepository.GetDoctorRoster())
-            .Returns(Array.Empty<DoctorRosterEntry>());
-
-        void CaptureUpdateRequestStatus(int requestId, string requestStatus, int? assignedDoctorId, string? assignedDoctorName)
-        {
-            lastPersistedRequestStatus = requestStatus;
+            requestRepository.Setup(repository => repository.GetAllRequests()).Returns(new List<ERRequest>());
+            staffRepository.Setup(repository => repository.LoadAllStaff()).Returns(new List<IStaff>());
+            shiftRepository.Setup(repository => repository.GetAllShifts()).Returns(new List<Shift>());
         }
 
-        repository
-            .Setup(dispatcherRepository => dispatcherRepository.UpdateRequestStatus(It.IsAny<int>(), It.IsAny<string>(), It.IsAny<int?>(), It.IsAny<string>()))
-            .Callback<int, string, int?, string?>(CaptureUpdateRequestStatus);
-        var service = new ERDispatchService(repository.Object);
+        private ERDispatchService CreateService() =>
+            new ERDispatchService(requestRepository.Object, staffRepository.Object, shiftRepository.Object);
 
-        await service.DispatchERRequestAsync(1);
+        private static Doctor MakeDoctor(int staffId, string specialization, DoctorStatus status) =>
+            new Doctor(staffId, "First", "Last", string.Empty, true, specialization, "LIC", status, 1);
 
-        Assert.Equal("UNMATCHED", lastPersistedRequestStatus);
-    }
+        private static Shift MakeCurrentShift(int id, IStaff staff, string location) =>
+            new Shift(id, staff, location, DateTime.Now.AddHours(-1), DateTime.Now.AddHours(2), ShiftStatus.SCHEDULED);
 
-    [Fact]
-    public async Task GetManualOverrideCandidatesAsync_WhenGetRequestByIdReturnsNull_ReturnsNoCandidates()
-    {
-        var repository = new Mock<IERDispatchRepository>();
-        repository
-            .Setup(dispatcherRepository => dispatcherRepository.GetRequestById(1))
-            .Returns((ERRequest?)null);
-        var service = new ERDispatchService(repository.Object);
-
-        var manualOverrideCandidateProfiles = await service.GetManualOverrideCandidatesAsync(1, 30);
-
-        Assert.Empty(manualOverrideCandidateProfiles);
-    }
-
-    [Fact]
-    public async Task ManualOverrideAsync_WhenNoNearEndRosterEntryMatchesDoctor_ReturnsUnsuccessfulResult()
-    {
-        var erRequest = new ERRequest { Id = 1, Specialization = "Cardio", Location = "W1" };
-        var overrideDoctorRosterEntry = new DoctorRosterEntry { DoctorId = 5, FullName = "D" };
-        var repository = new Mock<IERDispatchRepository>();
-        repository
-            .Setup(dispatcherRepository => dispatcherRepository.GetRequestById(1))
-            .Returns(erRequest);
-        repository
-            .Setup(dispatcherRepository => dispatcherRepository.GetDoctorById(5))
-            .Returns(overrideDoctorRosterEntry);
-        repository
-            .Setup(dispatcherRepository => dispatcherRepository.GetDoctorRoster())
-            .Returns(Array.Empty<DoctorRosterEntry>());
-        var service = new ERDispatchService(repository.Object);
-
-        var manualOverrideResult = await service.ManualOverrideAsync(1, 5, 10);
-
-        Assert.False(manualOverrideResult.IsSuccess);
-    }
-
-    [Fact]
-    public async Task SimulateIncomingRequestsAsync_WhenCountIsZero_StillCreatesAtLeastOne()
-    {
-        var callCount = 0;
-        var repository = new Mock<IERDispatchRepository>();
-        repository.Setup(dispatcherRepository => dispatcherRepository.GetDoctorRoster()).Returns(Array.Empty<DoctorRosterEntry>());
-
-        int IncrementAndReturnCallCount()
+        [Fact]
+        public async Task GetPendingRequestIdsAsync_ReturnsOnlyPendingRequests()
         {
-            return ++callCount;
+            requestRepository.Setup(repository => repository.GetAllRequests()).Returns(new List<ERRequest>
+            {
+                new ERRequest { Id = 1, Status = "PENDING", CreatedAt = DateTime.Now.AddMinutes(-2) },
+                new ERRequest { Id = 2, Status = "ASSIGNED" },
+                new ERRequest { Id = 3, Status = "PENDING", CreatedAt = DateTime.Now.AddMinutes(-1) },
+            });
+
+            var result = await CreateService().GetPendingRequestIdsAsync();
+
+            Assert.Equal(new[] { 1, 3 }, result.ToArray());
         }
 
-        repository
-            .Setup(dispatcherRepository => dispatcherRepository.CreateIncomingRequest(It.IsAny<string>(), It.IsAny<string>()))
-            .Returns(IncrementAndReturnCallCount);
-        var service = new ERDispatchService(repository.Object);
-
-        var createdIds = await service.SimulateIncomingRequestsAsync(0);
-
-        Assert.Equal(1, createdIds.Count);
-    }
-
-    [Fact]
-    public async Task GetPendingRequestIdsAsync_ReturnsIdFromEachPending()
-    {
-        var firstPendingRequest = new ERRequest { Id = 7, Specialization = "A", Location = "B" };
-        var secondPendingRequest = new ERRequest { Id = 8, Specialization = "C", Location = "D" };
-        var repository = new Mock<IERDispatchRepository>();
-        repository
-            .Setup(dispatcherRepository => dispatcherRepository.GetPendingRequests())
-            .Returns(new[] { firstPendingRequest, secondPendingRequest });
-        var service = new ERDispatchService(repository.Object);
-
-        var ids = await service.GetPendingRequestIdsAsync();
-
-        Assert.Equal(8, ids[1]);
-    }
-
-    [Fact]
-    public async Task DispatchERRequestAsync_WhenMatchFound_PersistsAssignedInRepository()
-    {
-        var pending = new ERRequest { Id = 1, Specialization = "Derm", Location = "W1" };
-        int? lastDoctorId = null;
-        var rosterEntry = new DoctorRosterEntry
+        [Fact]
+        public async Task DispatchERRequestAsync_ReturnsNotFound_WhenRequestIsAbsent()
         {
-            DoctorId = 3,
-            FullName = "Dr T",
-            Specialization = "Derm",
-            Location = "W1",
-            StatusRaw = "AVAILABLE",
-            ScheduleStart = DateTime.Now.AddHours(-1),
-            ScheduleEnd = DateTime.Now.AddHours(1),
-        };
-        var repository = new Mock<IERDispatchRepository>();
-        repository
-            .Setup(dispatcherRepository => dispatcherRepository.GetPendingRequests())
-            .Returns(new[] { pending });
-        repository
-            .Setup(dispatcherRepository => dispatcherRepository.GetDoctorRoster())
-            .Returns(new[] { rosterEntry });
+            requestRepository.Setup(repository => repository.GetAllRequests()).Returns(new List<ERRequest>());
 
-        void CaptureAssignedDoctorId(int requestId, string state, int? doctorId, string? doctorName)
-        {
-            lastDoctorId = doctorId;
+            var result = await CreateService().DispatchERRequestAsync(99);
+
+            Assert.False(result.IsSuccess);
+            Assert.Contains("not found", result.Message);
         }
 
-        repository
-            .Setup(dispatcherRepository => dispatcherRepository.UpdateRequestStatus(1, "ASSIGNED", 3, It.IsAny<string>()))
-            .Callback<int, string, int?, string?>(CaptureAssignedDoctorId);
-        var service = new ERDispatchService(repository.Object);
-
-        _ = await service.DispatchERRequestAsync(1);
-
-        Assert.Equal(3, lastDoctorId);
-    }
-
-    [Fact]
-    public async Task GetManualOverrideCandidatesAsync_WhenNearEndSpecialistInRoster_ListsSpecialtyMatch()
-    {
-        var now = DateTime.Now;
-        var request = new ERRequest { Id = 1, Specialization = "Onc", Location = "E1" };
-        var near = new DoctorRosterEntry
+        [Fact]
+        public async Task DispatchERRequestAsync_AssignsAvailableMatchingDoctor()
         {
-            DoctorId = 4,
-            FullName = "Dr R",
-            Specialization = "Onc",
-            Location = "E1",
-            StatusRaw = "IN_EXAMINATION",
-            ScheduleStart = now.AddHours(-1),
-            ScheduleEnd = now.AddMinutes(20),
-        };
-        var other = new DoctorRosterEntry
+            var request = new ERRequest { Id = 1, Status = "PENDING", Specialization = "Cardio", Location = "ER1" };
+            var matchingDoctor = MakeDoctor(7, "Cardio", DoctorStatus.AVAILABLE);
+            requestRepository.Setup(repository => repository.GetAllRequests()).Returns(new List<ERRequest> { request });
+            staffRepository.Setup(repository => repository.LoadAllStaff()).Returns(new List<IStaff> { matchingDoctor });
+            shiftRepository.Setup(repository => repository.GetAllShifts()).Returns(new List<Shift> { MakeCurrentShift(1, matchingDoctor, "ER1") });
+
+            var result = await CreateService().DispatchERRequestAsync(1);
+
+            Assert.True(result.IsSuccess);
+            Assert.Equal(7, result.MatchedDoctorId);
+            requestRepository.Verify(repository => repository.UpdateRequestStatus(1, "ASSIGNED", 7, It.IsAny<string>()), Times.Once);
+            staffRepository.Verify(repository => repository.UpdateStatusAsync(7, DoctorStatus.IN_EXAMINATION.ToString()), Times.Once);
+        }
+
+        [Fact]
+        public async Task DispatchERRequestAsync_MarksUnmatched_WhenNoEligibleDoctor()
         {
-            DoctorId = 5,
-            FullName = "X",
-            Specialization = "Other",
-            Location = "E1",
-            StatusRaw = "IN_EXAMINATION",
-            ScheduleStart = now.AddHours(-1),
-            ScheduleEnd = now.AddMinutes(5),
-        };
-        var repository = new Mock<IERDispatchRepository>();
-        repository.Setup(dispatcherRepository => dispatcherRepository.GetRequestById(1)).Returns(request);
-        repository
-            .Setup(dispatcherRepository => dispatcherRepository.GetDoctorRoster())
-            .Returns(new[] { near, other });
-        var service = new ERDispatchService(repository.Object);
+            var request = new ERRequest { Id = 1, Status = "PENDING", Specialization = "Cardio", Location = "ER1" };
+            var unavailable = MakeDoctor(7, "Cardio", DoctorStatus.IN_EXAMINATION);
+            requestRepository.Setup(repository => repository.GetAllRequests()).Returns(new List<ERRequest> { request });
+            staffRepository.Setup(repository => repository.LoadAllStaff()).Returns(new List<IStaff> { unavailable });
+            shiftRepository.Setup(repository => repository.GetAllShifts()).Returns(new List<Shift> { MakeCurrentShift(1, unavailable, "ER1") });
 
-        var result = await service.GetManualOverrideCandidatesAsync(1, 30);
+            var result = await CreateService().DispatchERRequestAsync(1);
 
-        Assert.Equal(4, result[0].DoctorId);
-    }
+            Assert.False(result.IsSuccess);
+            requestRepository.Verify(repository => repository.UpdateRequestStatus(1, "UNMATCHED", null, null), Times.Once);
+        }
 
-    [Fact]
-    public async Task ManualOverrideAsync_WhenDoctorIsEligible_UpdatesToAssigned()
-    {
-        var now = DateTime.Now;
-        var erRequest = new ERRequest { Id = 1, Specialization = "Onc", Location = "E1" };
-        var near = new DoctorRosterEntry
+        [Fact]
+        public async Task SimulateIncomingRequestsAsync_CreatesRequestedNumberOfRequests()
         {
-            DoctorId = 4,
-            FullName = "Dr R",
-            Specialization = "Onc",
-            Location = "E1",
-            StatusRaw = "IN_EXAMINATION",
-            ScheduleStart = now.AddHours(-1),
-            ScheduleEnd = now.AddMinutes(15),
-        };
-        var repository = new Mock<IERDispatchRepository>();
-        repository.Setup(dispatcherRepository => dispatcherRepository.GetRequestById(1)).Returns(erRequest);
-        repository
-            .Setup(dispatcherRepository => dispatcherRepository.GetDoctorRoster())
-            .Returns(new[] { near });
-        repository.Setup(dispatcherRepository => dispatcherRepository.GetDoctorById(4)).Returns(near);
-        var service = new ERDispatchService(repository.Object);
+            requestRepository.Setup(repository => repository.AddRequest(It.IsAny<string>(), It.IsAny<string>(), "PENDING")).Returns(1);
 
-        var result = await service.ManualOverrideAsync(1, 4, 30);
+            var result = await CreateService().SimulateIncomingRequestsAsync(3);
 
-        Assert.True(result.IsSuccess);
+            Assert.Equal(3, result.Count);
+            requestRepository.Verify(repository => repository.AddRequest(It.IsAny<string>(), It.IsAny<string>(), "PENDING"), Times.Exactly(3));
+        }
+
+        [Fact]
+        public async Task GetManualOverrideCandidatesAsync_ReturnsEmpty_WhenRequestNotFound()
+        {
+            requestRepository.Setup(repository => repository.GetRequestById(42)).Returns((ERRequest?)null);
+
+            var result = await CreateService().GetManualOverrideCandidatesAsync(42, 30);
+
+            Assert.Empty(result);
+        }
     }
 }

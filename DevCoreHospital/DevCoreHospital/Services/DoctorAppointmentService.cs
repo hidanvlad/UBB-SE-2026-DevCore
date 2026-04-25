@@ -10,11 +10,13 @@ namespace DevCoreHospital.Services
     public sealed class DoctorAppointmentService : IDoctorAppointmentService
     {
         private readonly IAppointmentRepository dataSource;
+        private readonly IStaffRepository staffRepository;
         private readonly IShiftRepository? shiftRepository;
 
-        public DoctorAppointmentService(IAppointmentRepository dataSource, IShiftRepository? shiftRepository = null)
+        public DoctorAppointmentService(IAppointmentRepository dataSource, IStaffRepository staffRepository, IShiftRepository? shiftRepository = null)
         {
             this.dataSource = dataSource;
+            this.staffRepository = staffRepository;
             this.shiftRepository = shiftRepository;
         }
 
@@ -22,29 +24,46 @@ namespace DevCoreHospital.Services
         {
             DateTime from = fromDate.Date;
             DateTime to = from.AddDays(31);
-            var appointments = await dataSource.GetAppointmentsInRangeAsync(doctorUserId, from, to, skip, take);
-            return appointments.Select(ToDomainAppointment).ToList();
+            var all = await dataSource.GetAllAppointmentsAsync();
+            return all
+                .Where(appointment => appointment.DoctorId == doctorUserId)
+                .Where(appointment => appointment.Date.Add(appointment.StartTime) >= from
+                    && appointment.Date.Add(appointment.StartTime) < to)
+                .OrderBy(appointment => appointment.Date)
+                .ThenBy(appointment => appointment.StartTime)
+                .Skip(skip)
+                .Take(take)
+                .Select(ToDomainAppointment)
+                .ToList();
         }
 
         public async Task<IReadOnlyList<(int DoctorId, string DoctorName)>> GetAllDoctorsAsync()
         {
-            var doctors = await dataSource.GetAllDoctorsAsync();
+            var doctors = await staffRepository.GetAllDoctorsAsync();
             return doctors
-                .Select(doctor => (DoctorId: doctor.DoctorId, DoctorName: (doctor.DoctorName ?? string.Empty).Trim()))
+                .Select(doctor => (
+                    DoctorId: doctor.DoctorId,
+                    DoctorName: ((doctor.FirstName ?? string.Empty) + " " + (doctor.LastName ?? string.Empty)).Trim()))
                 .OrderBy(doctor => doctor.DoctorName)
                 .ToList();
         }
 
         public async Task<Appointment?> GetAppointmentDetailsAsync(int appointmentId)
         {
-            var appointment = await dataSource.GetAppointmentDetailsAsync(appointmentId);
+            var all = await dataSource.GetAllAppointmentsAsync();
+            var appointment = all.FirstOrDefault(a => a.Id == appointmentId);
             return appointment == null ? null : ToDomainAppointment(appointment);
         }
 
         public async Task<IReadOnlyList<Appointment>> GetAppointmentsForAdminAsync(int doctorId)
         {
-            var appointments = await dataSource.GetAppointmentsForAdminAsync(doctorId);
-            return appointments.Select(ToDomainAppointment).ToList();
+            var all = await dataSource.GetAllAppointmentsAsync();
+            return all
+                .Where(appointment => appointment.DoctorId == doctorId)
+                .OrderBy(appointment => appointment.Date)
+                .ThenBy(appointment => appointment.StartTime)
+                .Select(ToDomainAppointment)
+                .ToList();
         }
 
         public async Task CreateAppointmentAsync(string patientName, int doctorId, DateTime date, TimeSpan startTime)
@@ -59,13 +78,13 @@ namespace DevCoreHospital.Services
                 Status = "Scheduled",
             };
             await PersistAppointmentAsync(appointment);
-            await dataSource.UpdateDoctorStatusAsync(doctorId, "IN_EXAMINATION");
+            await staffRepository.UpdateStatusAsync(doctorId, "IN_EXAMINATION");
         }
 
         public async Task BookAppointmentAsync(Appointment appointment)
         {
             await PersistAppointmentAsync(appointment);
-            await dataSource.UpdateDoctorStatusAsync(appointment.DoctorId, "IN_EXAMINATION");
+            await staffRepository.UpdateStatusAsync(appointment.DoctorId, "IN_EXAMINATION");
         }
 
         public async Task FinishAppointmentAsync(Appointment appointment)
@@ -78,18 +97,20 @@ namespace DevCoreHospital.Services
             await dataSource.UpdateAppointmentStatusAsync(appointment!.Id, "Finished");
             appointment.Status = "Finished";
 
-            int activeAppointments = await dataSource.GetAppointmentsCountForDoctorByStatusAsync(appointment.DoctorId, "Scheduled");
+            var all = await dataSource.GetAllAppointmentsAsync();
+            int activeAppointments = all.Count(a =>
+                a.DoctorId == appointment.DoctorId
+                && string.Equals(a.Status, "Scheduled", StringComparison.OrdinalIgnoreCase));
 
             if (activeAppointments == 0)
             {
-                await dataSource.UpdateDoctorStatusAsync(appointment.DoctorId, "AVAILABLE");
+                await staffRepository.UpdateStatusAsync(appointment.DoctorId, "AVAILABLE");
             }
         }
 
         public async Task<IReadOnlyList<Appointment>> GetAppointmentsInRangeAsync(int doctorId, DateTime from, DateTime to)
         {
-            const int maxAppointments = 500;
-            var rawAppointments = await dataSource.GetAppointmentsInRangeAsync(doctorId, from, to, 0, maxAppointments);
+            var rawAppointments = await dataSource.GetAllAppointmentsAsync();
 
             bool IsForDoctor(Appointment appointment) => appointment.DoctorId == doctorId;
             bool IsInRange(Appointment appointment)
@@ -132,12 +153,16 @@ namespace DevCoreHospital.Services
                 return Task.FromResult<IReadOnlyList<Shift>>(new List<Shift>());
             }
 
-            bool IsNotCancelled(Shift shift) => shift.Status != ShiftStatus.CANCELLED;
+            bool IsForDoctorInRange(Shift shift) =>
+                shift.AppointedStaff.StaffID == doctorId
+                && shift.StartTime < to
+                && shift.EndTime > from
+                && shift.Status != ShiftStatus.CANCELLED;
 
             return Task.Run<IReadOnlyList<Shift>>(() =>
                 shiftRepository
-                    .GetShiftsForStaffInRange(doctorId, from, to)
-                    .Where(IsNotCancelled)
+                    .GetAllShifts()
+                    .Where(IsForDoctorInRange)
                     .OrderBy(shift => shift.StartTime)
                     .ToList());
         }

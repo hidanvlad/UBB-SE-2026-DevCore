@@ -72,12 +72,17 @@ namespace DevCoreHospital
             static ShiftRepository ResolvePharmacyShiftRepository(IServiceProvider serviceProvider) => serviceProvider.GetRequiredService<ShiftRepository>();
             services.AddSingleton<IPharmacyShiftRepository>(ResolvePharmacyShiftRepository);
 
-            static SalaryRepository CreateSalaryRepository(IServiceProvider serviceProvider) => new SalaryRepository(AppSettings.ConnectionString);
-            services.AddSingleton<SalaryRepository>(CreateSalaryRepository);
-            static ShiftSwapRepository CreateShiftSwapRepository(IServiceProvider serviceProvider) => new ShiftSwapRepository(AppSettings.ConnectionString);
-            services.AddSingleton<ShiftSwapRepository>(CreateShiftSwapRepository);
-            static ShiftSwapRepository ResolveShiftSwapRepository(IServiceProvider serviceProvider) => serviceProvider.GetRequiredService<ShiftSwapRepository>();
-            services.AddSingleton<IShiftSwapRepository>(ResolveShiftSwapRepository);
+            static IPharmacyHandoverRepository CreatePharmacyHandoverRepository(IServiceProvider serviceProvider) =>
+                new PharmacyHandoverRepository(AppSettings.ConnectionString);
+            services.AddSingleton<IPharmacyHandoverRepository>(CreatePharmacyHandoverRepository);
+
+            static IShiftSwapRepository CreateShiftSwapRepository(IServiceProvider serviceProvider) =>
+                new ShiftSwapRepository(AppSettings.ConnectionString);
+            services.AddSingleton<IShiftSwapRepository>(CreateShiftSwapRepository);
+
+            static INotificationRepository CreateNotificationRepository(IServiceProvider serviceProvider) =>
+                new NotificationRepository(AppSettings.ConnectionString);
+            services.AddSingleton<INotificationRepository>(CreateNotificationRepository);
 
             static AppointmentRepository CreateAppointmentRepository(IServiceProvider serviceProvider) => new AppointmentRepository(AppSettings.ConnectionString);
             services.AddSingleton<AppointmentRepository>(CreateAppointmentRepository);
@@ -85,14 +90,19 @@ namespace DevCoreHospital
             services.AddSingleton<IAppointmentRepository>(ResolveAppointmentRepository);
 
             services.AddSingleton<IHangoutRepository, HangoutRepository>();
+            static IHangoutParticipantRepository CreateHangoutParticipantRepository(IServiceProvider serviceProvider) =>
+                new HangoutParticipantRepository(AppSettings.ConnectionString);
+            services.AddSingleton<IHangoutParticipantRepository>(CreateHangoutParticipantRepository);
 
             static IEvaluationsRepository CreateEvaluationsRepository(IServiceProvider serviceProvider) => new EvaluationsRepository(AppSettings.ConnectionString);
             services.AddSingleton<IEvaluationsRepository>(CreateEvaluationsRepository);
 
             static IERDispatchRepository CreateERDispatchRepository(IServiceProvider serviceProvider) => new ERDispatchRepository(AppSettings.ConnectionString);
             services.AddSingleton<IERDispatchRepository>(CreateERDispatchRepository);
-            static IFatigueAuditRepository CreateFatigueAuditRepository(IServiceProvider serviceProvider) => new FatigueAuditRepository(AppSettings.ConnectionString);
-            services.AddSingleton<IFatigueAuditRepository>(CreateFatigueAuditRepository);
+
+            static IHighRiskMedicineRepository CreateHighRiskMedicineRepository(IServiceProvider serviceProvider) =>
+                new HighRiskMedicineRepository(AppSettings.ConnectionString);
+            services.AddSingleton<IHighRiskMedicineRepository>(CreateHighRiskMedicineRepository);
         }
 
         private static void RegisterServices(IServiceCollection services)
@@ -107,7 +117,9 @@ namespace DevCoreHospital
             services.AddSingleton<IShiftSwapService, ShiftSwapService>();
             static ISalaryComputationService CreateSalaryComputationService(IServiceProvider serviceProvider) =>
                 new SalaryComputationService(
-                    serviceProvider.GetRequiredService<SalaryRepository>(),
+                    serviceProvider.GetRequiredService<IPharmacyHandoverRepository>(),
+                    serviceProvider.GetRequiredService<IHangoutRepository>(),
+                    serviceProvider.GetRequiredService<IHangoutParticipantRepository>(),
                     serviceProvider.GetRequiredService<IStaffRepository>(),
                     serviceProvider.GetRequiredService<IShiftManagementShiftRepository>());
             services.AddSingleton<ISalaryComputationService>(CreateSalaryComputationService);

@@ -5,16 +5,9 @@ namespace DevCoreHospital.Repositories
 {
     public interface IShiftSwapRepository
     {
-        int CreateShiftSwapRequest(ShiftSwapRequest request);
-
-        List<ShiftSwapRequest> GetSwapRequestsForColleague(int colleagueId);
-
+        int AddShiftSwapRequest(ShiftSwapRequest request);
+        IReadOnlyList<ShiftSwapRequest> GetAllShiftSwapRequests();
         ShiftSwapRequest? GetShiftSwapRequestById(int swapId);
-
-        bool UpdateShiftSwapRequestStatus(int swapId, string status);
-
-        void AddNotification(int recipientStaffId, string title, string message);
-
-        bool ReassignShiftToStaff(int shiftId, int newStaffId);
+        void UpdateShiftSwapRequestStatus(int swapId, string status);
     }
 }

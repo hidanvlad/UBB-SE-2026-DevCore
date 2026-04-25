@@ -37,7 +37,7 @@ namespace DevCoreHospital.Tests.Services
                 MakeShift(1, rangeStart.AddHours(8), rangeStart.AddHours(16)),
             };
             shiftRepositoryMock
-                .Setup(shiftRepository => shiftRepository.GetShiftsForStaffInRange(1, rangeStart, rangeEnd))
+                .Setup(shiftRepository => shiftRepository.GetAllShifts())
                 .Returns(expected);
 
             var result = await sut.GetShiftsAsync(1, rangeStart, rangeEnd);
@@ -52,7 +52,7 @@ namespace DevCoreHospital.Tests.Services
             var rangeStart = new DateTime(2025, 4, 14);
             var rangeEnd = new DateTime(2025, 4, 15);
             shiftRepositoryMock
-                .Setup(shiftRepository => shiftRepository.GetShiftsForStaffInRange(It.IsAny<int>(), It.IsAny<DateTime>(), It.IsAny<DateTime>()))
+                .Setup(shiftRepository => shiftRepository.GetAllShifts())
                 .Returns(new List<Shift>());
 
             var result = await sut.GetShiftsAsync(99, rangeStart, rangeEnd);
@@ -66,12 +66,12 @@ namespace DevCoreHospital.Tests.Services
             var rangeStart = new DateTime(2025, 4, 14);
             var rangeEnd = new DateTime(2025, 4, 21);
             shiftRepositoryMock
-                .Setup(shiftRepository => shiftRepository.GetShiftsForStaffInRange(It.IsAny<int>(), It.IsAny<DateTime>(), It.IsAny<DateTime>()))
+                .Setup(shiftRepository => shiftRepository.GetAllShifts())
                 .Returns(new List<Shift>());
 
             await sut.GetShiftsAsync(42, rangeStart, rangeEnd);
 
-            shiftRepositoryMock.Verify(shiftRepository => shiftRepository.GetShiftsForStaffInRange(42, rangeStart, rangeEnd), Times.Once);
+            shiftRepositoryMock.Verify(shiftRepository => shiftRepository.GetAllShifts(), Times.Once);
         }
 
         [Fact]
@@ -80,13 +80,13 @@ namespace DevCoreHospital.Tests.Services
             var rangeStart = new DateTime(2025, 4, 14);
             var rangeEnd = new DateTime(2025, 4, 21);
             shiftRepositoryMock
-                .Setup(shiftRepository => shiftRepository.GetShiftsForStaffInRange(It.IsAny<int>(), It.IsAny<DateTime>(), It.IsAny<DateTime>()))
+                .Setup(shiftRepository => shiftRepository.GetAllShifts())
                 .Returns(new List<Shift>());
 
             await sut.GetShiftsAsync(1, rangeStart, rangeEnd);
 
             shiftRepositoryMock.Verify(
-                shiftRepository => shiftRepository.GetShiftsForStaffInRange(It.IsAny<int>(), rangeStart, rangeEnd),
+                shiftRepository => shiftRepository.GetAllShifts(),
                 Times.Once);
         }
 
@@ -102,7 +102,7 @@ namespace DevCoreHospital.Tests.Services
                 MakeShift(3, rangeStart.AddDays(2).AddHours(8), rangeStart.AddDays(2).AddHours(16)),
             };
             shiftRepositoryMock
-                .Setup(shiftRepository => shiftRepository.GetShiftsForStaffInRange(It.IsAny<int>(), It.IsAny<DateTime>(), It.IsAny<DateTime>()))
+                .Setup(shiftRepository => shiftRepository.GetAllShifts())
                 .Returns(shifts);
 
             var result = await sut.GetShiftsAsync(1, rangeStart, rangeEnd);
