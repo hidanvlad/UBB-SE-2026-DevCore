@@ -54,22 +54,7 @@ namespace DevCoreHospital.Repositories
             return results;
         }
 
-        public void SaveEvaluation(MedicalEvaluation record)
-        {
-            int patientId = int.TryParse(record.PatientId, out var parsedPatientId) ? parsedPatientId : 0;
-            bool assumedRisk = (record.Symptoms ?? string.Empty).IndexOf("[RISK]", StringComparison.OrdinalIgnoreCase) >= 0;
-            int doctorId = record.Evaluator?.StaffID ?? AppSettings.DefaultDoctorId;
-
-            ExecuteSaveEvaluation(
-                doctorId,
-                patientId,
-                record.Symptoms ?? string.Empty,
-                record.Notes ?? string.Empty,
-                record.MedsList ?? string.Empty,
-                assumedRisk);
-        }
-
-        protected virtual void ExecuteSaveEvaluation(int doctorId, int patientId, string diagnosis, string notes, string meds, bool assumedRisk)
+        public virtual void ExecuteSaveEvaluation(int doctorId, int patientId, string diagnosis, string notes, string meds, bool assumedRisk)
         {
             string sql = @"INSERT INTO Medical_Evaluations
                            (doctor_id, patient_id, diagnosis, doctor_notes, medications, source, assumed_risk)
@@ -175,7 +160,7 @@ namespace DevCoreHospital.Repositories
             }
         }
 
-        public DevCoreHospital.Models.Doctor? GetDoctorById(int id)
+        public Doctor? GetDoctorById(int id)
         {
             using var connection = new SqlConnection(connectionString);
             using var command = new SqlCommand("SELECT staff_id, first_name, last_name FROM Staff WHERE staff_id = @Id", connection);
@@ -230,28 +215,6 @@ namespace DevCoreHospital.Repositories
             return doctors;
         }
 
-        public bool IsDoctorFatigued(string doctorId)
-        {
-            const double fatigueThresholdHours = 12.0;
-            return GetDoctorFatigueHours(doctorId) >= fatigueThresholdHours;
-        }
-
-        public string? CheckMedicineConflict(string patientId, string meds)
-        {
-            if (string.IsNullOrWhiteSpace(meds) || string.IsNullOrWhiteSpace(patientId))
-            {
-                return null;
-            }
-
-            string? highRiskWarning = GetHighRiskMedicineWarning(meds);
-            if (!string.IsNullOrEmpty(highRiskWarning))
-            {
-                return highRiskWarning;
-            }
-
-            return CheckPatientHistoryForRisk(patientId, meds);
-        }
-
         public virtual string? GetHighRiskMedicineWarning(string medicineName)
         {
             using (SqlConnection connection = new SqlConnection(connectionString))
@@ -295,6 +258,21 @@ namespace DevCoreHospital.Repositories
             }
 
             return null;
+        }
+
+        public bool IsDoctorFatigued(string doctorId)
+        {
+            throw new NotImplementedException("Use IMedicalEvaluationService.IsDoctorFatigued instead");
+        }
+
+        public string? CheckMedicineConflict(string patientId, string meds)
+        {
+            throw new NotImplementedException("Use IMedicalEvaluationService.CheckMedicineConflict instead");
+        }
+
+        public void SaveEvaluation(MedicalEvaluation record)
+        {
+            throw new NotImplementedException("Use IMedicalEvaluationService.SaveEvaluation instead");
         }
     }
 }

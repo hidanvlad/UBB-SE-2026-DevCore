@@ -21,34 +21,10 @@ namespace DevCoreHospital.Repositories
         }
 
         public IReadOnlyList<DoctorRosterEntry> GetDoctorRoster()
-        {
-            var now = DateTime.Now;
-
-            bool IsOnCurrentShiftNow(DoctorRosterEntry entry) => IsOnCurrentShift(entry, now);
-            DoctorRosterEntry SelectFirstByScheduleEnd(IGrouping<int, DoctorRosterEntry> doctorGroup)
-                => doctorGroup.OrderBy(GetScheduleEnd).First();
-            DateTime GetScheduleEnd(DoctorRosterEntry rosterEntry) => rosterEntry.ScheduleEnd ?? DateTime.MaxValue;
-            int GetDoctorId(DoctorRosterEntry entry) => entry.DoctorId;
-
-            return FetchRosterEntries()
-                .Where(IsDoctor)
-                .Where(IsOnCurrentShiftNow)
-                .Select(NormalizeRosterEntry)
-                .GroupBy(GetDoctorId)
-                .Select(SelectFirstByScheduleEnd)
-                .ToList();
-        }
+            => FetchRosterEntries();
 
         public IReadOnlyList<ERRequest> GetPendingRequests()
-        {
-            bool IsPending(ERRequest request) => string.Equals(Normalize(request.Status), "PENDING", StringComparison.OrdinalIgnoreCase);
-            DateTime GetCreatedAt(ERRequest request) => request.CreatedAt;
-
-            return FetchRequests()
-                .Where(IsPending)
-                .OrderBy(GetCreatedAt)
-                .ToList();
-        }
+            => FetchRequests();
 
         public int CreateIncomingRequest(string specialization, string location)
             => ExecuteCreateRequest(specialization, location, "PENDING");
@@ -57,19 +33,7 @@ namespace DevCoreHospital.Repositories
             => ExecuteGetRequestById(requestId);
 
         public DoctorRosterEntry? GetDoctorById(int doctorId)
-        {
-            var now = DateTime.Now;
-
-            bool IsOnCurrentShiftNow(DoctorRosterEntry entry) => IsOnCurrentShift(entry, now);
-            DateTime GetScheduleEnd(DoctorRosterEntry entry) => entry.ScheduleEnd ?? DateTime.MaxValue;
-
-            return FetchRosterEntriesByStaffId(doctorId)
-                .Where(IsDoctor)
-                .Where(IsOnCurrentShiftNow)
-                .Select(NormalizeRosterEntry)
-                .OrderBy(GetScheduleEnd)
-                .FirstOrDefault();
-        }
+            => FetchRosterEntriesByStaffId(doctorId).FirstOrDefault();
 
         public void UpdateRequestStatus(int requestId, string status, int? doctorId, string? doctorName)
             => ExecuteUpdateRequestStatus(requestId, status, doctorId, doctorName);
@@ -282,61 +246,6 @@ namespace DevCoreHospital.Repositories
                     command.ExecuteNonQuery();
                 }
             }
-        }
-
-        private static DoctorRosterEntry NormalizeRosterEntry(DoctorRosterEntry entry)
-        {
-            return new DoctorRosterEntry
-            {
-                DoctorId = entry.DoctorId,
-                FullName = Normalize(entry.FullName),
-                RoleRaw = Normalize(entry.RoleRaw),
-                Specialization = string.IsNullOrWhiteSpace(entry.Specialization) ? "General" : entry.Specialization.Trim(),
-                StatusRaw = string.IsNullOrWhiteSpace(entry.StatusRaw) ? "OFF_DUTY" : entry.StatusRaw.Trim(),
-                Location = Normalize(entry.Location),
-                IsShiftActive = entry.IsShiftActive,
-                ShiftStatusRaw = Normalize(entry.ShiftStatusRaw),
-                ScheduleStart = entry.ScheduleStart,
-                ScheduleEnd = entry.ScheduleEnd,
-            };
-        }
-
-        private static bool IsDoctor(DoctorRosterEntry entry)
-        {
-            return string.Equals(Normalize(entry.RoleRaw), "DOCTOR", StringComparison.OrdinalIgnoreCase);
-        }
-
-        private static bool IsOnCurrentShift(DoctorRosterEntry entry, DateTime now)
-        {
-            if (!entry.ScheduleStart.HasValue || !entry.ScheduleEnd.HasValue)
-            {
-                return false;
-            }
-
-            if (entry.ScheduleStart.Value > now || entry.ScheduleEnd.Value < now)
-            {
-                return false;
-            }
-
-            if (entry.IsShiftActive.HasValue && !entry.IsShiftActive.Value)
-            {
-                return false;
-            }
-
-            var shiftStatus = Normalize(entry.ShiftStatusRaw);
-            if (string.Equals(shiftStatus, "CANCELLED", StringComparison.OrdinalIgnoreCase) ||
-                string.Equals(shiftStatus, "COMPLETED", StringComparison.OrdinalIgnoreCase) ||
-                string.Equals(shiftStatus, "VACATION", StringComparison.OrdinalIgnoreCase))
-            {
-                return false;
-            }
-
-            return true;
-        }
-
-        private static string Normalize(string? value)
-        {
-            return (value ?? string.Empty).Trim();
         }
 
         private static DoctorRosterEntry ReadDoctorRosterEntry(SqlDataReader reader)

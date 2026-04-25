@@ -8,6 +8,7 @@ namespace DevCoreHospital.Repositories
         List<Doctor> GetAllDoctors();
         List<Appointment> GetAppointmentsByDoctor(int doctorId);
         List<MedicalEvaluation> GetEvaluationsByDoctor(string doctorId);
+        void ExecuteSaveEvaluation(int doctorId, int patientId, string diagnosis, string notes, string meds, bool assumedRisk);
         void SaveEvaluation(MedicalEvaluation record);
         void DeleteEvaluation(int evaluationId);
         double GetDoctorFatigueHours(string doctorId);

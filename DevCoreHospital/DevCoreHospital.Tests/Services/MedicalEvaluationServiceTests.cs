@@ -62,7 +62,13 @@ namespace DevCoreHospital.Tests.Services
 
             sut.SaveEvaluation(evaluation);
 
-            repositoryMock.Verify(evaluationsRepository => evaluationsRepository.SaveEvaluation(evaluation), Times.Once);
+            repositoryMock.Verify(evaluationsRepository => evaluationsRepository.ExecuteSaveEvaluation(
+                It.IsAny<int>(),
+                It.IsAny<int>(),
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<bool>()), Times.Once);
         }
 
         [Fact]
@@ -76,18 +82,18 @@ namespace DevCoreHospital.Tests.Services
         [Fact]
         public void IsDoctorFatigued_ReturnsTrue_WhenRepositoryReturnsTrue()
         {
-            repositoryMock.Setup(evaluationsRepository => evaluationsRepository.IsDoctorFatigued("5")).Returns(true);
+            repositoryMock.Setup(evaluationsRepository => evaluationsRepository.GetDoctorFatigueHours("5")).Returns(13.0);
 
             var result = sut.IsDoctorFatigued("5");
 
             Assert.True(result);
-            repositoryMock.Verify(evaluationsRepository => evaluationsRepository.IsDoctorFatigued("5"), Times.Once);
+            repositoryMock.Verify(evaluationsRepository => evaluationsRepository.GetDoctorFatigueHours("5"), Times.Once);
         }
 
         [Fact]
         public void IsDoctorFatigued_ReturnsFalse_WhenRepositoryReturnsFalse()
         {
-            repositoryMock.Setup(evaluationsRepository => evaluationsRepository.IsDoctorFatigued("3")).Returns(false);
+            repositoryMock.Setup(evaluationsRepository => evaluationsRepository.GetDoctorFatigueHours("3")).Returns(11.0);
 
             var result = sut.IsDoctorFatigued("3");
 
@@ -97,12 +103,12 @@ namespace DevCoreHospital.Tests.Services
         [Fact]
         public void CheckMedicineConflict_ReturnsWarning_WhenConflictExists()
         {
-            repositoryMock.Setup(evaluationsRepository => evaluationsRepository.CheckMedicineConflict("P1", "Aspirin")).Returns("Risk: bleeding");
+            repositoryMock.Setup(evaluationsRepository => evaluationsRepository.GetHighRiskMedicineWarning("Aspirin")).Returns("Risk: bleeding");
 
             var result = sut.CheckMedicineConflict("P1", "Aspirin");
 
             Assert.Equal("Risk: bleeding", result);
-            repositoryMock.Verify(evaluationsRepository => evaluationsRepository.CheckMedicineConflict("P1", "Aspirin"), Times.Once);
+            repositoryMock.Verify(evaluationsRepository => evaluationsRepository.GetHighRiskMedicineWarning("Aspirin"), Times.Once);
         }
 
         [Fact]

@@ -1,6 +1,8 @@
 using System;
 using System.IO;
+using System.Linq;
 using System.Text.Json;
+using System.Collections.Generic;
 using Microsoft.Data.SqlClient;
 
 namespace DevCoreHospital.Tests.Repositories;
@@ -13,10 +15,74 @@ public class SqlTestFixture : IDisposable
     {
         var path = Path.Combine(AppContext.BaseDirectory, "appsettings.json");
         using var doc = JsonDocument.Parse(File.ReadAllText(path));
-        ConnectionString = doc.RootElement
+        var configuredConnectionString = doc.RootElement
             .GetProperty("ConnectionStrings")
             .GetProperty("TestDatabase")
             .GetString()!;
+
+        ConnectionString = ResolveConnectionString(configuredConnectionString);
+    }
+
+    private static string ResolveConnectionString(string configuredConnectionString)
+    {
+        var configuredBuilder = new SqlConnectionStringBuilder(configuredConnectionString)
+        {
+            ConnectTimeout = 3
+        };
+
+        var candidates = new List<string>
+        {
+            configuredBuilder.ConnectionString
+        };
+
+        if (!string.Equals(configuredBuilder.InitialCatalog, "DevCoreHospital", StringComparison.OrdinalIgnoreCase))
+        {
+            var fallbackBuilder = new SqlConnectionStringBuilder(configuredBuilder.ConnectionString)
+            {
+                InitialCatalog = "DevCoreHospital"
+            };
+            candidates.Add(fallbackBuilder.ConnectionString);
+        }
+
+        AddFallback(candidates, configuredBuilder, "localhost\\SQLEXPRESS", "HospitalDatabase");
+        AddFallback(candidates, configuredBuilder, "localhost\\SQLEXPRESS", "DevCoreHospital");
+        AddFallback(candidates, configuredBuilder, ".\\SQLEXPRESS", "HospitalDatabase");
+        AddFallback(candidates, configuredBuilder, ".\\SQLEXPRESS", "DevCoreHospital");
+
+        foreach (var candidate in candidates.Distinct(StringComparer.OrdinalIgnoreCase))
+        {
+            if (CanOpenConnection(candidate))
+            {
+                return candidate;
+            }
+        }
+
+        throw new InvalidOperationException(
+            "Unable to open any configured SQL test connection. Checked: " + string.Join(" | ", candidates));
+    }
+
+    private static bool CanOpenConnection(string connectionString)
+    {
+        try
+        {
+            using var connection = new SqlConnection(connectionString);
+            connection.Open();
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private static void AddFallback(List<string> candidates, SqlConnectionStringBuilder template, string dataSource, string database)
+    {
+        var builder = new SqlConnectionStringBuilder(template.ConnectionString)
+        {
+            DataSource = dataSource,
+            InitialCatalog = database
+        };
+        candidates.Add(builder.ConnectionString);
     }
 
     public SqlConnection OpenConnection()

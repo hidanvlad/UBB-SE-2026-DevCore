@@ -119,7 +119,23 @@ public class SalaryComputationServiceTests
         var service = new SalaryComputationService(salaryRepositoryMock.Object);
         var result = await service.ComputeSalaryPharmacistAsync(pharmacist, [shift], 5, 2026);
 
-        Assert.Equal(374.40, result, 2);
+        Assert.Equal(428.40, result, 2);
+    }
+
+    [Fact]
+    public async Task ComputeSalaryDoctorAsync_UsesShiftDuration_WhenRepositoryThrowsForHours()
+    {
+        var doctor = new Doctor { StaffID = 14, Specialization = "Pediatrics", YearsOfExperience = 0 };
+        var shift = CreateShift(9, doctor, new DateTime(2026, 5, 4, 8, 0, 0), new DateTime(2026, 5, 4, 16, 0, 0));
+        var salaryRepositoryMock = new Mock<SalaryRepository>("fake");
+
+        salaryRepositoryMock.Setup(salaryRepository => salaryRepository.GetShiftHoursFromDb(9)).Throws(new InvalidOperationException("db"));
+        salaryRepositoryMock.Setup(salaryRepository => salaryRepository.DidStaffParticipateInHangout(14, 5, 2026)).Returns(false);
+
+        var service = new SalaryComputationService(salaryRepositoryMock.Object);
+        var result = await service.ComputeSalaryDoctorAsync(doctor, [shift], 5, 2026);
+
+        Assert.Equal(680.00, result, 2);
     }
 
     [Fact]

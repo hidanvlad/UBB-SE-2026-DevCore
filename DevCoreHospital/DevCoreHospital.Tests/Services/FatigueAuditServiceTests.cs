@@ -167,7 +167,7 @@ namespace DevCoreHospital.Tests.Services
             var result = fatigueAuditService.RunAutoAudit(WeekStart);
 
             var restViolation = result.Violations.Single(violation => violation.Rule == "MIN_12H_REST");
-            Assert.Contains("2.0h", restViolation.Message);
+            Assert.Contains(2.0.ToString("F1"), restViolation.Message);
         }
 
         [Fact]
@@ -316,22 +316,31 @@ namespace DevCoreHospital.Tests.Services
         [Fact]
         public void ReassignShift_DelegatesToRepository_AndReturnsItsResult()
         {
-            repositoryMock.Setup(repository => repository.ReassignShift(10, 20)).Returns(true);
+            repositoryMock.Setup(repository => repository.UpdateShiftStaffId(10, 20)).Returns(1);
 
             var result = fatigueAuditService.ReassignShift(10, 20);
 
             Assert.True(result);
-            repositoryMock.Verify(repository => repository.ReassignShift(10, 20), Times.Once);
+            repositoryMock.Verify(repository => repository.UpdateShiftStaffId(10, 20), Times.Once);
         }
 
         [Fact]
         public void ReassignShift_ReturnsFalse_WhenRepositoryReturnsFalse()
         {
-            repositoryMock.Setup(repository => repository.ReassignShift(It.IsAny<int>(), It.IsAny<int>())).Returns(false);
+            repositoryMock.Setup(repository => repository.UpdateShiftStaffId(It.IsAny<int>(), It.IsAny<int>())).Returns(0);
 
             var result = fatigueAuditService.ReassignShift(5, 7);
 
             Assert.False(result);
+        }
+
+        [Fact]
+        public void ReassignShift_ReturnsFalse_WhenIdsAreInvalid()
+        {
+            var result = fatigueAuditService.ReassignShift(0, -1);
+
+            Assert.False(result);
+            repositoryMock.Verify(repository => repository.UpdateShiftStaffId(It.IsAny<int>(), It.IsAny<int>()), Times.Never);
         }
 
         [Fact]

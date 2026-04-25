@@ -25,9 +25,9 @@ public class ShiftSwapFlowIntegrationTests : IClassFixture<SqlTestFixture>
         try
         {
             var staffRepo = new StaffRepository(database.ConnectionString);
-            var shiftRepo = new ShiftRepository(database.ConnectionString, staffRepo);
-            var swapRepo  = new ShiftSwapRepository(database.ConnectionString);
-            var service   = new ShiftSwapService(staffRepo, shiftRepo, swapRepo);
+            var shiftRepo = new ShiftRepository(database.ConnectionString);
+            var swapRepo = new ShiftSwapRepository(database.ConnectionString);
+            var service = new ShiftSwapService(staffRepo, shiftRepo, swapRepo);
 
             var incoming = new IncomingSwapRequestsViewModel(
                 service,
@@ -47,17 +47,17 @@ public class ShiftSwapFlowIntegrationTests : IClassFixture<SqlTestFixture>
         using var connection = database.OpenConnection();
         var requesterId = database.InsertStaff(connection, "Doctor", "InbOne", "Requester", "Cardiology");
         var colleagueId = database.InsertStaff(connection, "Doctor", "InbOne", "Colleague", "Cardiology");
-        var start          = DateTime.Today.AddDays(30).AddHours(9);
-        var shiftId        = database.InsertShift(connection, requesterId, "ER", start, start.AddHours(8));
-        var swapRequestId  = 0;
+        var start = DateTime.Today.AddDays(30).AddHours(9);
+        var shiftId = database.InsertShift(connection, requesterId, "ER", start, start.AddHours(8));
+        var swapRequestId = 0;
         try
         {
             swapRequestId = InsertSwapRequest(connection, shiftId, requesterId, colleagueId);
 
             var staffRepo = new StaffRepository(database.ConnectionString);
-            var shiftRepo = new ShiftRepository(database.ConnectionString, staffRepo);
-            var swapRepo  = new ShiftSwapRepository(database.ConnectionString);
-            var service   = new ShiftSwapService(staffRepo, shiftRepo, swapRepo);
+            var shiftRepo = new ShiftRepository(database.ConnectionString);
+            var swapRepo = new ShiftSwapRepository(database.ConnectionString);
+            var service = new ShiftSwapService(staffRepo, shiftRepo, swapRepo);
 
             var incoming = new IncomingSwapRequestsViewModel(
                 service,
@@ -78,23 +78,23 @@ public class ShiftSwapFlowIntegrationTests : IClassFixture<SqlTestFixture>
     public void RequestSwapCommand_WhenAllConditionsMet_CreatesSwapRequestInDatabase()
     {
         using var connection = database.OpenConnection();
-        var requesterId = database.InsertStaff(connection, "Doctor", "SwapReq",  "Requester", "SwapTestSpec");
-        var colleagueId = database.InsertStaff(connection, "Doctor", "SwapReq",  "Colleague", "SwapTestSpec");
-        var start   = DateTime.Today.AddDays(35).AddHours(9);
+        var requesterId = database.InsertStaff(connection, "Doctor", "SwapReq", "Requester", "SwapTestSpec");
+        var colleagueId = database.InsertStaff(connection, "Doctor", "SwapReq", "Colleague", "SwapTestSpec");
+        var start = DateTime.Today.AddDays(35).AddHours(9);
         var shiftId = database.InsertShift(connection, requesterId, "ER", start, start.AddHours(8));
         try
         {
             var staffRepo = new StaffRepository(database.ConnectionString);
-            var shiftRepo = new ShiftRepository(database.ConnectionString, staffRepo);
-            var swapRepo  = new ShiftSwapRepository(database.ConnectionString);
-            var service   = new ShiftSwapService(staffRepo, shiftRepo, swapRepo);
+            var shiftRepo = new ShiftRepository(database.ConnectionString);
+            var swapRepo = new ShiftSwapRepository(database.ConnectionString);
+            var service = new ShiftSwapService(staffRepo, shiftRepo, swapRepo);
             var viewModel = new MyScheduleViewModel(service);
 
             bool IsRequester(DoctorOptionViewModel doctor) => doctor.StaffId == requesterId;
             bool IsTargetShift(DoctorShiftItemViewModel shiftItem) => shiftItem.Id == shiftId;
             bool IsColleague(StaffOptionViewModel colleague) => colleague.StaffId == colleagueId;
-            viewModel.SelectedDoctor    = viewModel.Doctors.First(IsRequester);
-            viewModel.SelectedShift     = viewModel.FutureShifts.First(IsTargetShift);
+            viewModel.SelectedDoctor = viewModel.Doctors.First(IsRequester);
+            viewModel.SelectedShift = viewModel.FutureShifts.First(IsTargetShift);
             viewModel.SelectedColleague = viewModel.EligibleColleagues.First(IsColleague);
 
             ((RelayCommand)viewModel.RequestSwapCommand).Execute(null!);
@@ -118,23 +118,23 @@ public class ShiftSwapFlowIntegrationTests : IClassFixture<SqlTestFixture>
     public void RequestSwapCommand_WhenAllConditionsMet_SetsSuccessStatusMessage()
     {
         using var connection = database.OpenConnection();
-        var requesterId = database.InsertStaff(connection, "Doctor", "SwapMsg",  "Requester", "SwapMsgSpec");
-        var colleagueId = database.InsertStaff(connection, "Doctor", "SwapMsg",  "Colleague", "SwapMsgSpec");
-        var start   = DateTime.Today.AddDays(36).AddHours(9);
+        var requesterId = database.InsertStaff(connection, "Doctor", "SwapMsg", "Requester", "SwapMsgSpec");
+        var colleagueId = database.InsertStaff(connection, "Doctor", "SwapMsg", "Colleague", "SwapMsgSpec");
+        var start = DateTime.Today.AddDays(36).AddHours(9);
         var shiftId = database.InsertShift(connection, requesterId, "ER", start, start.AddHours(8));
         try
         {
             var staffRepo = new StaffRepository(database.ConnectionString);
-            var shiftRepo = new ShiftRepository(database.ConnectionString, staffRepo);
-            var swapRepo  = new ShiftSwapRepository(database.ConnectionString);
-            var service   = new ShiftSwapService(staffRepo, shiftRepo, swapRepo);
+            var shiftRepo = new ShiftRepository(database.ConnectionString);
+            var swapRepo = new ShiftSwapRepository(database.ConnectionString);
+            var service = new ShiftSwapService(staffRepo, shiftRepo, swapRepo);
             var viewModel = new MyScheduleViewModel(service);
 
             bool IsRequester(DoctorOptionViewModel doctor) => doctor.StaffId == requesterId;
             bool IsTargetShift(DoctorShiftItemViewModel shiftItem) => shiftItem.Id == shiftId;
             bool IsColleague(StaffOptionViewModel colleague) => colleague.StaffId == colleagueId;
-            viewModel.SelectedDoctor    = viewModel.Doctors.First(IsRequester);
-            viewModel.SelectedShift     = viewModel.FutureShifts.First(IsTargetShift);
+            viewModel.SelectedDoctor = viewModel.Doctors.First(IsRequester);
+            viewModel.SelectedShift = viewModel.FutureShifts.First(IsTargetShift);
             viewModel.SelectedColleague = viewModel.EligibleColleagues.First(IsColleague);
 
             ((RelayCommand)viewModel.RequestSwapCommand).Execute(null!);
@@ -157,7 +157,7 @@ public class ShiftSwapFlowIntegrationTests : IClassFixture<SqlTestFixture>
             INSERT INTO ShiftSwapRequests (shift_id, requester_id, colleague_id, requested_at, status)
             VALUES (@ShiftId, @RequesterId, @ColleagueId, @RequestedAt, 'PENDING');
             SELECT CAST(SCOPE_IDENTITY() AS INT);", connection);
-        command.Parameters.AddWithValue("@ShiftId",     shiftId);
+        command.Parameters.AddWithValue("@ShiftId", shiftId);
         command.Parameters.AddWithValue("@RequesterId", requesterId);
         command.Parameters.AddWithValue("@ColleagueId", colleagueId);
         command.Parameters.AddWithValue("@RequestedAt", DateTime.UtcNow);

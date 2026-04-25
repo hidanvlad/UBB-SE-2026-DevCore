@@ -9,12 +9,10 @@ namespace DevCoreHospital.Repositories
     public class ShiftRepository : IShiftRepository, IShiftManagementShiftRepository, IPharmacyShiftRepository
     {
         private readonly string connectionString;
-        private readonly StaffRepository staffRepository;
 
-        public ShiftRepository(string connectionString, StaffRepository staffRepository)
+        public ShiftRepository(string connectionString)
         {
             this.connectionString = connectionString;
-            this.staffRepository = staffRepository;
         }
 
         private SqlConnection GetConnection() => new SqlConnection(connectionString);
@@ -24,32 +22,65 @@ namespace DevCoreHospital.Repositories
             command.Parameters.Add(new SqlParameter(name, value ?? DBNull.Value));
         }
 
-        // Fetches all shifts from DB, joining with staff from StaffRepository.
+        private static IStaff? CreateStaffFromReader(SqlDataReader reader)
+        {
+            int staffId = reader.GetInt32(5);
+            string role = reader.GetString(6);
+            string firstName = reader.GetString(7);
+            string lastName = reader.GetString(8);
+            string contactInfo = reader.IsDBNull(9) ? string.Empty : reader.GetString(9);
+            bool isAvailable = reader.GetBoolean(10);
+            string licenseNumber = reader.IsDBNull(11) ? string.Empty : reader.GetString(11);
+            string specialization = reader.IsDBNull(12) ? string.Empty : reader.GetString(12);
+            string statusText = reader.IsDBNull(13) ? "Available" : reader.GetString(13);
+            string certification = reader.IsDBNull(14) ? string.Empty : reader.GetString(14);
+            int yearsOfExperience = reader.IsDBNull(15) ? 0 : reader.GetInt32(15);
+
+            Enum.TryParse<DoctorStatus>(statusText, true, out DoctorStatus doctorStatus);
+
+            if (role == "Doctor")
+            {
+                return new Doctor(staffId, firstName, lastName, contactInfo, string.Empty, isAvailable,
+                    specialization, licenseNumber, doctorStatus, yearsOfExperience);
+            }
+
+            if (role == "Pharmacist")
+            {
+                return new Pharmacyst(staffId, firstName, lastName, contactInfo, isAvailable, certification,
+                    yearsOfExperience);
+            }
+
+            return null;
+        }
+
+        // Fetches all shifts from DB and materializes staff from the joined staff row.
         private List<Shift> FetchAllShiftsFromDatabase()
         {
             var shifts = new List<Shift>();
-            var allStaff = staffRepository.LoadAllStaff();
             try
             {
                 using var connection = GetConnection();
                 connection.Open();
                 using var command = new SqlCommand(
-                    "SELECT shift_id, staff_id, location, start_time, end_time, status FROM Shifts",
+                    @"SELECT s.shift_id, s.location, s.start_time, s.end_time, s.status,
+                             st.staff_id, st.role, st.first_name, st.last_name, st.contact_info,
+                             st.is_available, st.license_number, st.specialization, st.status,
+                             st.certification, st.years_of_experience
+                      FROM Shifts s
+                      INNER JOIN Staff st ON s.staff_id = st.staff_id",
                     connection);
 
                 using var reader = command.ExecuteReader();
                 while (reader.Read())
                 {
                     int shiftId = reader.GetInt32(0);
-                    int staffId = reader.GetInt32(1);
-                    string location = reader.IsDBNull(2) ? string.Empty : reader.GetString(2);
-                    DateTime startTime = reader.GetDateTime(3);
-                    DateTime endTime = reader.GetDateTime(4);
-                    string statusText = reader.IsDBNull(5) ? "Scheduled" : reader.GetString(5);
+                    string location = reader.IsDBNull(1) ? string.Empty : reader.GetString(1);
+                    DateTime startTime = reader.GetDateTime(2);
+                    DateTime endTime = reader.GetDateTime(3);
+                    string statusText = reader.IsDBNull(4) ? "Scheduled" : reader.GetString(4);
 
                     Enum.TryParse<ShiftStatus>(statusText, true, out ShiftStatus shiftStatus);
-                    bool HasMatchingStaffId(IStaff staffMember) => staffMember.StaffID == staffId;
-                    var appointedStaff = allStaff.FirstOrDefault(HasMatchingStaffId);
+                    var appointedStaff = CreateStaffFromReader(reader);
 
                     if (appointedStaff != null)
                     {

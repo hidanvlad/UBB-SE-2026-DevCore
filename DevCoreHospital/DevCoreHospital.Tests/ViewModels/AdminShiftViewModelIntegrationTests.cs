@@ -24,7 +24,7 @@ namespace DevCoreHospital.Tests.ViewModels
             try
             {
                 var staffRepository = new StaffRepository(database.ConnectionString);
-                var shiftRepository = new ShiftRepository(database.ConnectionString, staffRepository);
+                var shiftRepository = new ShiftRepository(database.ConnectionString);
                 var service = new ShiftManagementService(staffRepository, shiftRepository);
                 var viewModel = new AdminShiftViewModel(service);
                 var staff = staffRepository.GetStaffById(staffId)!;
@@ -59,7 +59,7 @@ namespace DevCoreHospital.Tests.ViewModels
             try
             {
                 var staffRepository = new StaffRepository(database.ConnectionString);
-                var shiftRepository = new ShiftRepository(database.ConnectionString, staffRepository);
+                var shiftRepository = new ShiftRepository(database.ConnectionString);
                 var service = new ShiftManagementService(staffRepository, shiftRepository);
                 var viewModel = new AdminShiftViewModel(service);
 
@@ -89,7 +89,7 @@ namespace DevCoreHospital.Tests.ViewModels
             try
             {
                 var staffRepository = new StaffRepository(database.ConnectionString);
-                var shiftRepository = new ShiftRepository(database.ConnectionString, staffRepository);
+                var shiftRepository = new ShiftRepository(database.ConnectionString);
                 var service = new ShiftManagementService(staffRepository, shiftRepository);
                 var viewModel = new AdminShiftViewModel(service);
 
@@ -121,7 +121,7 @@ namespace DevCoreHospital.Tests.ViewModels
             try
             {
                 var staffRepository = new StaffRepository(database.ConnectionString);
-                var shiftRepository = new ShiftRepository(database.ConnectionString, staffRepository);
+                var shiftRepository = new ShiftRepository(database.ConnectionString);
                 var service = new ShiftManagementService(staffRepository, shiftRepository);
                 var viewModel = new AdminShiftViewModel(service);
 

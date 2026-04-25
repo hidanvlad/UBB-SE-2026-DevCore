@@ -21,7 +21,7 @@ namespace DevCoreHospital.Services
             bool HasSpecializationAndLocation(DoctorProfile doctor) =>
                 !string.IsNullOrWhiteSpace(doctor.Specialization) && !string.IsNullOrWhiteSpace(doctor.Location);
 
-            var liveTemplates = GetAvailableDoctors(repository.GetDoctorRoster())
+            var liveTemplates = GetAvailableDoctors(GetDoctorRosterForDispatch())
                 .Where(HasSpecializationAndLocation)
                 .Select(doctor => (Specialization: doctor.Specialization.Trim(), Location: doctor.Location.Trim()))
                 .Distinct()
@@ -53,7 +53,7 @@ namespace DevCoreHospital.Services
 
         public Task<IReadOnlyList<int>> GetPendingRequestIdsAsync()
         {
-            var ids = repository.GetPendingRequests()
+            var ids = GetPendingRequests()
                 .Select(request => request.Id)
                 .ToList();
 
@@ -63,7 +63,7 @@ namespace DevCoreHospital.Services
         public Task<ERDispatchResult> DispatchERRequestAsync(int requestId)
         {
             bool HasMatchingId(ERRequest pendingRequest) => pendingRequest.Id == requestId;
-            var request = repository.GetPendingRequests().FirstOrDefault(HasMatchingId);
+            var request = GetPendingRequests().FirstOrDefault(HasMatchingId);
             if (request == null)
             {
                 return Task.FromResult(new ERDispatchResult
@@ -112,7 +112,7 @@ namespace DevCoreHospital.Services
             }
 
             var now = DateTime.Now;
-            var inExaminationDoctors = GetDoctorsInExamination(repository.GetDoctorRoster());
+            var inExaminationDoctors = GetDoctorsInExamination(GetDoctorRosterForDispatch());
 
             bool HasScheduleEnd(DoctorProfile doctor) => doctor.ScheduleEnd.HasValue;
             bool IsNearEnd(DoctorProfile doctor)
@@ -149,7 +149,8 @@ namespace DevCoreHospital.Services
         public async Task<ERDispatchResult> ManualOverrideAsync(int requestId, int doctorId, int nearEndMinutes)
         {
             var request = repository.GetRequestById(requestId);
-            var doctorRosterEntry = repository.GetDoctorById(doctorId);
+            bool HasMatchingDoctorId(DoctorRosterEntry rosterEntry) => rosterEntry.DoctorId == doctorId;
+            var doctorRosterEntry = GetDoctorRosterForDispatch().FirstOrDefault(HasMatchingDoctorId);
             var doctor = doctorRosterEntry == null ? null : ToDoctorProfile(doctorRosterEntry);
 
             if (request == null || doctor == null)
@@ -162,8 +163,8 @@ namespace DevCoreHospital.Services
             }
 
             var eligibleCandidates = await GetManualOverrideCandidatesAsync(requestId, nearEndMinutes);
-            bool HasMatchingDoctorId(DoctorProfile overrideCandidate) => overrideCandidate.DoctorId == doctorId;
-            if (!eligibleCandidates.Any(HasMatchingDoctorId))
+            bool HasMatchingDoctorIdInCandidates(DoctorProfile overrideCandidate) => overrideCandidate.DoctorId == doctorId;
+            if (!eligibleCandidates.Any(HasMatchingDoctorIdInCandidates))
             {
                 return new ERDispatchResult
                 {
@@ -190,7 +191,7 @@ namespace DevCoreHospital.Services
 
         private DoctorProfile? FindBestMatchingDoctor(ERRequest request)
         {
-            var availableDoctors = GetAvailableDoctors(repository.GetDoctorRoster());
+            var availableDoctors = GetAvailableDoctors(GetDoctorRosterForDispatch());
 
             bool IsMatchingAvailableDoctor(DoctorProfile doctor) =>
                 IsSameValue(doctor.Specialization, request.Specialization) &&
@@ -205,21 +206,100 @@ namespace DevCoreHospital.Services
             return matches.FirstOrDefault();
         }
 
+        private IReadOnlyList<DoctorRosterEntry> GetDoctorRosterForDispatch()
+        {
+            var now = DateTime.Now;
+
+            DateTime GetScheduleEnd(DoctorRosterEntry rosterEntry) => rosterEntry.ScheduleEnd ?? DateTime.MaxValue;
+
+            return repository.GetDoctorRoster()
+                .Where(IsDoctor)
+                .Where(entry => IsOnCurrentShift(entry, now))
+                .Select(NormalizeRosterEntry)
+                .GroupBy(entry => entry.DoctorId)
+                .Select(group => group.OrderBy(GetScheduleEnd).First())
+                .ToList();
+        }
+
+        private IReadOnlyList<ERRequest> GetPendingRequests()
+        {
+            return repository.GetPendingRequests()
+                .Where(request => string.Equals(NormalizeToken(request.Status), "PENDING", StringComparison.OrdinalIgnoreCase))
+                .OrderBy(request => request.CreatedAt)
+                .ToList();
+        }
+
         private static IReadOnlyList<DoctorProfile> GetAvailableDoctors(IEnumerable<DoctorRosterEntry> roster)
             => GetDoctorsByStatus(roster, DoctorStatus.AVAILABLE);
 
         private static IReadOnlyList<DoctorProfile> GetDoctorsInExamination(IEnumerable<DoctorRosterEntry> roster)
             => GetDoctorsByStatus(roster, DoctorStatus.IN_EXAMINATION);
 
+        private static DoctorRosterEntry NormalizeRosterEntry(DoctorRosterEntry entry)
+        {
+            return new DoctorRosterEntry
+            {
+                DoctorId = entry.DoctorId,
+                FullName = NormalizeToken(entry.FullName),
+                RoleRaw = NormalizeToken(entry.RoleRaw),
+                Specialization = string.IsNullOrWhiteSpace(entry.Specialization) ? "General" : entry.Specialization.Trim(),
+                StatusRaw = string.IsNullOrWhiteSpace(entry.StatusRaw) ? "OFF_DUTY" : entry.StatusRaw.Trim(),
+                Location = NormalizeToken(entry.Location),
+                IsShiftActive = entry.IsShiftActive,
+                ShiftStatusRaw = NormalizeToken(entry.ShiftStatusRaw),
+                ScheduleStart = entry.ScheduleStart,
+                ScheduleEnd = entry.ScheduleEnd,
+            };
+        }
+
+        private static bool IsDoctor(DoctorRosterEntry entry)
+        {
+            var normalizedRole = NormalizeToken(entry.RoleRaw);
+            if (string.IsNullOrEmpty(normalizedRole))
+            {
+                return true;
+            }
+
+            return string.Equals(normalizedRole, "DOCTOR", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static bool IsOnCurrentShift(DoctorRosterEntry entry, DateTime now)
+        {
+            if (!entry.ScheduleStart.HasValue || !entry.ScheduleEnd.HasValue)
+            {
+                return false;
+            }
+
+            if (entry.ScheduleStart.Value > now || entry.ScheduleEnd.Value < now)
+            {
+                return false;
+            }
+
+            if (entry.IsShiftActive.HasValue && !entry.IsShiftActive.Value)
+            {
+                return false;
+            }
+
+            var shiftStatus = NormalizeToken(entry.ShiftStatusRaw);
+            if (string.Equals(shiftStatus, "CANCELLED", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(shiftStatus, "COMPLETED", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(shiftStatus, "VACATION", StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+
+            return true;
+        }
+
         private static DoctorProfile ToDoctorProfile(DoctorRosterEntry entry)
         {
             return new DoctorProfile
             {
                 DoctorId = entry.DoctorId,
-                FullName = entry.FullName,
-                Specialization = entry.Specialization,
+                FullName = NormalizeToken(entry.FullName),
+                Specialization = string.IsNullOrWhiteSpace(entry.Specialization) ? "General" : entry.Specialization.Trim(),
                 Status = ParseStatus(entry.StatusRaw),
-                Location = entry.Location,
+                Location = NormalizeToken(entry.Location),
                 ScheduleStart = entry.ScheduleStart,
                 ScheduleEnd = entry.ScheduleEnd
             };
@@ -231,19 +311,13 @@ namespace DevCoreHospital.Services
 
             return roster
                 .Select(ToDoctorProfile)
-                .Where(IsOnCurrentShift)
                 .Where(HasTargetStatus)
                 .ToList();
         }
 
-        private static bool IsOnCurrentShift(DoctorProfile profile)
-        {
-            return profile.ScheduleStart.HasValue && profile.ScheduleEnd.HasValue;
-        }
-
         private static DoctorStatus ParseStatus(string? raw)
         {
-            var token = (raw ?? string.Empty).Trim().Replace(" ", "_");
+            var token = NormalizeToken(raw).Replace(" ", "_");
 
             if (string.Equals(token, "Available", StringComparison.OrdinalIgnoreCase) ||
                 string.Equals(token, "AVAILABLE", StringComparison.OrdinalIgnoreCase))
@@ -261,7 +335,7 @@ namespace DevCoreHospital.Services
             return string.Equals(NormalizeToken(left), NormalizeToken(right), StringComparison.OrdinalIgnoreCase);
         }
 
-        private static string NormalizeToken(string value)
+        private static string NormalizeToken(string? value)
         {
             return (value ?? string.Empty).Trim();
         }

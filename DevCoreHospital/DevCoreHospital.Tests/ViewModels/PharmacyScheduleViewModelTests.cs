@@ -185,14 +185,16 @@ namespace DevCoreHospital.Tests.ViewModels
         public void HeaderSubtitle_ShowsWeekRange_WhenIsWeeklyView()
         {
             var anchor = new DateTime(2025, 4, 16);
+            var startOfWeek = new DateTime(2025, 4, 14);
+            var endOfWeek = new DateTime(2025, 4, 20);
             var viewModel = CreateViewModel();
             SetAnchorDate(viewModel, anchor);
             SetIsWeeklyView(viewModel, true);
 
             var subtitle = viewModel.HeaderSubtitle;
 
-            Assert.Contains("14 Apr 2025", subtitle);
-            Assert.Contains("20 Apr 2025", subtitle);
+            Assert.Contains(startOfWeek.ToString("dd MMM yyyy"), subtitle);
+            Assert.Contains(endOfWeek.ToString("dd MMM yyyy"), subtitle);
         }
 
         [Fact]
@@ -203,20 +205,21 @@ namespace DevCoreHospital.Tests.ViewModels
             SetAnchorDate(viewModel, anchor);
             SetIsWeeklyView(viewModel, false);
 
-            Assert.Contains("Wednesday", viewModel.HeaderSubtitle);
-            Assert.Contains("16 Apr 2025", viewModel.HeaderSubtitle);
+            Assert.Contains(anchor.ToString("dddd"), viewModel.HeaderSubtitle);
+            Assert.Contains(anchor.ToString("dd MMM yyyy"), viewModel.HeaderSubtitle);
         }
 
         [Fact]
         public void SelectedDateText_ShowsWeekOf_WhenIsWeeklyView()
         {
             var anchor = new DateTime(2025, 4, 16);
+            var startOfWeek = new DateTime(2025, 4, 14);
             var viewModel = CreateViewModel();
             SetAnchorDate(viewModel, anchor);
             SetIsWeeklyView(viewModel, true);
 
             Assert.StartsWith("Week of ", viewModel.SelectedDateText);
-            Assert.Contains("14 Apr 2025", viewModel.SelectedDateText);
+            Assert.Contains(startOfWeek.ToString("dd MMM yyyy"), viewModel.SelectedDateText);
         }
 
         [Fact]
@@ -227,7 +230,7 @@ namespace DevCoreHospital.Tests.ViewModels
             SetAnchorDate(viewModel, anchor);
             SetIsWeeklyView(viewModel, false);
 
-            Assert.Contains("Wednesday", viewModel.SelectedDateText);
+            Assert.Contains(anchor.ToString("dddd"), viewModel.SelectedDateText);
         }
 
         [Fact]
@@ -323,7 +326,7 @@ namespace DevCoreHospital.Tests.ViewModels
         public void TodayCommand_SetsAnchorDateToToday()
         {
             var viewModel = CreateViewModel();
-                SetAnchorDate(viewModel, new DateTime(2020, 1, 1));
+            SetAnchorDate(viewModel, new DateTime(2020, 1, 1));
 
             viewModel.TodayCommand.Execute(null);
 

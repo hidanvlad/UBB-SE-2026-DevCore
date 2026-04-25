@@ -28,9 +28,18 @@ namespace DevCoreHospital.Tests.Integration
             public string GetDoctorStatus(int doctorId) =>
                 doctorStatuses.TryGetValue(doctorId, out var status) ? status : string.Empty;
 
-            public Task AddAppointmentAsync(Appointment appointment)
+            public Task AddAppointmentAsync(int patientId, int doctorId, DateTime startTime, DateTime endTime, string status)
             {
-                appointments.Add(appointment);
+                appointments.Add(new Appointment
+                {
+                    Id = appointments.Count + 1,
+                    PatientName = patientId.ToString(),
+                    DoctorId = doctorId,
+                    Date = startTime.Date,
+                    StartTime = startTime.TimeOfDay,
+                    EndTime = endTime.TimeOfDay,
+                    Status = status,
+                });
                 return Task.CompletedTask;
             }
 
@@ -46,13 +55,11 @@ namespace DevCoreHospital.Tests.Integration
                 return Task.CompletedTask;
             }
 
-            public Task<int> GetActiveAppointmentsCountForDoctorAsync(int doctorId)
+            public Task<int> GetAppointmentsCountForDoctorByStatusAsync(int doctorId, string status)
             {
-                bool IsActiveAppointmentForDoctor(Appointment appointment) =>
-                    appointment.DoctorId == doctorId &&
-                    !string.Equals(appointment.Status, "Finished", StringComparison.OrdinalIgnoreCase) &&
-                    !string.Equals(appointment.Status, "Canceled", StringComparison.OrdinalIgnoreCase);
-                int count = appointments.Count(IsActiveAppointmentForDoctor);
+                bool HasStatus(Appointment appointment) =>
+                    string.Equals(appointment.Status, status, StringComparison.OrdinalIgnoreCase);
+                int count = appointments.Count(appointment => appointment.DoctorId == doctorId && HasStatus(appointment));
                 return Task.FromResult(count);
             }
 
@@ -62,13 +69,15 @@ namespace DevCoreHospital.Tests.Integration
                 return Task.CompletedTask;
             }
 
-            public Task<IReadOnlyList<Appointment>> GetUpcomingAppointmentsAsync(
-                int doctorUserId, DateTime fromDate, int skip, int take)
+            public Task<IReadOnlyList<Appointment>> GetAppointmentsInRangeAsync(
+                int doctorUserId, DateTime fromDate, DateTime toDate, int skip, int take)
             {
-                bool IsUpcomingForDoctor(Appointment appointment) =>
-                    appointment.DoctorId == doctorUserId && appointment.Date >= fromDate;
+                bool IsInRangeForDoctor(Appointment appointment) =>
+                    appointment.DoctorId == doctorUserId
+                    && appointment.Date >= fromDate
+                    && appointment.Date < toDate;
                 IReadOnlyList<Appointment> result = appointments
-                    .Where(IsUpcomingForDoctor)
+                    .Where(IsInRangeForDoctor)
                     .Skip(skip).Take(take)
                     .ToList();
                 return Task.FromResult(result);
@@ -309,7 +318,12 @@ namespace DevCoreHospital.Tests.Integration
                 Status = "Scheduled",
             };
 
-            await dataSource.AddAppointmentAsync(appointment);
+            await dataSource.AddAppointmentAsync(
+                0,
+                appointment.DoctorId,
+                appointment.Date.Date.Add(appointment.StartTime),
+                appointment.Date.Date.Add(appointment.EndTime),
+                appointment.Status);
             viewModel.SelectedDate = selectedDate;
             viewModel.SelectedDoctor = new DoctorScheduleViewModel.DoctorOption { DoctorId = 1, DoctorName = "Ana Pop" };
 

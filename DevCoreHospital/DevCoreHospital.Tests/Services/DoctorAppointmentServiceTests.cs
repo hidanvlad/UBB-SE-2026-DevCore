@@ -25,11 +25,25 @@ namespace DevCoreHospital.Tests.Services
         [Fact]
         public async Task BookAppointmentAsync_AddsAppointment_WithGivenAppointmentObject()
         {
-            var appointment = new Appointment { Id = 1, DoctorId = 10 };
+            var appointment = new Appointment
+            {
+                Id = 1,
+                DoctorId = 10,
+                PatientName = "PAT-42",
+                Date = new DateTime(2025, 8, 1),
+                StartTime = new TimeSpan(9, 0, 0),
+                EndTime = new TimeSpan(9, 30, 0),
+                Status = "Scheduled",
+            };
 
             await service.BookAppointmentAsync(appointment);
 
-            mockDataSource.Verify(appointmentRepository => appointmentRepository.AddAppointmentAsync(appointment), Times.Once);
+            mockDataSource.Verify(appointmentRepository => appointmentRepository.AddAppointmentAsync(
+                42,
+                10,
+                new DateTime(2025, 8, 1, 9, 0, 0),
+                new DateTime(2025, 8, 1, 9, 30, 0),
+                "Scheduled"), Times.Once);
         }
 
         [Fact]
@@ -47,7 +61,7 @@ namespace DevCoreHospital.Tests.Services
         public async Task FinishAppointmentAsync_SetsAppointmentStatus_ToFinished()
         {
             var appointment = new Appointment { Id = 5, DoctorId = 10 };
-            mockDataSource.Setup(appointmentRepository => appointmentRepository.GetActiveAppointmentsCountForDoctorAsync(10)).ReturnsAsync(1);
+            mockDataSource.Setup(appointmentRepository => appointmentRepository.GetAppointmentsCountForDoctorByStatusAsync(10, "Scheduled")).ReturnsAsync(1);
 
             await service.FinishAppointmentAsync(appointment);
 
@@ -58,7 +72,7 @@ namespace DevCoreHospital.Tests.Services
         public async Task FinishAppointmentAsync_SetsDoctorStatus_ToAvailable_WhenNoActiveAppointmentsRemain()
         {
             var appointment = new Appointment { Id = 5, DoctorId = 10 };
-            mockDataSource.Setup(appointmentRepository => appointmentRepository.GetActiveAppointmentsCountForDoctorAsync(10)).ReturnsAsync(0);
+            mockDataSource.Setup(appointmentRepository => appointmentRepository.GetAppointmentsCountForDoctorByStatusAsync(10, "Scheduled")).ReturnsAsync(0);
 
             await service.FinishAppointmentAsync(appointment);
 
@@ -69,7 +83,7 @@ namespace DevCoreHospital.Tests.Services
         public async Task FinishAppointmentAsync_DoesNotUpdateDoctorStatus_WhenActiveAppointmentsRemain()
         {
             var appointment = new Appointment { Id = 5, DoctorId = 10 };
-            mockDataSource.Setup(appointmentRepository => appointmentRepository.GetActiveAppointmentsCountForDoctorAsync(10)).ReturnsAsync(2);
+            mockDataSource.Setup(appointmentRepository => appointmentRepository.GetAppointmentsCountForDoctorByStatusAsync(10, "Scheduled")).ReturnsAsync(2);
 
             await service.FinishAppointmentAsync(appointment);
 
@@ -130,7 +144,9 @@ namespace DevCoreHospital.Tests.Services
 
             var result = await service.GetAllDoctorsAsync();
 
-            Assert.Same(expected, result);
+            Assert.Equal(2, result.Count);
+            Assert.Equal((2, "Dr. Jones"), result[0]);
+            Assert.Equal((1, "Dr. Smith"), result[1]);
             mockDataSource.Verify(appointmentRepository => appointmentRepository.GetAllDoctorsAsync(), Times.Once);
         }
 
@@ -142,7 +158,10 @@ namespace DevCoreHospital.Tests.Services
 
             var result = await service.GetAppointmentDetailsAsync(42);
 
-            Assert.Same(expected, result);
+            Assert.NotNull(result);
+            Assert.Equal(42, result!.Id);
+            Assert.Equal(5, result.DoctorId);
+            Assert.Equal("Jane Doe", result.PatientName);
             mockDataSource.Verify(appointmentRepository => appointmentRepository.GetAppointmentDetailsAsync(42), Times.Once);
         }
 
@@ -162,35 +181,20 @@ namespace DevCoreHospital.Tests.Services
         {
             var date = new DateTime(2025, 8, 1);
             var startTime = new TimeSpan(10, 0, 0);
-            Appointment? captured = null;
-
-            void CaptureAppointment(Appointment appointment) { captured = appointment; }
-
-            mockDataSource
-                .Setup(appointmentRepository => appointmentRepository.AddAppointmentAsync(It.IsAny<Appointment>()))
-                .Callback<Appointment>(CaptureAppointment);
-            mockDataSource
-                .Setup(appointmentRepository => appointmentRepository.GetActiveAppointmentsCountForDoctorAsync(It.IsAny<int>()))
-                .ReturnsAsync(1);
 
             await service.CreateAppointmentAsync("PAT-1", 5, date, startTime);
 
-            Assert.NotNull(captured);
-            Assert.Equal("PAT-1", captured!.PatientName);
-            Assert.Equal(5, captured.DoctorId);
-            Assert.Equal(date.Date, captured.Date);
-            Assert.Equal(startTime, captured.StartTime);
-            Assert.Equal(startTime.Add(TimeSpan.FromMinutes(30)), captured.EndTime);
-            Assert.Equal("Scheduled", captured.Status);
+            mockDataSource.Verify(appointmentRepository => appointmentRepository.AddAppointmentAsync(
+                1,
+                5,
+                new DateTime(2025, 8, 1, 10, 0, 0),
+                new DateTime(2025, 8, 1, 10, 30, 0),
+                "Scheduled"), Times.Once);
         }
 
         [Fact]
         public async Task CreateAppointmentAsync_SetsDoctorStatus_ToInExamination()
         {
-            mockDataSource
-                .Setup(appointmentRepository => appointmentRepository.GetActiveAppointmentsCountForDoctorAsync(It.IsAny<int>()))
-                .ReturnsAsync(1);
-
             await service.CreateAppointmentAsync("PAT-1", 7, DateTime.Today, TimeSpan.Zero);
 
             mockDataSource.Verify(appointmentRepository => appointmentRepository.UpdateDoctorStatusAsync(7, "IN_EXAMINATION"), Times.Once);
@@ -242,7 +246,7 @@ namespace DevCoreHospital.Tests.Services
                 EndTime = new TimeSpan(10, 0, 0),
             };
             mockDataSource
-                .Setup(appointmentRepository => appointmentRepository.GetUpcomingAppointmentsAsync(1, from, 0, It.IsAny<int>()))
+                .Setup(appointmentRepository => appointmentRepository.GetAppointmentsInRangeAsync(1, from, to, 0, It.IsAny<int>()))
                 .ReturnsAsync(new List<Appointment> { appointment });
 
             var result = await service.GetAppointmentsInRangeAsync(1, from, to);
@@ -263,7 +267,7 @@ namespace DevCoreHospital.Tests.Services
                 EndTime = new TimeSpan(9, 0, 0),
             };
             mockDataSource
-                .Setup(appointmentRepository => appointmentRepository.GetUpcomingAppointmentsAsync(1, from, 0, It.IsAny<int>()))
+                .Setup(appointmentRepository => appointmentRepository.GetAppointmentsInRangeAsync(1, from, to, 0, It.IsAny<int>()))
                 .ReturnsAsync(new List<Appointment> { appointment });
 
             var result = await service.GetAppointmentsInRangeAsync(1, from, to);
@@ -284,7 +288,7 @@ namespace DevCoreHospital.Tests.Services
                 EndTime = new TimeSpan(11, 0, 0),
             };
             mockDataSource
-                .Setup(appointmentRepository => appointmentRepository.GetUpcomingAppointmentsAsync(1, from, 0, It.IsAny<int>()))
+                .Setup(appointmentRepository => appointmentRepository.GetAppointmentsInRangeAsync(1, from, to, 0, It.IsAny<int>()))
                 .ReturnsAsync(new List<Appointment> { appointment });
 
             var result = await service.GetAppointmentsInRangeAsync(1, from, to);
@@ -305,7 +309,7 @@ namespace DevCoreHospital.Tests.Services
                 EndTime = new TimeSpan(11, 0, 0),
             };
             mockDataSource
-                .Setup(appointmentRepository => appointmentRepository.GetUpcomingAppointmentsAsync(1, from, 0, It.IsAny<int>()))
+                .Setup(appointmentRepository => appointmentRepository.GetAppointmentsInRangeAsync(1, from, to, 0, It.IsAny<int>()))
                 .ReturnsAsync(new List<Appointment> { appointment });
 
             var result = await service.GetAppointmentsInRangeAsync(1, from, to);

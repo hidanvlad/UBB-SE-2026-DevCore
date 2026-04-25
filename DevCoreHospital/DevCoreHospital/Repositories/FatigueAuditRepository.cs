@@ -114,32 +114,18 @@ namespace DevCoreHospital.Repositories
             return profiles;
         }
 
-        public bool ReassignShift(int shiftId, int newStaffId)
+        public int UpdateShiftStaffId(int shiftId, int newStaffId)
         {
             using (SqlConnection connection = new SqlConnection(connectionString))
             {
                 connection.Open();
-                using (SqlTransaction transaction = connection.BeginTransaction())
+                using (SqlCommand update = connection.CreateCommand())
                 {
-                    try
-                    {
-                        using (SqlCommand update = connection.CreateCommand())
-                        {
-                            update.Transaction = transaction;
-                            update.CommandText = "UPDATE Shifts SET staff_id = @NewStaffId WHERE shift_id = @ShiftId;";
-                            AddParameter(update, "@NewStaffId", newStaffId);
-                            AddParameter(update, "@ShiftId", shiftId);
+                    update.CommandText = "UPDATE Shifts SET staff_id = @NewStaffId WHERE shift_id = @ShiftId;";
+                    AddParameter(update, "@NewStaffId", newStaffId);
+                    AddParameter(update, "@ShiftId", shiftId);
 
-                            var rows = update.ExecuteNonQuery();
-                            transaction.Commit();
-                            return rows > 0;
-                        }
-                    }
-                    catch
-                    {
-                        transaction.Rollback();
-                        return false;
-                    }
+                    return update.ExecuteNonQuery();
                 }
             }
         }

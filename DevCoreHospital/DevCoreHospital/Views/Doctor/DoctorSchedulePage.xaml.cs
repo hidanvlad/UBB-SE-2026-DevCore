@@ -11,7 +11,7 @@ namespace DevCoreHospital.Views.Doctor
     public sealed partial class DoctorSchedulePage : Page
     {
         private readonly DoctorScheduleViewModel vm;
-        private readonly IDialogService dialogService;
+        private readonly DialogService dialogService;
         private bool initialized;
 
         public DoctorSchedulePage()
@@ -19,7 +19,7 @@ namespace DevCoreHospital.Views.Doctor
             InitializeComponent();
 
             vm = App.Services.GetRequiredService<DoctorScheduleViewModel>();
-            dialogService = App.Services.GetRequiredService<IDialogService>();
+            dialogService = App.Services.GetRequiredService<DialogService>();
             DataContext = vm;
         }
 

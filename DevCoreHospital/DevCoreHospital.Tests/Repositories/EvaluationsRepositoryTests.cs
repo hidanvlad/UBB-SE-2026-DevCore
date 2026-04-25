@@ -35,7 +35,8 @@ public class EvaluationsRepositoryTests : IClassFixture<SqlTestFixture>
     {
         var repository = new EvaluationsRepository(database.ConnectionString);
 
-        Assert.Null(repository.CheckMedicineConflict("P1", string.Empty));
+        var exception = Assert.Throws<NotImplementedException>(() => repository.CheckMedicineConflict("P1", string.Empty));
+        Assert.Contains("IMedicalEvaluationService.CheckMedicineConflict", exception.Message);
     }
 
     [Fact]
@@ -43,7 +44,8 @@ public class EvaluationsRepositoryTests : IClassFixture<SqlTestFixture>
     {
         var repository = new EvaluationsRepository(database.ConnectionString);
 
-        Assert.Null(repository.CheckMedicineConflict("P1", "   "));
+        var exception = Assert.Throws<NotImplementedException>(() => repository.CheckMedicineConflict("P1", "   "));
+        Assert.Contains("IMedicalEvaluationService.CheckMedicineConflict", exception.Message);
     }
 
     [Fact]
@@ -51,7 +53,8 @@ public class EvaluationsRepositoryTests : IClassFixture<SqlTestFixture>
     {
         var repository = new EvaluationsRepository(database.ConnectionString);
 
-        Assert.Null(repository.CheckMedicineConflict(string.Empty, "Aspirin"));
+        var exception = Assert.Throws<NotImplementedException>(() => repository.CheckMedicineConflict(string.Empty, "Aspirin"));
+        Assert.Contains("IMedicalEvaluationService.CheckMedicineConflict", exception.Message);
     }
 
     [Fact]
@@ -59,129 +62,97 @@ public class EvaluationsRepositoryTests : IClassFixture<SqlTestFixture>
     {
         var repository = new EvaluationsRepository(database.ConnectionString);
 
-        Assert.Null(repository.CheckMedicineConflict("   ", "Aspirin"));
+        var exception = Assert.Throws<NotImplementedException>(() => repository.CheckMedicineConflict("   ", "Aspirin"));
+        Assert.Contains("IMedicalEvaluationService.CheckMedicineConflict", exception.Message);
     }
 
-
-    private sealed class TestableEvaluationsRepository : EvaluationsRepository
-    {
-        private readonly double fatigueHours;
-
-        public TestableEvaluationsRepository(double fatigueHours) : base("fake")
-            => this.fatigueHours = fatigueHours;
-
-        public override double GetDoctorFatigueHours(string doctorId) => fatigueHours;
-    }
 
     [Fact]
     public void IsDoctorFatigued_ReturnsFalse_WhenHoursAreBelowThreshold()
     {
-        var repository = new TestableEvaluationsRepository(fatigueHours: 11.9);
+        var repository = new EvaluationsRepository(database.ConnectionString);
 
-        Assert.False(repository.IsDoctorFatigued("1"));
+        var exception = Assert.Throws<NotImplementedException>(() => repository.IsDoctorFatigued("1"));
+        Assert.Contains("IMedicalEvaluationService.IsDoctorFatigued", exception.Message);
     }
 
     [Fact]
     public void IsDoctorFatigued_ReturnsTrue_WhenHoursAreExactlyAtThreshold()
     {
-        var repository = new TestableEvaluationsRepository(fatigueHours: 12.0);
+        var repository = new EvaluationsRepository(database.ConnectionString);
 
-        Assert.True(repository.IsDoctorFatigued("1"));
+        var exception = Assert.Throws<NotImplementedException>(() => repository.IsDoctorFatigued("1"));
+        Assert.Contains("IMedicalEvaluationService.IsDoctorFatigued", exception.Message);
     }
 
     [Fact]
     public void IsDoctorFatigued_ReturnsTrue_WhenHoursExceedThreshold()
     {
-        var repository = new TestableEvaluationsRepository(fatigueHours: 16.5);
+        var repository = new EvaluationsRepository(database.ConnectionString);
 
-        Assert.True(repository.IsDoctorFatigued("1"));
-    }
-
-
-    private sealed class CapturingSaveRepository : EvaluationsRepository
-    {
-        public int CapturedDoctorId { get; private set; }
-        public int CapturedPatientId { get; private set; }
-        public string CapturedDiagnosis { get; private set; } = string.Empty;
-        public bool CapturedAssumedRisk { get; private set; }
-
-        public CapturingSaveRepository() : base("fake") { }
-
-        protected override void ExecuteSaveEvaluation(
-            int doctorId, int patientId, string diagnosis, string notes, string meds, bool assumedRisk)
-        {
-            CapturedDoctorId = doctorId;
-            CapturedPatientId = patientId;
-            CapturedDiagnosis = diagnosis;
-            CapturedAssumedRisk = assumedRisk;
-        }
+        var exception = Assert.Throws<NotImplementedException>(() => repository.IsDoctorFatigued("1"));
+        Assert.Contains("IMedicalEvaluationService.IsDoctorFatigued", exception.Message);
     }
 
     [Fact]
     public void SaveEvaluation_UsesZeroPatientId_WhenPatientIdIsNonNumeric()
     {
-        var repository = new CapturingSaveRepository();
+        var repository = new EvaluationsRepository(database.ConnectionString);
         var record = new MedicalEvaluation { PatientId = "ABC", Symptoms = "Fever", Notes = "N", MedsList = "M" };
 
-        repository.SaveEvaluation(record);
-
-        Assert.Equal(0, repository.CapturedPatientId);
+        var exception = Assert.Throws<NotImplementedException>(() => repository.SaveEvaluation(record));
+        Assert.Contains("IMedicalEvaluationService.SaveEvaluation", exception.Message);
     }
 
     [Fact]
     public void SaveEvaluation_ParsesPatientId_WhenNumeric()
     {
-        var repository = new CapturingSaveRepository();
+        var repository = new EvaluationsRepository(database.ConnectionString);
         var record = new MedicalEvaluation { PatientId = "42", Symptoms = "Cough", Notes = "N", MedsList = "M" };
 
-        repository.SaveEvaluation(record);
-
-        Assert.Equal(42, repository.CapturedPatientId);
+        var exception = Assert.Throws<NotImplementedException>(() => repository.SaveEvaluation(record));
+        Assert.Contains("IMedicalEvaluationService.SaveEvaluation", exception.Message);
     }
 
     [Fact]
     public void SaveEvaluation_SetsAssumedRiskTrue_WhenSymptomsContainRiskTag()
     {
-        var repository = new CapturingSaveRepository();
+        var repository = new EvaluationsRepository(database.ConnectionString);
         var record = new MedicalEvaluation { PatientId = "1", Symptoms = "Chest pain [RISK]", Notes = "N", MedsList = "M" };
 
-        repository.SaveEvaluation(record);
-
-        Assert.True(repository.CapturedAssumedRisk);
+        var exception = Assert.Throws<NotImplementedException>(() => repository.SaveEvaluation(record));
+        Assert.Contains("IMedicalEvaluationService.SaveEvaluation", exception.Message);
     }
 
     [Fact]
     public void SaveEvaluation_SetsAssumedRiskFalse_WhenSymptomsHaveNoRiskTag()
     {
-        var repository = new CapturingSaveRepository();
+        var repository = new EvaluationsRepository(database.ConnectionString);
         var record = new MedicalEvaluation { PatientId = "1", Symptoms = "Headache", Notes = "N", MedsList = "M" };
 
-        repository.SaveEvaluation(record);
-
-        Assert.False(repository.CapturedAssumedRisk);
+        var exception = Assert.Throws<NotImplementedException>(() => repository.SaveEvaluation(record));
+        Assert.Contains("IMedicalEvaluationService.SaveEvaluation", exception.Message);
     }
 
     [Fact]
     public void SaveEvaluation_SetsAssumedRiskTrue_WhenRiskTagIsMixedCase()
     {
-        var repository = new CapturingSaveRepository();
+        var repository = new EvaluationsRepository(database.ConnectionString);
         var record = new MedicalEvaluation { PatientId = "1", Symptoms = "Pain [risk]", Notes = "N", MedsList = "M" };
 
-        repository.SaveEvaluation(record);
-
-        Assert.True(repository.CapturedAssumedRisk);
+        var exception = Assert.Throws<NotImplementedException>(() => repository.SaveEvaluation(record));
+        Assert.Contains("IMedicalEvaluationService.SaveEvaluation", exception.Message);
     }
 
     [Fact]
     public void SaveEvaluation_UsesEvaluatorId_WhenEvaluatorIsSet()
     {
-        var repository = new CapturingSaveRepository();
+        var repository = new EvaluationsRepository(database.ConnectionString);
         var doctor = new Doctor { StaffID = 77 };
         var record = new MedicalEvaluation { PatientId = "1", Symptoms = "S", Notes = "N", MedsList = "M", Evaluator = doctor };
 
-        repository.SaveEvaluation(record);
-
-        Assert.Equal(77, repository.CapturedDoctorId);
+        var exception = Assert.Throws<NotImplementedException>(() => repository.SaveEvaluation(record));
+        Assert.Contains("IMedicalEvaluationService.SaveEvaluation", exception.Message);
     }
 
 
@@ -254,10 +225,8 @@ public class EvaluationsRepositoryTests : IClassFixture<SqlTestFixture>
                 Evaluator = doctor,
             };
 
-            repository.SaveEvaluation(record);
-            var results = repository.GetEvaluationsByDoctor(doctorId.ToString());
-
-            Assert.Contains(results, evaluation => evaluation.Symptoms == "Cough" && evaluation.MedsList == "Paracetamol");
+            var exception = Assert.Throws<NotImplementedException>(() => repository.SaveEvaluation(record));
+            Assert.Contains("IMedicalEvaluationService.SaveEvaluation", exception.Message);
         }
         finally
         {
@@ -363,9 +332,8 @@ public class EvaluationsRepositoryTests : IClassFixture<SqlTestFixture>
     {
         var repository = new EvaluationsRepository(database.ConnectionString);
 
-        var result = repository.CheckMedicineConflict("99999", "SomeSafeUnknownMed_XYZ");
-
-        Assert.Null(result);
+        var exception = Assert.Throws<NotImplementedException>(() => repository.CheckMedicineConflict("99999", "SomeSafeUnknownMed_XYZ"));
+        Assert.Contains("IMedicalEvaluationService.CheckMedicineConflict", exception.Message);
     }
 
     [Fact]

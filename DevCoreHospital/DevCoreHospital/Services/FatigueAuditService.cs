@@ -20,7 +20,19 @@ namespace DevCoreHospital.Services
 
         public bool ReassignShift(int shiftId, int newStaffId)
         {
-            return repository.ReassignShift(shiftId, newStaffId);
+            if (shiftId <= 0 || newStaffId <= 0)
+            {
+                return false;
+            }
+
+            try
+            {
+                return repository.UpdateShiftStaffId(shiftId, newStaffId) > 0;
+            }
+            catch
+            {
+                return false;
+            }
         }
 
         public AutoAuditResult RunAutoAudit(DateTime weekStart)

@@ -7,6 +7,6 @@ namespace DevCoreHospital.Repositories
     {
         IReadOnlyList<RosterShift> GetAllShifts();
         IReadOnlyList<StaffProfile> GetStaffProfiles();
-        bool ReassignShift(int shiftId, int newStaffId);
+        int UpdateShiftStaffId(int shiftId, int newStaffId);
     }
 }

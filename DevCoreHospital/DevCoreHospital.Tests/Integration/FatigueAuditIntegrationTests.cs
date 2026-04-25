@@ -171,7 +171,7 @@ namespace DevCoreHospital.Tests.Integration
                 MakeProfile(2, "Bob", "Doctor", "Cardiology"),
             };
             SetupDataSource(shifts, profiles);
-            repositoryMock.Setup(r => r.ReassignShift(It.IsAny<int>(), It.IsAny<int>())).Returns(true);
+            repositoryMock.Setup(r => r.UpdateShiftStaffId(It.IsAny<int>(), It.IsAny<int>())).Returns(1);
 
             var vm = CreateViewModel();
             Assert.True(vm.HasConflicts);
