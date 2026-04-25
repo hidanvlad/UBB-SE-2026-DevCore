@@ -1,66 +1,89 @@
-﻿using DevCoreHospital.Models;
-using DevCoreHospital.Data;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using DevCoreHospital.Models;
+using Microsoft.Data.SqlClient;
 
 namespace DevCoreHospital.Repositories
 {
-    public class AppointmentRepository : IDoctorAppointmentDataSource
+    public class AppointmentRepository : IAppointmentRepository
     {
-        private readonly DatabaseManager _dbManager;
+        private readonly string connectionString;
 
-        public AppointmentRepository(DatabaseManager dbManager)
+        public AppointmentRepository(string connectionString)
         {
-            _dbManager = dbManager;
+            this.connectionString = connectionString;
         }
 
-        public async Task<IReadOnlyList<Appointment>> GetUpcomingAppointmentsAsync(int doctorUserId, DateTime fromDate, int skip, int take)
+        private SqlConnection GetConnection() => new SqlConnection(connectionString);
+
+        private static void AddParameter(SqlCommand command, string name, object? value)
         {
-            // Wider window; exact day/week selection is already applied in DoctorScheduleViewModel.
-            var toDate = fromDate.Date.AddDays(31);
-            return await _dbManager.GetUpcomingAppointmentsAsync(doctorUserId, fromDate.Date, toDate, skip, take);
+            command.Parameters.Add(new SqlParameter(name, value ?? DBNull.Value));
         }
 
-        public async Task<IReadOnlyList<(int DoctorId, string DoctorName)>> GetAllDoctorsAsync()
+        public async Task<IReadOnlyList<Appointment>> GetAllAppointmentsAsync()
         {
-            return await _dbManager.GetAllDoctorsAsync();
+            var appointments = new List<Appointment>();
+
+            using var connection = GetConnection();
+            await connection.OpenAsync();
+            using var command = new SqlCommand(
+                "SELECT appointment_id, doctor_id, patient_id, start_time, end_time, status FROM Appointments;",
+                connection);
+
+            using var reader = await command.ExecuteReaderAsync();
+            int idOrdinal = reader.GetOrdinal("appointment_id");
+            int doctorIdOrdinal = reader.GetOrdinal("doctor_id");
+            int patientIdOrdinal = reader.GetOrdinal("patient_id");
+            int startOrdinal = reader.GetOrdinal("start_time");
+            int endOrdinal = reader.GetOrdinal("end_time");
+            int statusOrdinal = reader.GetOrdinal("status");
+
+            while (await reader.ReadAsync())
+            {
+                DateTime startDateTime = reader.GetDateTime(startOrdinal);
+                DateTime endDateTime = reader.GetDateTime(endOrdinal);
+                appointments.Add(new Appointment
+                {
+                    Id = reader.GetInt32(idOrdinal),
+                    DoctorId = reader.GetInt32(doctorIdOrdinal),
+                    DoctorName = string.Empty,
+                    PatientName = reader.GetInt32(patientIdOrdinal).ToString(),
+                    Date = startDateTime.Date,
+                    StartTime = startDateTime.TimeOfDay,
+                    EndTime = endDateTime.TimeOfDay,
+                    Status = reader.GetString(statusOrdinal),
+                });
+            }
+            return appointments;
         }
 
-        public async Task<Appointment?> GetAppointmentDetailsAsync(int appointmentId)
+        public async Task AddAppointmentAsync(int patientId, int doctorId, DateTime startTime, DateTime endTime, string status)
         {
-            return await _dbManager.GetAppointmentDetailsAsync(appointmentId);
-        }
-
-        public async Task<IReadOnlyList<Appointment>> GetAppointmentsForAdminAsync(int doctorId)
-        {
-            return await _dbManager.GetAppointmentsForAdminAsync(doctorId);
-        }
-
-        public async Task AddAppointmentAsync(Appointment appt)
-        {
-            string rawPatientInput = appt.PatientName?.Replace("PAT-", "").Trim() ?? "0";
-            int.TryParse(rawPatientInput, out int patientId);
-
-            DateTime startTimeDb = appt.Date.Date.Add(appt.StartTime);
-            DateTime endTimeDb = appt.Date.Date.Add(appt.EndTime);
-
-            await _dbManager.AddAppointmentAsync(patientId, appt.DoctorId, startTimeDb, endTimeDb);
+            using var connection = GetConnection();
+            await connection.OpenAsync();
+            using var command = new SqlCommand(
+                "INSERT INTO Appointments (patient_id, doctor_id, start_time, end_time, status) VALUES (@PatientId, @DoctorId, @StartTime, @EndTime, @Status);",
+                connection);
+            AddParameter(command, "@PatientId", patientId);
+            AddParameter(command, "@DoctorId", doctorId);
+            AddParameter(command, "@StartTime", startTime);
+            AddParameter(command, "@EndTime", endTime);
+            AddParameter(command, "@Status", status);
+            await command.ExecuteNonQueryAsync();
         }
 
         public async Task UpdateAppointmentStatusAsync(int id, string status)
         {
-            await _dbManager.UpdateAppointmentStatusAsync(id, status);
-        }
-
-        public async Task<int> GetActiveAppointmentsCountForDoctorAsync(int doctorId)
-        {
-            return await _dbManager.GetActiveAppointmentsCountAsync(doctorId);
-        }
-
-        public async Task UpdateDoctorStatusAsync(int doctorId, string status)
-        {
-            await _dbManager.UpdateDoctorStatusAsync(doctorId, status);
+            using var connection = GetConnection();
+            await connection.OpenAsync();
+            using var command = new SqlCommand(
+                "UPDATE Appointments SET status = @Status WHERE appointment_id = @Id;",
+                connection);
+            AddParameter(command, "@Status", status);
+            AddParameter(command, "@Id", id);
+            await command.ExecuteNonQueryAsync();
         }
     }
 }

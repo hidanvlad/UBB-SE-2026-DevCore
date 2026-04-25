@@ -1,5 +1,6 @@
-﻿using Microsoft.UI.Xaml.Controls;
 using DevCoreHospital.ViewModels;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.UI.Xaml.Controls;
 
 namespace DevCoreHospital.Views
 {
@@ -11,8 +12,7 @@ namespace DevCoreHospital.Views
         {
             this.InitializeComponent();
 
-            // Initialize the ViewModel and set it as the DataContext for XAML bindings
-            ViewModel = new SalaryComputationViewModel();
+            ViewModel = App.Services.GetRequiredService<SalaryComputationViewModel>();
             this.DataContext = ViewModel;
         }
     }

@@ -29,7 +29,7 @@
 
             <CalendarDatePicker Header="Date" Date="{x:Bind ViewModel.SelectedDate, Mode=TwoWay}" HorizontalAlignment="Stretch"/>
 
-            <ComboBox Header="Max Participants" ItemsSource="{x:Bind ViewModel.MaxParticipantsOptions}" SelectedItem="{x:Bind ViewModel.MaxParticipants, Mode=TwoWay}" HorizontalAlignment="Stretch"/>
+            <ComboBox Header="Max Participants" ItemsSource="{x:Bind ViewModel.MaximumParticipantsOptions}" SelectedItem="{x:Bind ViewModel.MaximumParticipants, Mode=TwoWay}" HorizontalAlignment="Stretch"/>
 
             <Button Content="Create Hangout" Command="{x:Bind ViewModel.CreateCommand}" Style="{StaticResource AccentButtonStyle}" HorizontalAlignment="Stretch"/>
 
@@ -50,17 +50,17 @@
                                     <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
                                 <StackPanel Grid.Column="0" Spacing="4">
-                                    <TextBlock Text="{x:Bind title}" FontSize="20" FontWeight="Bold"/>
-                                    <TextBlock Text="{x:Bind description}" TextWrapping="Wrap" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                                    <TextBlock Text="{x:Bind Title}" FontSize="20" FontWeight="Bold"/>
+                                    <TextBlock Text="{x:Bind Description}" TextWrapping="Wrap" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
                                     <StackPanel Orientation="Horizontal" Spacing="16" Margin="0,8,0,0">
                                         <TextBlock Text="{x:Bind FormattedDate}"/>
-                                        <TextBlock Text="{x:Bind participantList.Count}"/>
+                                        <TextBlock Text="{x:Bind ParticipantList.Count}"/>
                                         <TextBlock Text="/"/>
-                                        <TextBlock Text="{x:Bind maxParticipants}"/>
+                                        <TextBlock Text="{x:Bind MaxParticipants}"/>
                                         <TextBlock Text="Participants"/>
                                     </StackPanel>
                                 </StackPanel>
-                                <Button Grid.Column="1" Content="Join" VerticalAlignment="Center" Click="Join_Click" Tag="{x:Bind hangoutID}" Style="{StaticResource AccentButtonStyle}"/>
+                                <Button Grid.Column="1" Content="Join" VerticalAlignment="Center" Click="Join_Click" Tag="{x:Bind HangoutID}" Style="{StaticResource AccentButtonStyle}"/>
                             </Grid>
                         </Border>
                     </DataTemplate>

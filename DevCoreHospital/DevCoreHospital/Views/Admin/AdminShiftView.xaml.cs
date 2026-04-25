@@ -1,11 +1,8 @@
-﻿using System;
-using Microsoft.UI.Xaml;
-using Microsoft.UI.Xaml.Controls;
-using DevCoreHospital.ViewModels.Admin;
 using DevCoreHospital.Models;
-using DevCoreHospital.Configuration;
-using DevCoreHospital.Repositories;
-using DevCoreHospital.Services;
+using DevCoreHospital.ViewModels.Admin;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml;
 
 namespace DevCoreHospital.Views.Admin
 {
@@ -17,18 +14,15 @@ namespace DevCoreHospital.Views.Admin
         {
             this.InitializeComponent();
 
-            var dbManager = new DevCoreHospital.Data.DatabaseManager(AppSettings.ConnectionString);
-
-            var staffRepo = new StaffRepository(dbManager);
-            var shiftRepo = new ShiftRepository(dbManager);
-            var service = new StaffAndShiftService(staffRepo, shiftRepo, dbManager);
-
-            ViewModel = new AdminShiftViewModel(service);
+            ViewModel = App.Services.GetRequiredService<AdminShiftViewModel>();
         }
 
         private void LocationComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (ViewModel == null) return;
+            if (ViewModel == null)
+            {
+                return;
+            }
 
             if (LocationComboBox.SelectedItem is string selectedLocation)
             {
@@ -38,7 +32,10 @@ namespace DevCoreHospital.Views.Admin
 
         private void SpecializationCertificationComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (ViewModel == null) return;
+            if (ViewModel == null)
+            {
+                return;
+            }
 
             var selectedLocation = LocationComboBox.SelectedItem as string;
             var selectedSpecializationOrCertification = SpecializationCertificationComboBox.SelectedItem as string;
@@ -49,7 +46,6 @@ namespace DevCoreHospital.Views.Admin
                 StaffComboBox.SelectedIndex = -1;
             }
         }
-
 
         private void CreateShift_Click(object sender, RoutedEventArgs e)
         {
@@ -63,9 +59,9 @@ namespace DevCoreHospital.Views.Admin
                 return;
             }
 
-            DateTime date = ShiftDatePicker.Date.Value.Date;
-            DateTime start = date.Add(StartTimePicker.SelectedTime.Value);
-            DateTime end = date.Add(EndTimePicker.SelectedTime.Value);
+            System.DateTime date = ShiftDatePicker.Date.Value.Date;
+            System.DateTime start = date.Add(StartTimePicker.SelectedTime.Value);
+            System.DateTime end = date.Add(EndTimePicker.SelectedTime.Value);
 
             if (end <= start)
             {

@@ -1,112 +1,129 @@
-﻿using DevCoreHospital.Data;
-using DevCoreHospital.Models;
 using System;
 using System.Collections.Generic;
-using System.Linq;
+using DevCoreHospital.Configuration;
+using DevCoreHospital.Models;
+using Microsoft.Data.SqlClient;
 
 namespace DevCoreHospital.Repositories
 {
-    public sealed class ERDispatchRepository : IERDispatchRepository
+    public class ERDispatchRepository : IERDispatchRepository
     {
-        private readonly IERDispatchDataSource _dataSource;
+        private readonly string connectionString;
 
-        public ERDispatchRepository(IERDispatchDataSource dataSource)
+        public ERDispatchRepository(string? connectionString = null)
         {
-            _dataSource = dataSource;
+            this.connectionString = string.IsNullOrWhiteSpace(connectionString)
+                ? AppSettings.ConnectionString
+                : connectionString;
         }
 
-        public IReadOnlyList<DoctorRosterEntry> GetDoctorRoster()
+        public int AddRequest(string specialization, string location, string status)
         {
-            var now = DateTime.Now;
+            using SqlConnection connection = new SqlConnection(connectionString);
+            connection.Open();
+            using SqlCommand command = new SqlCommand(@"
+                INSERT INTO dbo.ER_Requests (specialization, [location], created_at, [status], assigned_doctor_id, assigned_doctor_name)
+                OUTPUT INSERTED.request_id
+                VALUES (@Specialization, @Location, GETDATE(), @Status, NULL, NULL);", connection);
 
-            return _dataSource.GetRosterEntries()
-                .Where(IsDoctor)
-                .Where(entry => IsOnCurrentShift(entry, now))
-                .Select(NormalizeRosterEntry)
-                .GroupBy(entry => entry.DoctorId)
-                .Select(group => group.OrderBy(e => e.ScheduleEnd ?? DateTime.MaxValue).First())
-                .ToList();
+            AddParameter(command, "@Specialization", specialization);
+            AddParameter(command, "@Location", location);
+            AddParameter(command, "@Status", status);
+
+            return Convert.ToInt32(command.ExecuteScalar());
         }
 
-        public IReadOnlyList<ERRequest> GetPendingRequests()
+        public IReadOnlyList<ERRequest> GetAllRequests()
         {
-            return _dataSource.GetRequests()
-                .Where(request => string.Equals(Normalize(request.Status), "PENDING", StringComparison.OrdinalIgnoreCase))
-                .OrderBy(request => request.CreatedAt)
-                .ToList();
-        }
+            var requests = new List<ERRequest>();
 
-        public int CreateIncomingRequest(string specialization, string location)
-            => _dataSource.CreateRequest(specialization, location, "PENDING");
+            using SqlConnection connection = new SqlConnection(connectionString);
+            connection.Open();
+            using SqlCommand command = new SqlCommand(
+                "SELECT request_id, specialization, location, created_at, status, assigned_doctor_id, assigned_doctor_name FROM dbo.ER_Requests;",
+                connection);
 
-        public ERRequest? GetRequestById(int requestId) => _dataSource.GetRequestById(requestId);
+            using SqlDataReader reader = command.ExecuteReader();
+            int idOrdinal = reader.GetOrdinal("request_id");
+            int specializationOrdinal = reader.GetOrdinal("specialization");
+            int locationOrdinal = reader.GetOrdinal("location");
+            int createdAtOrdinal = reader.GetOrdinal("created_at");
+            int statusOrdinal = reader.GetOrdinal("status");
+            int assignedDoctorIdOrdinal = reader.GetOrdinal("assigned_doctor_id");
+            int assignedDoctorNameOrdinal = reader.GetOrdinal("assigned_doctor_name");
 
-        public DoctorRosterEntry? GetDoctorById(int doctorId)
-        {
-            var now = DateTime.Now;
-
-            return _dataSource.GetRosterEntriesByStaffId(doctorId)
-                .Where(IsDoctor)
-                .Where(entry => IsOnCurrentShift(entry, now))
-                .Select(NormalizeRosterEntry)
-                .OrderBy(entry => entry.ScheduleEnd ?? DateTime.MaxValue)
-                .FirstOrDefault();
-        }
-
-        public void UpdateRequestStatus(int requestId, string status, int? doctorId, string? doctorName)
-            => _dataSource.UpdateRequestStatus(requestId, status, doctorId, doctorName);
-
-        public void UpdateDoctorStatus(int doctorId, DoctorStatus status)
-            => _dataSource.UpdateDoctorStatus(doctorId, status);
-
-        private static DoctorRosterEntry NormalizeRosterEntry(DoctorRosterEntry entry)
-        {
-            return new DoctorRosterEntry
+            while (reader.Read())
             {
-                DoctorId = entry.DoctorId,
-                FullName = Normalize(entry.FullName),
-                RoleRaw = Normalize(entry.RoleRaw),
-                Specialization = string.IsNullOrWhiteSpace(entry.Specialization) ? "General" : entry.Specialization.Trim(),
-                StatusRaw = string.IsNullOrWhiteSpace(entry.StatusRaw) ? "OFF_DUTY" : entry.StatusRaw.Trim(),
-                Location = Normalize(entry.Location),
-                IsShiftActive = entry.IsShiftActive,
-                ShiftStatusRaw = Normalize(entry.ShiftStatusRaw),
-                ScheduleStart = entry.ScheduleStart,
-                ScheduleEnd = entry.ScheduleEnd
+                requests.Add(new ERRequest
+                {
+                    Id = reader.GetInt32(idOrdinal),
+                    Specialization = reader.IsDBNull(specializationOrdinal) ? string.Empty : reader.GetString(specializationOrdinal),
+                    Location = reader.IsDBNull(locationOrdinal) ? string.Empty : reader.GetString(locationOrdinal),
+                    CreatedAt = reader.IsDBNull(createdAtOrdinal) ? DateTime.MinValue : reader.GetDateTime(createdAtOrdinal),
+                    Status = reader.IsDBNull(statusOrdinal) ? string.Empty : reader.GetString(statusOrdinal),
+                    AssignedDoctorId = reader.IsDBNull(assignedDoctorIdOrdinal) ? null : reader.GetInt32(assignedDoctorIdOrdinal),
+                    AssignedDoctorName = reader.IsDBNull(assignedDoctorNameOrdinal) ? null : reader.GetString(assignedDoctorNameOrdinal),
+                });
+            }
+            return requests;
+        }
+
+        public ERRequest? GetRequestById(int requestId)
+        {
+            using SqlConnection connection = new SqlConnection(connectionString);
+            connection.Open();
+            using SqlCommand command = new SqlCommand(
+                "SELECT request_id, specialization, location, created_at, status, assigned_doctor_id, assigned_doctor_name FROM dbo.ER_Requests WHERE request_id = @RequestId;",
+                connection);
+            AddParameter(command, "@RequestId", requestId);
+
+            using SqlDataReader reader = command.ExecuteReader();
+            if (!reader.Read())
+            {
+                return null;
+            }
+
+            int idOrdinal = reader.GetOrdinal("request_id");
+            int specializationOrdinal = reader.GetOrdinal("specialization");
+            int locationOrdinal = reader.GetOrdinal("location");
+            int createdAtOrdinal = reader.GetOrdinal("created_at");
+            int statusOrdinal = reader.GetOrdinal("status");
+            int assignedDoctorIdOrdinal = reader.GetOrdinal("assigned_doctor_id");
+            int assignedDoctorNameOrdinal = reader.GetOrdinal("assigned_doctor_name");
+
+            return new ERRequest
+            {
+                Id = reader.GetInt32(idOrdinal),
+                Specialization = reader.IsDBNull(specializationOrdinal) ? string.Empty : reader.GetString(specializationOrdinal),
+                Location = reader.IsDBNull(locationOrdinal) ? string.Empty : reader.GetString(locationOrdinal),
+                CreatedAt = reader.IsDBNull(createdAtOrdinal) ? DateTime.MinValue : reader.GetDateTime(createdAtOrdinal),
+                Status = reader.IsDBNull(statusOrdinal) ? string.Empty : reader.GetString(statusOrdinal),
+                AssignedDoctorId = reader.IsDBNull(assignedDoctorIdOrdinal) ? null : reader.GetInt32(assignedDoctorIdOrdinal),
+                AssignedDoctorName = reader.IsDBNull(assignedDoctorNameOrdinal) ? null : reader.GetString(assignedDoctorNameOrdinal),
             };
         }
 
-        private static bool IsDoctor(DoctorRosterEntry entry)
+        public void UpdateRequestStatus(int requestId, string status, int? assignedDoctorId, string? assignedDoctorName)
         {
-            return string.Equals(Normalize(entry.RoleRaw), "DOCTOR", StringComparison.OrdinalIgnoreCase);
+            using SqlConnection connection = new SqlConnection(connectionString);
+            connection.Open();
+            using SqlCommand command = new SqlCommand(@"
+                UPDATE dbo.ER_Requests
+                SET status = @Status,
+                    assigned_doctor_id = @AssignedDoctorId,
+                    assigned_doctor_name = @AssignedDoctorName
+                WHERE request_id = @RequestId;", connection);
+
+            AddParameter(command, "@Status", status);
+            AddParameter(command, "@AssignedDoctorId", (object?)assignedDoctorId ?? DBNull.Value);
+            AddParameter(command, "@AssignedDoctorName", (object?)assignedDoctorName ?? DBNull.Value);
+            AddParameter(command, "@RequestId", requestId);
+            command.ExecuteNonQuery();
         }
 
-        private static bool IsOnCurrentShift(DoctorRosterEntry entry, DateTime now)
+        private static void AddParameter(SqlCommand command, string name, object? value)
         {
-            if (!entry.ScheduleStart.HasValue || !entry.ScheduleEnd.HasValue)
-                return false;
-
-            if (entry.ScheduleStart.Value > now || entry.ScheduleEnd.Value < now)
-                return false;
-
-            if (entry.IsShiftActive.HasValue && !entry.IsShiftActive.Value)
-                return false;
-
-            var shiftStatus = Normalize(entry.ShiftStatusRaw);
-            if (string.Equals(shiftStatus, "CANCELLED", StringComparison.OrdinalIgnoreCase) ||
-                string.Equals(shiftStatus, "COMPLETED", StringComparison.OrdinalIgnoreCase) ||
-                string.Equals(shiftStatus, "VACATION", StringComparison.OrdinalIgnoreCase))
-            {
-                return false;
-            }
-
-            return true;
-        }
-
-        private static string Normalize(string? value)
-        {
-            return (value ?? string.Empty).Trim();
+            command.Parameters.Add(new SqlParameter(name, value ?? DBNull.Value));
         }
     }
 }
-

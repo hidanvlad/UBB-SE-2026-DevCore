@@ -36,7 +36,7 @@
                 <ComboBox x:Name="PharmacistComboBox"
                           Header="Pharmacist"
                           PlaceholderText="Select pharmacist"
-                          DisplayMemberPath="DisplayName"/>
+                          DisplayMemberPath="displayName"/>
 
                 <CalendarDatePicker x:Name="StartDatePicker"
                                     Header="Start date"/>

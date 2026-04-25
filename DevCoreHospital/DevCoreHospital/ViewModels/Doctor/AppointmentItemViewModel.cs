@@ -38,5 +38,20 @@ namespace DevCoreHospital.ViewModels.Doctor
             StartTime = item.StartTime;
             EndTime = item.EndTime;
         }
+
+        public Appointment ToAppointment() => new Appointment
+        {
+            Id = Id,
+            PatientName = PatientName,
+            DoctorId = DoctorId,
+            DoctorName = DoctorName,
+            Date = Date,
+            StartTime = StartTime,
+            EndTime = EndTime,
+            Status = Status,
+            Type = Type,
+            Location = Location,
+            Notes = Notes
+        };
     }
 }

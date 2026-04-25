@@ -19,7 +19,9 @@ namespace DevCoreHospital.Models
         public DateTime RequestedAt { get; set; } = DateTime.UtcNow;
         public ShiftSwapRequestStatus Status { get; set; } = ShiftSwapRequestStatus.PENDING;
 
-        public ShiftSwapRequest() { }
+        public ShiftSwapRequest()
+        {
+        }
 
         public ShiftSwapRequest(int swapId, int shiftId, int requesterId, int colleagueId)
         {

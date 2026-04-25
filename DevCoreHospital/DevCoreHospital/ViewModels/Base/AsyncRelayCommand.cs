@@ -1,39 +1,47 @@
-﻿using System;
 using System.Threading.Tasks;
 using System.Windows.Input;
+using System;
 
 namespace DevCoreHospital.ViewModels.Base;
 
 public class AsyncRelayCommand : ICommand
 {
-    private readonly Func<Task> _execute;
-    private readonly Func<bool>? _canExecute;
-    private bool _isRunning;
+    private readonly Func<Task> execute;
+    private readonly Func<bool>? canExecute;
+    private bool isRunning;
 
     public AsyncRelayCommand(Func<Task> execute, Func<bool>? canExecute = null)
     {
-        _execute = execute;
-        _canExecute = canExecute;
+        this.execute = execute;
+        this.canExecute = canExecute;
     }
 
     public event EventHandler? CanExecuteChanged;
 
     public bool CanExecute(object? parameter)
-        => !_isRunning && (_canExecute?.Invoke() ?? true);
+        => !isRunning && (canExecute?.Invoke() ?? true);
 
     public async void Execute(object? parameter)
     {
-        if (!CanExecute(parameter)) return;
+        await ExecuteAsync();
+    }
+
+    public async Task ExecuteAsync()
+    {
+        if (!CanExecute(null))
+        {
+            return;
+        }
 
         try
         {
-            _isRunning = true;
+            isRunning = true;
             RaiseCanExecuteChanged();
-            await _execute();
+            await execute();
         }
         finally
         {
-            _isRunning = false;
+            isRunning = false;
             RaiseCanExecuteChanged();
         }
     }

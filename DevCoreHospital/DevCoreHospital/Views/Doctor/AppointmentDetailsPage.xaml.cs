@@ -1,72 +1,76 @@
-﻿using DevCoreHospital.Configuration;
-using DevCoreHospital.Data;
+using System;
 using DevCoreHospital.Models;
-using DevCoreHospital.Repositories;
 using DevCoreHospital.Services;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Navigation;
-using System;
 
 namespace DevCoreHospital.Views
 {
     public sealed partial class AppointmentDetailsPage : Page
     {
-        private Appointment _currentAppointment;
-        private DoctorAppointmentService _service;
+        private const string DateFormat = "yyyy-MM-dd";
+        private const string TimeFormat = @"hh\:mm";
+        private const string FinishedStatus = "Finished";
+
+        private Appointment? currentAppointment;
+        private readonly IDoctorAppointmentService service;
 
         public AppointmentDetailsPage()
         {
             this.InitializeComponent();
 
-            var dbManager = new DatabaseManager(AppSettings.ConnectionString);
-            var repo = new AppointmentRepository(dbManager);
-            _service = new DoctorAppointmentService(repo);
+            service = App.Services.GetRequiredService<IDoctorAppointmentService>();
         }
 
-        protected override void OnNavigatedTo(NavigationEventArgs e)
+        protected override void OnNavigatedTo(NavigationEventArgs eventArgs)
         {
-            base.OnNavigatedTo(e);
+            base.OnNavigatedTo(eventArgs);
 
-            if (e.Parameter is Appointment appt)
+            if (eventArgs.Parameter is Appointment appointment)
             {
-                _currentAppointment = appt;
+                currentAppointment = appointment;
                 PopulateData();
             }
         }
 
         private void PopulateData()
         {
-            PatientNameText.Text = _currentAppointment.PatientName;
-            DoctorNameText.Text = _currentAppointment.DoctorName;
-            DateText.Text = _currentAppointment.Date.ToString("yyyy-MM-dd");
-            TimeText.Text = $"{_currentAppointment.StartTime:hh\\:mm} - {_currentAppointment.EndTime:hh\\:mm}";
-            StatusText.Text = _currentAppointment.Status;
+            if (currentAppointment == null)
+            {
+                return;
+            }
+
+            PatientNameText.Text = currentAppointment.PatientName;
+            DoctorNameText.Text = currentAppointment.DoctorName;
+            DateText.Text = currentAppointment.Date.ToString(DateFormat);
+            TimeText.Text = $"{currentAppointment.StartTime.ToString(TimeFormat)} - {currentAppointment.EndTime.ToString(TimeFormat)}";
+            StatusText.Text = currentAppointment.Status;
         }
 
-        private async void FinishBtn_Click(object sender, RoutedEventArgs e)
+        private async void FinishBtn_Click(object sender, RoutedEventArgs eventArgs)
         {
-            if (_currentAppointment.Status == "Finished")
+            if (currentAppointment == null)
             {
-                ShowMessage("This appointment is already finished.", InfoBarSeverity.Warning);
                 return;
             }
 
             try
             {
-                await _service.FinishAppointmentAsync(_currentAppointment);
+                await service.FinishAppointmentAsync(currentAppointment!);
 
-                _currentAppointment.Status = "Finished";
+                currentAppointment!.Status = FinishedStatus;
                 PopulateData();
                 ShowMessage("Appointment finished successfully! Doctor status updated.", InfoBarSeverity.Success);
             }
-            catch (Exception ex)
+            catch (Exception exception)
             {
-                ShowMessage($"Error: {ex.Message}", InfoBarSeverity.Error);
+                ShowMessage($"Error: {exception.Message}", InfoBarSeverity.Error);
             }
         }
 
-        private void GoBack_Click(object sender, RoutedEventArgs e)
+        private void GoBack_Click(object sender, RoutedEventArgs eventArgs)
         {
             if (this.Frame.CanGoBack)
             {

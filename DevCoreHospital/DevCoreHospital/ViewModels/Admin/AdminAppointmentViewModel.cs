@@ -1,78 +1,57 @@
-﻿using DevCoreHospital.Models;
-using DevCoreHospital.Services;
 using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
+using DevCoreHospital.Models;
+using DevCoreHospital.Services;
+using DevCoreHospital.ViewModels.Base;
 
 namespace DevCoreHospital.ViewModels
 {
     public class AdminAppointmentsViewModel : INotifyPropertyChanged
     {
-        private readonly IDoctorAppointmentService _appointmentService;
+        private readonly IDoctorAppointmentService appointmentService;
 
-        public ObservableCollection<DoctorOption> Doctors { get; } = new();
+        public ObservableCollection<DoctorOption> Doctors { get; } = new ObservableCollection<DoctorOption>();
         public ObservableCollection<Appointment> AppointmentsList { get; } = new ObservableCollection<Appointment>();
 
         public AdminAppointmentsViewModel(IDoctorAppointmentService appointmentService)
         {
-            _appointmentService = appointmentService;
+            this.appointmentService = appointmentService;
         }
-
 
         public async Task LoadDoctorsAsync()
         {
-            var doctors = await _appointmentService.GetAllDoctorsAsync();
-            Doctors.Clear();
-            foreach (var doc in doctors)
-            {
-                Doctors.Add(new DoctorOption
-                {
-                    DoctorId = doc.DoctorId,
-                    DoctorName = string.IsNullOrWhiteSpace(doc.DoctorName) ? $"Doctor #{doc.DoctorId}" : doc.DoctorName
-                });
-            }
+            var doctors = await appointmentService.GetAllDoctorsAsync();
+            Doctors.ReplaceWith(doctors.Select(DoctorOption.From));
         }
 
         public async Task LoadAppointmentsForDoctorAsync(int doctorId)
         {
-            var apps = await _appointmentService.GetAppointmentsForAdminAsync(doctorId);
-            AppointmentsList.Clear();
-            foreach (var app in apps)
-            {
-                AppointmentsList.Add(app);
-            }
+            var appointments = await appointmentService.GetAppointmentsForAdminAsync(doctorId);
+            AppointmentsList.ReplaceWith(appointments);
         }
-
 
         public async Task BookAppointmentAsync(string patientId, int doctorId, DateTime date, TimeSpan time)
         {
-            var newAppointment = new Appointment
-            {
-                PatientName = patientId,
-                DoctorId = doctorId,
-                Date = date.Date,
-                StartTime = time,
-                EndTime = time.Add(TimeSpan.FromMinutes(30)),
-                Status = "Scheduled"
-            };
-
-            await _appointmentService.BookAppointmentAsync(newAppointment);
+            await appointmentService.CreateAppointmentAsync(patientId, doctorId, date, time);
         }
 
         public async Task FinishAppointmentAsync(Appointment appointment)
         {
-            await _appointmentService.FinishAppointmentAsync(appointment);
+            await appointmentService.FinishAppointmentAsync(appointment);
         }
 
         public async Task CancelAppointmentAsync(Appointment appointment)
         {
-            await _appointmentService.CancelAppointmentAsync(appointment);
+            await appointmentService.CancelAppointmentAsync(appointment);
         }
 
-        public event PropertyChangedEventHandler PropertyChanged;
-        protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
+        public event PropertyChangedEventHandler? PropertyChanged;
+
+        protected void OnPropertyChanged([CallerMemberName] string? propertyName = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
@@ -81,6 +60,13 @@ namespace DevCoreHospital.ViewModels
         {
             public int DoctorId { get; set; }
             public string DoctorName { get; set; } = string.Empty;
+
+            public static DoctorOption From((int DoctorId, string DoctorName) doctor) =>
+                new DoctorOption
+                {
+                    DoctorId = doctor.DoctorId,
+                    DoctorName = string.IsNullOrWhiteSpace(doctor.DoctorName) ? $"Doctor #{doctor.DoctorId}" : doctor.DoctorName,
+                };
         }
     }
 }

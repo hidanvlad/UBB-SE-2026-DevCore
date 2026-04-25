@@ -91,7 +91,7 @@
                                  MaxLength="500"/>
 
                         <TextBox Header="Meds List" 
-                                 Text="{x:Bind ViewModel.MedsList, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                 Text="{x:Bind ViewModel.MedicationsList, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                  PlaceholderText="Enter medications..." AcceptsReturn="True" MinHeight="60"
                                  IsEnabled="{x:Bind ViewModel.IsFormEnabled, Mode=OneWay}"
                                  MaxLength="200"/>

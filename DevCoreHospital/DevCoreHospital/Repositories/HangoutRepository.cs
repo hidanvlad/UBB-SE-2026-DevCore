@@ -1,72 +1,98 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using DevCoreHospital.Models;
-using DevCoreHospital.Data;
 using DevCoreHospital.Configuration;
+using DevCoreHospital.Models;
+using Microsoft.Data.SqlClient;
 
 namespace DevCoreHospital.Repositories
 {
-    public class HangoutRepository
+    public class HangoutRepository : IHangoutRepository
     {
-        private readonly DatabaseManager _dbManager;
+        private readonly string connectionString;
 
         public HangoutRepository()
         {
-            _dbManager = new DatabaseManager(AppSettings.ConnectionString);
+            connectionString = AppSettings.ConnectionString;
         }
 
-        public void AddHangout(Hangout hangout)
+        public HangoutRepository(string connectionString)
         {
-            int newId = _dbManager.InsertHangout(hangout.title, hangout.description, hangout.date, hangout.maxParticipants);
-
-            foreach (var p in hangout.participantList)
-            {
-                _dbManager.InsertHangoutParticipant(newId, p.StaffID);
-            }
+            this.connectionString = connectionString;
         }
 
-        public void AddParticipant(int hangoutId, int staffId)
+        public int AddHangout(string title, string description, DateTime date, int maxParticipants)
         {
-            _dbManager.InsertHangoutParticipant(hangoutId, staffId);
+            using SqlConnection connection = new SqlConnection(connectionString);
+            connection.Open();
+            using SqlCommand command = new SqlCommand(@"
+                INSERT INTO Hangouts (title, description, date_time, max_staff)
+                OUTPUT INSERTED.hangout_id
+                VALUES (@Title, @Description, @Date, @MaxStaff);", connection);
+
+            AddParameter(command, "@Title", title);
+            AddParameter(command, "@Description", string.IsNullOrEmpty(description) ? (object)DBNull.Value : description);
+            AddParameter(command, "@Date", date);
+            AddParameter(command, "@MaxStaff", maxParticipants);
+
+            return (int)command.ExecuteScalar();
         }
 
         public List<Hangout> GetAllHangouts()
         {
-            var list = _dbManager.GetAllHangouts();
-
-            foreach (var h in list)
+            var hangouts = new List<Hangout>();
+            using SqlConnection connection = new SqlConnection(connectionString);
+            connection.Open();
+            using SqlCommand command = new SqlCommand(
+                "SELECT hangout_id, title, description, date_time, max_staff FROM Hangouts;",
+                connection);
+            using SqlDataReader reader = command.ExecuteReader();
+            int idOrdinal = reader.GetOrdinal("hangout_id");
+            int titleOrdinal = reader.GetOrdinal("title");
+            int descriptionOrdinal = reader.GetOrdinal("description");
+            int dateOrdinal = reader.GetOrdinal("date_time");
+            int maxStaffOrdinal = reader.GetOrdinal("max_staff");
+            while (reader.Read())
             {
-                var participants = _dbManager.GetHangoutParticipants(h.hangoutID);
-                h.participantList.AddRange(participants);
+                hangouts.Add(new Hangout(
+                    reader.GetInt32(idOrdinal),
+                    reader.GetString(titleOrdinal),
+                    reader.IsDBNull(descriptionOrdinal) ? string.Empty : reader.GetString(descriptionOrdinal),
+                    reader.GetDateTime(dateOrdinal),
+                    reader.GetInt32(maxStaffOrdinal)));
             }
-
-            return list;
+            return hangouts;
         }
 
-        public Hangout? GetHangoutById(int id)
+        public Hangout? GetHangoutById(int hangoutId)
         {
-            var h = _dbManager.GetHangoutById(id);
-            if (h != null)
+            using SqlConnection connection = new SqlConnection(connectionString);
+            connection.Open();
+            using SqlCommand command = new SqlCommand(
+                "SELECT hangout_id, title, description, date_time, max_staff FROM Hangouts WHERE hangout_id = @HangoutId;",
+                connection);
+            AddParameter(command, "@HangoutId", hangoutId);
+            using SqlDataReader reader = command.ExecuteReader();
+            if (!reader.Read())
             {
-                var participants = _dbManager.GetHangoutParticipants(h.hangoutID);
-                h.participantList.AddRange(participants);
+                return null;
             }
-            return h;
+
+            int idOrdinal = reader.GetOrdinal("hangout_id");
+            int titleOrdinal = reader.GetOrdinal("title");
+            int descriptionOrdinal = reader.GetOrdinal("description");
+            int dateOrdinal = reader.GetOrdinal("date_time");
+            int maxStaffOrdinal = reader.GetOrdinal("max_staff");
+            return new Hangout(
+                reader.GetInt32(idOrdinal),
+                reader.GetString(titleOrdinal),
+                reader.IsDBNull(descriptionOrdinal) ? string.Empty : reader.GetString(descriptionOrdinal),
+                reader.GetDateTime(dateOrdinal),
+                reader.GetInt32(maxStaffOrdinal));
         }
 
-        // Conflict Check: Evaluates the business logic locally using raw data from DB
-        public bool HasConflictsOnDate(int staffId, DateTime date)
+        private static void AddParameter(SqlCommand command, string name, object? value)
         {
-            var statuses = _dbManager.GetAppointmentStatusesForStaffOnDate(staffId, date);
-
-            var activeConflicts = statuses.Where(status =>
-                !string.Equals(status, "Finished", StringComparison.OrdinalIgnoreCase) &&
-                !string.Equals(status, "Canceled", StringComparison.OrdinalIgnoreCase) &&
-                !string.Equals(status, "Cancelled", StringComparison.OrdinalIgnoreCase)
-            );
-
-            return activeConflicts.Any();
+            command.Parameters.Add(new SqlParameter(name, value ?? DBNull.Value));
         }
     }
 }

@@ -1,6 +1,6 @@
-﻿using Microsoft.UI.Xaml;
-using Microsoft.UI.Xaml.Data;
 using System;
+using Microsoft.UI.Xaml.Data;
+using Microsoft.UI.Xaml;
 
 namespace DevCoreHospital.Converters
 {
@@ -8,9 +8,9 @@ namespace DevCoreHospital.Converters
     {
         public object Convert(object value, Type targetType, object parameter, string language)
         {
-            if (value is bool b)
+            if (value is bool shouldBeVisible)
             {
-                return b ? Visibility.Visible : Visibility.Collapsed;
+                return shouldBeVisible ? Visibility.Visible : Visibility.Collapsed;
             }
             return Visibility.Collapsed;
         }
