@@ -539,7 +539,7 @@ namespace DevCoreHospital.Tests.Services
         }
 
         [Fact]
-        public void AddShift_DelegatesToRepository()
+        public void AddShift_WhenInvoked_DelegatesToRepository()
         {
             var doctor = BuildDoctor(66, "Cardiology");
             var shift = BuildShift(603, doctor, new DateTime(2026, 4, 21, 8, 0, 0), new DateTime(2026, 4, 21, 16, 0, 0));
@@ -550,7 +550,7 @@ namespace DevCoreHospital.Tests.Services
         }
 
         [Fact]
-        public void GetDailyShifts_ReturnsOnlyShiftsOnGivenDate()
+        public void GetDailyShifts_WhenShiftsSpanMultipleDates_ReturnsOnlyShiftsOnGivenDate()
         {
             var day = new DateTime(2026, 4, 21);
             var doctor = BuildDoctor(67, "Cardiology");
@@ -578,7 +578,7 @@ namespace DevCoreHospital.Tests.Services
         }
 
         [Fact]
-        public void GetActiveShifts_ReturnsOnlyActiveShifts()
+        public void GetActiveShifts_WhenShiftsHaveMixedStatuses_ReturnsOnlyActiveOnes()
         {
             var day = new DateTime(2026, 4, 21);
             var doctor = BuildDoctor(70, "Cardiology");

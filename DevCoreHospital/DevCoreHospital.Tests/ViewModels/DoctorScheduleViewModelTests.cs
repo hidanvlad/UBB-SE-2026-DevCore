@@ -200,7 +200,7 @@ namespace DevCoreHospital.Tests.ViewModels
 
 
         [Fact]
-        public async Task LoadAsync_DisplaysAllAppointmentsReturnedByService()
+        public async Task LoadAsync_WhenServiceReturnsAppointments_DisplaysAllOfThem()
         {
             var selectedDate = new DateTime(2025, 6, 11);
             var appointments = new List<Appointment>
@@ -344,7 +344,7 @@ namespace DevCoreHospital.Tests.ViewModels
         }
 
         [Fact]
-        public void DoctorOption_SplitFirstLast_ReturnsEmpty_WhenInputIsNullOrWhitespace()
+        public void DoctorOptionSplitFirstLast_WhenInputIsNullOrWhitespace_ReturnsEmpty()
         {
             var (first1, last1) = DoctorScheduleViewModel.DoctorOption.SplitFirstLast(null);
             var (first2, last2) = DoctorScheduleViewModel.DoctorOption.SplitFirstLast("   ");
@@ -454,7 +454,7 @@ namespace DevCoreHospital.Tests.ViewModels
         }
 
         [Fact]
-        public void TodayCommand_SetsSelectedDateToToday()
+        public void TodayCommand_WhenExecuted_SetsSelectedDateToToday()
         {
             viewModel.SelectedDate = new DateTime(2020, 1, 1);
 
@@ -464,7 +464,7 @@ namespace DevCoreHospital.Tests.ViewModels
         }
 
         [Fact]
-        public void NextDayCommand_AdvancesOneDayInDailyMode()
+        public void NextDayCommand_WhenInDailyMode_AdvancesOneDay()
         {
             var date = new DateTime(2025, 6, 11);
             viewModel.ViewMode = DoctorScheduleViewModel.ScheduleViewMode.Daily;
@@ -476,7 +476,7 @@ namespace DevCoreHospital.Tests.ViewModels
         }
 
         [Fact]
-        public void NextDayCommand_AdvancesSevenDaysInWeeklyMode()
+        public void NextDayCommand_WhenInWeeklyMode_AdvancesSevenDays()
         {
             var date = new DateTime(2025, 6, 11);
             viewModel.ViewMode = DoctorScheduleViewModel.ScheduleViewMode.Weekly;
@@ -488,7 +488,7 @@ namespace DevCoreHospital.Tests.ViewModels
         }
 
         [Fact]
-        public void PreviousDayCommand_GoesBackOneDayInDailyMode()
+        public void PreviousDayCommand_WhenInDailyMode_GoesBackOneDay()
         {
             var date = new DateTime(2025, 6, 11);
             viewModel.ViewMode = DoctorScheduleViewModel.ScheduleViewMode.Daily;
@@ -500,7 +500,7 @@ namespace DevCoreHospital.Tests.ViewModels
         }
 
         [Fact]
-        public void PreviousDayCommand_GoesBackSevenDaysInWeeklyMode()
+        public void PreviousDayCommand_WhenInWeeklyMode_GoesBackSevenDays()
         {
             var date = new DateTime(2025, 6, 11);
             viewModel.ViewMode = DoctorScheduleViewModel.ScheduleViewMode.Weekly;
@@ -512,7 +512,7 @@ namespace DevCoreHospital.Tests.ViewModels
         }
 
         [Fact]
-        public void DailyModeCommand_SetsViewModeToDaily()
+        public void DailyModeCommand_WhenExecuted_SetsViewModeToDaily()
         {
             viewModel.ViewMode = DoctorScheduleViewModel.ScheduleViewMode.Weekly;
 
@@ -522,7 +522,7 @@ namespace DevCoreHospital.Tests.ViewModels
         }
 
         [Fact]
-        public void WeeklyModeCommand_SetsViewModeToWeekly()
+        public void WeeklyModeCommand_WhenExecuted_SetsViewModeToWeekly()
         {
             viewModel.ViewMode = DoctorScheduleViewModel.ScheduleViewMode.Daily;
 

@@ -32,7 +32,7 @@ namespace DevCoreHospital.Tests.Services
         }
 
         [Fact]
-        public void RoleType_CanBeChangedToPharmacist()
+        public void RoleType_WhenSetToPharmacist_ReflectsPharmacistRole()
         {
             service.RoleType = UserRole.Pharmacist;
 
@@ -48,7 +48,7 @@ namespace DevCoreHospital.Tests.Services
         }
 
         [Fact]
-        public void RoleType_CanBeChangedToAdmin()
+        public void RoleType_WhenSetToAdmin_ReflectsAdminRole()
         {
             service.RoleType = UserRole.Admin;
 

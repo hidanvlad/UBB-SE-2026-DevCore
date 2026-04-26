@@ -37,7 +37,7 @@ namespace DevCoreHospital.Tests.Services
                 shiftRepository.Object);
 
         [Fact]
-        public void GetAllDoctors_ReturnsDoctorsFromStaffRepository()
+        public void GetAllDoctors_WhenInvoked_ReturnsDoctorsFromStaffRepository()
         {
             var doctor = new Doctor(1, "Ana", "Pop", string.Empty, true, "Cardiology", "LIC", DoctorStatus.AVAILABLE, 3);
             var pharmacist = new Pharmacyst(2, "Test", "Staff", string.Empty, true, "General", 1);
@@ -50,7 +50,7 @@ namespace DevCoreHospital.Tests.Services
         }
 
         [Fact]
-        public void GetAppointmentsByDoctor_ReturnsConfirmedAppointmentsForDoctor()
+        public void GetAppointmentsByDoctor_WhenAppointmentsHaveMixedStatuses_ReturnsOnlyConfirmedOnes()
         {
             var matching = new Appointment { Id = 5, DoctorId = 10, Status = "Confirmed" };
             var otherDoctor = new Appointment { Id = 6, DoctorId = 11, Status = "Confirmed" };
@@ -65,7 +65,7 @@ namespace DevCoreHospital.Tests.Services
         }
 
         [Fact]
-        public void GetEvaluationsByDoctor_FiltersByEvaluatorStaffId()
+        public void GetEvaluationsByDoctor_WhenEvaluationsBelongToMultipleEvaluators_FiltersByEvaluatorStaffId()
         {
             var matching = new MedicalEvaluation { EvaluationID = 1, Evaluator = new Doctor { StaffID = 10 } };
             var notMatching = new MedicalEvaluation { EvaluationID = 2, Evaluator = new Doctor { StaffID = 11 } };
@@ -87,7 +87,7 @@ namespace DevCoreHospital.Tests.Services
         }
 
         [Fact]
-        public void SaveEvaluation_DelegatesToRepository()
+        public void SaveEvaluation_WhenInvoked_DelegatesToRepository()
         {
             var evaluation = new MedicalEvaluation { PatientId = "42", Evaluator = new Doctor { StaffID = 7 } };
 
@@ -103,7 +103,7 @@ namespace DevCoreHospital.Tests.Services
         }
 
         [Fact]
-        public void DeleteEvaluation_DelegatesToRepository()
+        public void DeleteEvaluation_WhenInvoked_DelegatesToRepository()
         {
             CreateService().DeleteEvaluation(42);
 

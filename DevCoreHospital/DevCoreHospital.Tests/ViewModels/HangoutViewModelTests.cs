@@ -90,7 +90,7 @@ namespace DevCoreHospital.Tests.ViewModels
         }
 
         [Fact]
-        public void CreateHangout_CallsServiceWithCorrectTitle()
+        public void CreateHangout_WhenInvoked_CallsServiceWithCorrectTitle()
         {
             viewModel.Title = "My Hangout";
             viewModel.Description = "desc";
@@ -188,7 +188,7 @@ namespace DevCoreHospital.Tests.ViewModels
         }
 
         [Fact]
-        public void JoinHangoutById_CallsServiceWithCorrectHangoutId()
+        public void JoinHangoutById_WhenInvoked_CallsServiceWithCorrectHangoutId()
         {
             viewModel.SelectedDoctor = TestDoctor;
 
@@ -233,13 +233,13 @@ namespace DevCoreHospital.Tests.ViewModels
         }
 
         [Fact]
-        public void MaxParticipants_DefaultIsFive()
+        public void MaxParticipants_WhenViewModelIsCreated_DefaultsToFive()
         {
             Assert.Equal(5, viewModel.MaximumParticipants);
         }
 
         [Fact]
-        public void MaxParticipantsOptions_ContainsExpectedValues()
+        public void MaxParticipantsOptions_WhenViewModelIsCreated_ContainsExpectedValues()
         {
             Assert.Equal(new[] { 2, 3, 4, 5, 10, 15, 20 }, viewModel.MaximumParticipantsOptions);
         }

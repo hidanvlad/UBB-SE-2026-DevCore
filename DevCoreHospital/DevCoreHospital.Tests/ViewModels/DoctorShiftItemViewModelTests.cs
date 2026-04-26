@@ -21,7 +21,7 @@ namespace DevCoreHospital.Tests.ViewModels
         }
 
         [Fact]
-        public void DateText_ReturnsFormattedDate()
+        public void DateText_WhenShiftHasDate_ReturnsFormattedDate()
         {
             var start = new DateTime(2025, 6, 15, 9, 0, 0);
             var viewModel = BuildViewModel(start: start);
@@ -30,7 +30,7 @@ namespace DevCoreHospital.Tests.ViewModels
         }
 
         [Fact]
-        public void TimeRangeText_ContainsStartAndEndTime()
+        public void TimeRangeText_WhenShiftHasTimes_ContainsStartAndEndTime()
         {
             var viewModel = BuildViewModel(
                 start: new DateTime(2025, 6, 15, 9, 0, 0),

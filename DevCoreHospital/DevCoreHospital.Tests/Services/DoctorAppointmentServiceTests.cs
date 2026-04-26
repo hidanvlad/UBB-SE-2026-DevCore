@@ -72,7 +72,7 @@ namespace DevCoreHospital.Tests.Services
         }
 
         [Fact]
-        public async Task FinishAppointmentAsync_SetsDoctorStatus_ToAvailable_WhenNoActiveAppointmentsRemain()
+        public async Task FinishAppointmentAsync_WhenNoActiveAppointmentsRemain_SetsDoctorStatusToAvailable()
         {
             var appointment = new Appointment { Id = 5, DoctorId = 10 };
             mockDataSource.Setup(appointmentRepository => appointmentRepository.GetAllAppointmentsAsync())
@@ -121,7 +121,7 @@ namespace DevCoreHospital.Tests.Services
         }
 
         [Fact]
-        public async Task CancelAppointmentAsync_SetsAppointmentStatus_ToCanceled_WhenAppointmentIsScheduled()
+        public async Task CancelAppointmentAsync_WhenAppointmentIsScheduled_SetsAppointmentStatusToCanceled()
         {
             var scheduledAppointment = new Appointment { Id = 3, DoctorId = 10, Status = "Scheduled" };
 
@@ -157,7 +157,7 @@ namespace DevCoreHospital.Tests.Services
         }
 
         [Fact]
-        public async Task GetAppointmentDetailsAsync_ReturnsMatchingAppointment()
+        public async Task GetAppointmentDetailsAsync_WhenIdExists_ReturnsMatchingAppointment()
         {
             var stored = new Appointment { Id = 42, DoctorId = 5, PatientName = "Jane Doe" };
             mockDataSource.Setup(appointmentRepository => appointmentRepository.GetAllAppointmentsAsync())
@@ -303,7 +303,7 @@ namespace DevCoreHospital.Tests.Services
         }
 
         [Fact]
-        public async Task GetAppointmentsInRangeAsync_ExcludesAppointmentFromDifferentDoctor()
+        public async Task GetAppointmentsInRangeAsync_WhenAppointmentBelongsToDifferentDoctor_ExcludesIt()
         {
             var from = new DateTime(2025, 6, 11);
             var to = from.AddDays(1);
@@ -344,7 +344,7 @@ namespace DevCoreHospital.Tests.Services
         }
 
         [Fact]
-        public async Task GetShiftsForStaffInRangeAsync_ReturnsShiftsOrderedByStartTime()
+        public async Task GetShiftsForStaffInRangeAsync_WhenMultipleShiftsExist_ReturnsThemOrderedByStartTime()
         {
             var from = new DateTime(2025, 6, 11);
             var to = from.AddDays(1);
@@ -378,7 +378,7 @@ namespace DevCoreHospital.Tests.Services
         }
 
         [Fact]
-        public async Task GetShiftsForStaffInRangeAsync_FiltersByDoctor()
+        public async Task GetShiftsForStaffInRangeAsync_WhenShiftBelongsToOtherDoctor_ExcludesIt()
         {
             var from = new DateTime(2025, 6, 11);
             var to = from.AddDays(1);

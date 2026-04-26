@@ -45,7 +45,7 @@ namespace DevCoreHospital.Tests.ViewModels
         }
 
         [Fact]
-        public void ShiftStartTimeText_ReturnsHourMinuteFormat()
+        public void ShiftStartTimeText_WhenShiftHasStartTime_ReturnsHourMinuteFormat()
         {
             var viewModel = BuildViewModel(start: new DateTime(2025, 6, 15, 9, 30, 0));
 
@@ -61,7 +61,7 @@ namespace DevCoreHospital.Tests.ViewModels
         }
 
         [Fact]
-        public void DayLabel_ReturnsEnglishFormattedDate()
+        public void DayLabel_WhenShiftHasDate_ReturnsEnglishFormattedDate()
         {
             var viewModel = BuildViewModel(start: new DateTime(2025, 6, 15, 8, 0, 0));
 
@@ -69,7 +69,7 @@ namespace DevCoreHospital.Tests.ViewModels
         }
 
         [Fact]
-        public void DurationText_ReturnsCorrectHoursAndMinutes()
+        public void DurationText_WhenShiftHasDuration_ReturnsCorrectHoursAndMinutes()
         {
             var viewModel = BuildViewModel(
                 start: new DateTime(2025, 6, 15, 8, 0, 0),
@@ -131,7 +131,7 @@ namespace DevCoreHospital.Tests.ViewModels
         }
 
         [Fact]
-        public void TimeRangeDetail_ContainsStartTimeText()
+        public void TimeRangeDetail_WhenShiftHasStartTime_ContainsStartTimeText()
         {
             var viewModel = BuildViewModel(
                 start: new DateTime(2025, 6, 15, 8, 0, 0),
@@ -141,7 +141,7 @@ namespace DevCoreHospital.Tests.ViewModels
         }
 
         [Fact]
-        public void TimeRangeDetail_ContainsEndTimeText()
+        public void TimeRangeDetail_WhenShiftHasEndTime_ContainsEndTimeText()
         {
             var viewModel = BuildViewModel(
                 start: new DateTime(2025, 6, 15, 8, 0, 0),
@@ -151,7 +151,7 @@ namespace DevCoreHospital.Tests.ViewModels
         }
 
         [Fact]
-        public void TimeRangeDetail_ContainsDurationText()
+        public void TimeRangeDetail_WhenShiftHasDuration_ContainsDurationText()
         {
             var viewModel = BuildViewModel(
                 start: new DateTime(2025, 6, 15, 8, 0, 0),

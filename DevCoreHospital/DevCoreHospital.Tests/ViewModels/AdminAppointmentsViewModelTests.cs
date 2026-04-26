@@ -141,7 +141,7 @@ namespace DevCoreHospital.Tests.ViewModels
         }
 
         [Fact]
-        public async Task BookAppointmentAsync_PassesDateAndTimeDirectlyToService()
+        public async Task BookAppointmentAsync_WhenInvoked_PassesDateAndTimeDirectlyToService()
         {
             var dateWithTime = new DateTime(2025, 8, 1, 15, 30, 0);
             var time = new TimeSpan(10, 0, 0);

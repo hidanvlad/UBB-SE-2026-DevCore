@@ -59,7 +59,7 @@ public class MyScheduleViewModelTests
     }
 
     [Fact]
-    public void RequestSwapCommand_CanExecuteIsFalseWhenColleagueMissing()
+    public void RequestSwapCommand_WhenColleagueMissing_CanExecuteIsFalse()
     {
         var doctorA = new MDoctor(1, "A", "A", string.Empty, true, "E", "L", DoctorStatus.AVAILABLE, 1);
         var futureTime = DateTime.UtcNow.AddDays(5);
@@ -77,7 +77,7 @@ public class MyScheduleViewModelTests
     }
 
     [Fact]
-    public void RequestSwap_PropagatesServiceMessage()
+    public void RequestSwap_WhenServiceReturnsMessage_PropagatesIt()
     {
         var doctorA = new MDoctor(1, "A", "A", string.Empty, true, "E", "L", DoctorStatus.AVAILABLE, 1);
         var futureTime = DateTime.UtcNow.AddDays(6);
@@ -153,7 +153,7 @@ public class MyScheduleViewModelTests
     }
 
     [Fact]
-    public void RequestSwapCommand_CanExecuteIsFalseWhenShiftMissing()
+    public void RequestSwapCommand_WhenShiftMissing_CanExecuteIsFalse()
     {
         var doctor = new MDoctor(1, "A", "A", string.Empty, true, "E", "L", DoctorStatus.AVAILABLE, 1);
         var when = DateTime.UtcNow.AddDays(3);

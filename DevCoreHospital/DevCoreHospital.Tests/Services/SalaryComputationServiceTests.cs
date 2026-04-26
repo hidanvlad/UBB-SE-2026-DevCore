@@ -94,7 +94,7 @@ public class SalaryComputationServiceTests
     }
 
     [Fact]
-    public async Task ComputeSalaryPharmacistAsync_CountsHandoversInTargetMonth()
+    public async Task ComputeSalaryPharmacistAsync_WhenHandoversFallInTargetMonth_CountsThem()
     {
         var pharmacist = new Pharmacyst { StaffID = 5, YearsOfExperience = 0 };
         var shift = CreateShift(104, pharmacist, new DateTime(2026, 5, 4, 8, 0, 0), new DateTime(2026, 5, 4, 16, 0, 0));
@@ -115,7 +115,7 @@ public class SalaryComputationServiceTests
     }
 
     [Fact]
-    public async Task ComputeSalaryPharmacistAsync_CapsMedicineBonusAtThirtyPercent()
+    public async Task ComputeSalaryPharmacistAsync_WhenMedicineBonusExceedsCap_CapsItAtThirtyPercent()
     {
         var pharmacist = new Pharmacyst { StaffID = 6, YearsOfExperience = 0 };
         var shift = CreateShift(105, pharmacist, new DateTime(2026, 5, 4, 8, 0, 0), new DateTime(2026, 5, 4, 16, 0, 0));

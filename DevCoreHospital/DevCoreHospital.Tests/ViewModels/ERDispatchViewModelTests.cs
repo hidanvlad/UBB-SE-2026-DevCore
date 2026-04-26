@@ -11,7 +11,7 @@ namespace DevCoreHospital.Tests.ViewModels;
 public class ERDispatchViewModelTests
 {
     [Fact]
-    public void Refresh_ClearsUnmatchedAndSuccessfulCollections()
+    public void Refresh_WhenExecuted_ClearsUnmatchedAndSuccessfulCollections()
     {
         var service = new Mock<IERDispatchService>(MockBehavior.Loose);
         var viewModel = new ERDispatchViewModel(service.Object);
@@ -25,7 +25,7 @@ public class ERDispatchViewModelTests
     }
 
     [Fact]
-    public async Task SimulateIncomingAsync_SetsStatusMessageMentioningSimulated()
+    public async Task SimulateIncomingAsync_WhenExecuted_SetsStatusMessageMentioningSimulated()
     {
         var service = new Mock<IERDispatchService>();
         service.Setup(dispatchService => dispatchService.SimulateIncomingRequestsAsync(2)).ReturnsAsync((IReadOnlyList<int>)new[] { 1, 2 });
@@ -37,7 +37,7 @@ public class ERDispatchViewModelTests
     }
 
     [Fact]
-    public async Task RunDispatchAsync_AddsRowWhenServiceMatches()
+    public async Task RunDispatchAsync_WhenServiceMatches_AddsRow()
     {
         var service = new Mock<IERDispatchService>();
         var erRequest = new ERRequest { Id = 1, Specialization = "A", Location = "L" };
@@ -52,7 +52,7 @@ public class ERDispatchViewModelTests
     }
 
     [Fact]
-    public async Task RunDispatchAsync_AddsUnmatchedWhenServiceDoesNotMatch()
+    public async Task RunDispatchAsync_WhenServiceDoesNotMatch_AddsUnmatched()
     {
         var service = new Mock<IERDispatchService>();
         var erRequest = new ERRequest { Id = 1, Specialization = "A", Location = "L" };
@@ -69,7 +69,7 @@ public class ERDispatchViewModelTests
     }
 
     [Fact]
-    public async Task LoadOverrideCandidatesAsync_UsesNoEligibleHintWhenListEmpty()
+    public async Task LoadOverrideCandidatesAsync_WhenCandidateListIsEmpty_UsesNoEligibleHint()
     {
         var service = new Mock<IERDispatchService>();
         service.Setup(dispatchService => dispatchService.GetManualOverrideCandidatesAsync(1, 30))
@@ -82,7 +82,7 @@ public class ERDispatchViewModelTests
     }
 
     [Fact]
-    public async Task ApplyOverrideAsync_FailsWhenUnmatchedIdMissingInCollection()
+    public async Task ApplyOverrideAsync_WhenUnmatchedIdMissingFromCollection_Fails()
     {
         var service = new Mock<IERDispatchService>(MockBehavior.Strict);
         var viewModel = new ERDispatchViewModel(service.Object);
@@ -94,7 +94,7 @@ public class ERDispatchViewModelTests
     }
 
     [Fact]
-    public async Task ApplyOverrideAsync_FailsWhenOverrideDoctorNotInCandidatesList()
+    public async Task ApplyOverrideAsync_WhenOverrideDoctorNotInCandidatesList_Fails()
     {
         var service = new Mock<IERDispatchService>(MockBehavior.Strict);
         var viewModel = new ERDispatchViewModel(service.Object);

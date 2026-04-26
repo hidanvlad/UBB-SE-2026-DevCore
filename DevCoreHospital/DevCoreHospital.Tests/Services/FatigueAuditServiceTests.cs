@@ -42,7 +42,7 @@ namespace DevCoreHospital.Tests.Services
         }
 
         [Fact]
-        public void RunAutoAudit_NormalizesArbitraryDayToMonday()
+        public void RunAutoAudit_WhenWeekStartIsArbitraryDay_NormalizesItToMonday()
         {
             var wednesday = new DateTime(2025, 4, 16);
 
@@ -87,7 +87,7 @@ namespace DevCoreHospital.Tests.Services
         }
 
         [Fact]
-        public void RunAutoAudit_IgnoresCancelledShifts()
+        public void RunAutoAudit_WhenShiftIsCancelled_IgnoresIt()
         {
             var doctor = MakeDoctor(1, "Ana", "Cardio");
             var cancelled = MakeShift(1, doctor, WeekStart.AddHours(8), WeekStart.AddHours(20), ShiftStatus.CANCELLED);
@@ -100,7 +100,7 @@ namespace DevCoreHospital.Tests.Services
         }
 
         [Fact]
-        public void ReassignShift_DelegatesToShiftRepository()
+        public void ReassignShift_WhenInvoked_DelegatesToShiftRepository()
         {
             var service = CreateService();
 

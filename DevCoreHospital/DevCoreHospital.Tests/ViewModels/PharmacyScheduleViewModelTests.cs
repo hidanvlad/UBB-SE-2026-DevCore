@@ -83,7 +83,7 @@ namespace DevCoreHospital.Tests.ViewModels
         }
 
         [Fact]
-        public async Task LoadAsync_ClearsShifts_AndDoesNotCallService_WhenAccessDenied()
+        public async Task LoadAsync_WhenAccessDenied_ClearsShiftsAndDoesNotCallService()
         {
             userMock.Setup(currentUser => currentUser.Role).Returns("Doctor");
             var viewModel = CreateViewModel();
@@ -234,7 +234,7 @@ namespace DevCoreHospital.Tests.ViewModels
         }
 
         [Fact]
-        public void IsDailyView_IsOppositeOfIsWeeklyView()
+        public void IsDailyView_WhenWeeklyViewToggled_IsOppositeOfIsWeeklyView()
         {
             var viewModel = CreateViewModel();
             SetIsWeeklyView(viewModel, true);
@@ -299,7 +299,7 @@ namespace DevCoreHospital.Tests.ViewModels
         }
 
         [Fact]
-        public void ShowDailyCommand_SetsIsDailyViewTrue()
+        public void ShowDailyCommand_WhenExecuted_SetsIsDailyViewTrue()
         {
             var viewModel = CreateViewModel();
             SetIsWeeklyView(viewModel, true);
@@ -311,7 +311,7 @@ namespace DevCoreHospital.Tests.ViewModels
         }
 
         [Fact]
-        public void ShowWeeklyCommand_SetsIsWeeklyViewTrue()
+        public void ShowWeeklyCommand_WhenExecuted_SetsIsWeeklyViewTrue()
         {
             var viewModel = CreateViewModel();
             SetIsWeeklyView(viewModel, false);
@@ -323,7 +323,7 @@ namespace DevCoreHospital.Tests.ViewModels
         }
 
         [Fact]
-        public void TodayCommand_SetsAnchorDateToToday()
+        public void TodayCommand_WhenExecuted_SetsAnchorDateToToday()
         {
             var viewModel = CreateViewModel();
             SetAnchorDate(viewModel, new DateTime(2020, 1, 1));
@@ -366,7 +366,7 @@ namespace DevCoreHospital.Tests.ViewModels
         }
 
         [Fact]
-        public async Task IsLoading_IsFalseAfterLoadCompletes()
+        public async Task IsLoading_WhenLoadCompletes_IsFalse()
         {
             var viewModel = CreateViewModel();
             SetSelectedPharmacist(viewModel, MakePharmacist());

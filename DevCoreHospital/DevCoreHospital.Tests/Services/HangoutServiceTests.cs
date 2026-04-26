@@ -167,7 +167,7 @@ namespace DevCoreHospital.Tests.Services
         }
 
         [Fact]
-        public void GetAllHangouts_HydratesParticipantsFromStaffRepository()
+        public void GetAllHangouts_WhenParticipantsExist_HydratesThemFromStaffRepository()
         {
             var hangout = new Hangout(1, "Lunch", "desc", DateTime.Now.AddDays(10), 5);
             var staffMember = BuildDoctor(7);

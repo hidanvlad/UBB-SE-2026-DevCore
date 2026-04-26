@@ -111,7 +111,7 @@ namespace DevCoreHospital.Tests.Services
         }
 
         [Fact]
-        public void GetPharmacists_DelegatesToStaffRepository()
+        public void GetPharmacists_WhenInvoked_DelegatesToStaffRepository()
         {
             var pharmacist = new Pharmacyst(1, "Ana", "Pop", string.Empty, true, "General", 2);
             staffRepositoryMock.Setup(staffRepository => staffRepository.GetPharmacists()).Returns(new List<Pharmacyst> { pharmacist });

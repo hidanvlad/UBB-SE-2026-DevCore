@@ -32,7 +32,7 @@ namespace DevCoreHospital.Tests.Services
             new Shift(id, staff, location, DateTime.Now.AddHours(-1), DateTime.Now.AddHours(2), ShiftStatus.SCHEDULED);
 
         [Fact]
-        public async Task GetPendingRequestIdsAsync_ReturnsOnlyPendingRequests()
+        public async Task GetPendingRequestIdsAsync_WhenRequestsHaveMixedStatuses_ReturnsOnlyPendingRequests()
         {
             requestRepository.Setup(repository => repository.GetAllRequests()).Returns(new List<ERRequest>
             {
@@ -58,7 +58,7 @@ namespace DevCoreHospital.Tests.Services
         }
 
         [Fact]
-        public async Task DispatchERRequestAsync_AssignsAvailableMatchingDoctor()
+        public async Task DispatchERRequestAsync_WhenAvailableMatchingDoctorExists_AssignsThatDoctor()
         {
             var request = new ERRequest { Id = 1, Status = "PENDING", Specialization = "Cardio", Location = "ER1" };
             var matchingDoctor = MakeDoctor(7, "Cardio", DoctorStatus.AVAILABLE);
@@ -90,7 +90,7 @@ namespace DevCoreHospital.Tests.Services
         }
 
         [Fact]
-        public async Task SimulateIncomingRequestsAsync_CreatesRequestedNumberOfRequests()
+        public async Task SimulateIncomingRequestsAsync_WhenCountSpecified_CreatesThatManyRequests()
         {
             requestRepository.Setup(repository => repository.AddRequest(It.IsAny<string>(), It.IsAny<string>(), "PENDING")).Returns(1);
 

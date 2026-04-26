@@ -153,7 +153,7 @@ namespace DevCoreHospital.Tests.Integration
 
 
         [Fact]
-        public async Task BookThenFinish_AppointmentStatusIsFinished()
+        public async Task BookThenFinish_WhenSequenceCompletes_AppointmentStatusIsFinished()
         {
             var dataSource = new InMemoryAppointmentDataSource();
             var staffRepository = new InMemoryStaffRepository();
@@ -198,7 +198,7 @@ namespace DevCoreHospital.Tests.Integration
 
 
         [Fact]
-        public async Task BookThenCancel_AppointmentStatusIsCanceled()
+        public async Task BookThenCancel_WhenSequenceCompletes_AppointmentStatusIsCanceled()
         {
             var dataSource = new InMemoryAppointmentDataSource();
             var staffRepository = new InMemoryStaffRepository();
@@ -212,7 +212,7 @@ namespace DevCoreHospital.Tests.Integration
         }
 
         [Fact]
-        public async Task BookFinishThenCancel_ThrowsInvalidOperationException()
+        public async Task Cancel_WhenAppointmentAlreadyFinished_ThrowsInvalidOperationException()
         {
             var dataSource = new InMemoryAppointmentDataSource();
             var staffRepository = new InMemoryStaffRepository();

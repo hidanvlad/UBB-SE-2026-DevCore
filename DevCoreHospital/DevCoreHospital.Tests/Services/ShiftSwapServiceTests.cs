@@ -48,7 +48,7 @@ public class ShiftSwapServiceTests
     }
 
     [Fact]
-    public void GetIncomingSwapRequests_ReturnsOnlyPendingRequestsForColleague()
+    public void GetIncomingSwapRequests_WhenRequestsHaveMixedStatuses_ReturnsOnlyPendingOnesForColleague()
     {
         var pending = new ShiftSwapRequest { SwapId = 5, ColleagueId = 9, Status = ShiftSwapRequestStatus.PENDING, RequestedAt = DateTime.UtcNow };
         var accepted = new ShiftSwapRequest { SwapId = 6, ColleagueId = 9, Status = ShiftSwapRequestStatus.ACCEPTED, RequestedAt = DateTime.UtcNow };

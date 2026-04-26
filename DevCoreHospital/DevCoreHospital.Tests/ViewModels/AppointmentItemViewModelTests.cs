@@ -33,7 +33,7 @@ namespace DevCoreHospital.Tests.ViewModels
             };
 
         [Fact]
-        public void DateText_ReturnsFormattedDate()
+        public void DateText_WhenAppointmentHasDate_ReturnsFormattedDate()
         {
             var date = new DateTime(2025, 6, 15);
             var viewModel = new AppointmentItemViewModel(BuildAppointment(date: date));
@@ -42,7 +42,7 @@ namespace DevCoreHospital.Tests.ViewModels
         }
 
         [Fact]
-        public void TimeRangeText_ContainsStartAndEndTime()
+        public void TimeRangeText_WhenAppointmentHasTimes_ContainsStartAndEndTime()
         {
             var viewModel = new AppointmentItemViewModel(BuildAppointment(
                 startTime: new TimeSpan(9, 30, 0),
@@ -77,7 +77,7 @@ namespace DevCoreHospital.Tests.ViewModels
         }
 
         [Fact]
-        public void ToAppointment_ReturnsAppointmentWithSameId()
+        public void ToAppointment_WhenInvoked_ReturnsAppointmentWithSameId()
         {
             var viewModel = new AppointmentItemViewModel(BuildAppointment(id: 42));
 

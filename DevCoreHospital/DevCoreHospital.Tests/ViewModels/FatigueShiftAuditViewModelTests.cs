@@ -219,7 +219,7 @@ namespace DevCoreHospital.Tests.ViewModels
         }
 
         [Fact]
-        public void WeekLabel_StartsWithWeekOf()
+        public void WeekLabel_WhenWeekStartIsSet_StartsWithWeekOf()
         {
             var viewModel = CreateViewModel();
 
@@ -227,7 +227,7 @@ namespace DevCoreHospital.Tests.ViewModels
         }
 
         [Fact]
-        public void WeekLabel_FormatsDateInEnglish()
+        public void WeekLabel_WhenWeekStartIsSet_FormatsDateInEnglish()
         {
             var viewModel = CreateViewModel();
 

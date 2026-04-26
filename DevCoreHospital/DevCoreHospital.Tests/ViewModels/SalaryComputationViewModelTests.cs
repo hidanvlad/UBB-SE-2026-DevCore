@@ -237,7 +237,7 @@ public class SalaryComputationViewModelTests
     }
 
     [Fact]
-    public async Task ComputeSalaryAsync_TransitionsIsLoadingAndFormatsSalaryResult()
+    public async Task ComputeSalaryAsync_WhenInvoked_TransitionsIsLoadingAndFormatsSalaryResult()
     {
         var taskCompletionSource = new TaskCompletionSource<double>();
         var salaryService = new Mock<ISalaryComputationService>();
