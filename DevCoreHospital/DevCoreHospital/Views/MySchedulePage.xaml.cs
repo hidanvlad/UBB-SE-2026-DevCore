@@ -1,8 +1,5 @@
-﻿using DevCoreHospital.Configuration;
-using DevCoreHospital.Data;
-using DevCoreHospital.Repositories;
-using DevCoreHospital.Services;
 using DevCoreHospital.ViewModels.Doctor;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml.Controls;
 
 namespace DevCoreHospital.Views
@@ -15,12 +12,7 @@ namespace DevCoreHospital.Views
         {
             InitializeComponent();
 
-            var dbManager = new DatabaseManager(AppSettings.ConnectionString);
-            var staffRepo = new StaffRepository(dbManager);
-            var shiftRepo = new ShiftRepository(dbManager);
-            var staffAndShiftService = new StaffAndShiftService(staffRepo, shiftRepo, dbManager);
-
-            ViewModel = new MyScheduleViewModel(staffAndShiftService, shiftRepo, staffRepo);
+            ViewModel = App.Services.GetRequiredService<MyScheduleViewModel>();
             DataContext = ViewModel;
         }
     }

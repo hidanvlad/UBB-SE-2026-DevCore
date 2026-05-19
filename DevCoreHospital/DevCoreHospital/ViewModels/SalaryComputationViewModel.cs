@@ -1,51 +1,52 @@
-﻿using DevCoreHospital.Configuration;
-using DevCoreHospital.Data;
+using System.Collections.ObjectModel;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System;
 using DevCoreHospital.Models;
 using DevCoreHospital.Services;
 using DevCoreHospital.ViewModels.Base;
-using System;
-using System.Collections.ObjectModel;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace DevCoreHospital.ViewModels
 {
     public class SalaryComputationViewModel : ObservableObject
     {
-        private readonly SalaryComputationService _salaryService;
-        private readonly DatabaseManager _dbManager;
+        private readonly ISalaryComputationService salaryService;
 
         public ObservableCollection<IStaff> StaffList { get; } = new ObservableCollection<IStaff>();
         public ObservableCollection<Shift> ShiftList { get; } = new ObservableCollection<Shift>();
 
-        private IStaff _selectedStaff;
+        private IStaff selectedStaff = default!;
         public IStaff SelectedStaff
         {
-            get => _selectedStaff;
-            set { SetProperty(ref _selectedStaff, value); ComputeSalaryCommand.RaiseCanExecuteChanged(); }
+            get => selectedStaff;
+            set
+            {
+                SetProperty(ref selectedStaff, value);
+                ComputeSalaryCommand.RaiseCanExecuteChanged();
+            }
         }
 
-        private int _selectedMonth = DateTime.Now.Month;
-        public int SelectedMonth { get => _selectedMonth; set => SetProperty(ref _selectedMonth, value); }
+        private int selectedMonth = DateTime.Now.Month;
+        public int SelectedMonth { get => selectedMonth; set => SetProperty(ref selectedMonth, value); }
 
-        private int _selectedYear = DateTime.Now.Year;
-        public int SelectedYear { get => _selectedYear; set => SetProperty(ref _selectedYear, value); }
+        private int selectedYear = DateTime.Now.Year;
+        public int SelectedYear { get => selectedYear; set => SetProperty(ref selectedYear, value); }
 
-        private bool _isLoading;
-        public bool IsLoading { get => _isLoading; set => SetProperty(ref _isLoading, value); }
+        private bool isLoading;
+        public bool IsLoading { get => isLoading; set => SetProperty(ref isLoading, value); }
 
-        private string _errorMessage = string.Empty;
-        public string ErrorMessage { get => _errorMessage; set => SetProperty(ref _errorMessage, value); }
+        private string errorMessage = string.Empty;
+        public string ErrorMessage { get => errorMessage; set => SetProperty(ref errorMessage, value); }
 
-        private string _salaryResult = string.Empty;
-        public string SalaryResult { get => _salaryResult; set => SetProperty(ref _salaryResult, value); }
+        private string salaryResult = string.Empty;
+        public string SalaryResult { get => salaryResult; set => SetProperty(ref salaryResult, value); }
 
         public AsyncRelayCommand ComputeSalaryCommand { get; }
 
-        public SalaryComputationViewModel()
+        public SalaryComputationViewModel(ISalaryComputationService salaryService)
         {
-            _dbManager = new DatabaseManager(AppSettings.ConnectionString);
-            _salaryService = new SalaryComputationService(_dbManager);
+            this.salaryService = salaryService;
 
             ComputeSalaryCommand = new AsyncRelayCommand(ComputeSalaryAsync, CanComputeSalary);
 
@@ -53,25 +54,19 @@ namespace DevCoreHospital.ViewModels
             LoadShiftList();
         }
 
-        private void LoadStaffList()
+        public SalaryComputationViewModel(ISalaryComputationService salaryService, IEnumerable<IStaff> staffList, IEnumerable<Shift> shiftList)
         {
-            StaffList.Clear();
-            var staffFromDb = _dbManager.GetStaff();
-            foreach (var staff in staffFromDb)
-            {
-                StaffList.Add(staff);
-            }
+            this.salaryService = salaryService;
+
+            ComputeSalaryCommand = new AsyncRelayCommand(ComputeSalaryAsync, CanComputeSalary);
+
+            StaffList.ReplaceWith(staffList);
+            ShiftList.ReplaceWith(shiftList);
         }
 
-        private void LoadShiftList()
-        {
-            ShiftList.Clear();
-            var shiftsFromDb = _dbManager.GetShifts();
-            foreach (var shift in shiftsFromDb)
-            {
-                ShiftList.Add(shift);
-            }
-        }
+        private void LoadStaffList() => StaffList.ReplaceWith(salaryService.GetAllStaff());
+
+        private void LoadShiftList() => ShiftList.ReplaceWith(salaryService.GetAllShifts());
 
         private bool CanComputeSalary()
         {
@@ -86,33 +81,35 @@ namespace DevCoreHospital.ViewModels
 
             try
             {
-                // The ViewModel filters the shifts for the specific month/year
-                var staffShifts = ShiftList.Where(s => s.AppointedStaff?.StaffID == SelectedStaff.StaffID
-                                                    && s.StartTime.Month == SelectedMonth
-                                                    && s.StartTime.Year == SelectedYear).ToList();
+                bool IsStaffShiftForPeriod(Shift shift) =>
+                    shift.AppointedStaff?.StaffID == SelectedStaff.StaffID
+                    && shift.StartTime.Month == SelectedMonth
+                    && shift.StartTime.Year == SelectedYear;
 
-                double salary = 0;
+                var staffShiftsForPeriod = ShiftList
+                    .Where(IsStaffShiftForPeriod)
+                    .ToList();
+
+                double computedSalary = 0;
 
                 if (SelectedStaff is Models.Doctor doctor)
                 {
-                    // Pass the month and year to the doctor calculation
-                    salary = await _salaryService.ComputeSalaryDoctorAsync(doctor, staffShifts, SelectedMonth, SelectedYear);
+                    computedSalary = await salaryService.ComputeSalaryDoctorAsync(doctor, staffShiftsForPeriod, SelectedMonth, SelectedYear);
                 }
-                else if (SelectedStaff is Models.Pharmacyst pharmacyst)
+                else if (SelectedStaff is Models.Pharmacyst pharmacist)
                 {
-                    // Pass the month and year to the pharmacyst calculation
-                    salary = await _salaryService.ComputeSalaryPharmacistAsync(pharmacyst, staffShifts, SelectedMonth, SelectedYear);
+                    computedSalary = await salaryService.ComputeSalaryPharmacistAsync(pharmacist, staffShiftsForPeriod, SelectedMonth, SelectedYear);
                 }
                 else
                 {
                     throw new InvalidOperationException("Unsupported staff type for salary computation.");
                 }
 
-                SalaryResult = $"Computed Salary: ${salary:F2}";
+                SalaryResult = $"Computed Salary: ${computedSalary:F2}";
             }
-            catch (Exception ex)
+            catch (Exception exception)
             {
-                ErrorMessage = $"Computation failed: {ex.Message}";
+                ErrorMessage = $"Computation failed: {exception.Message}";
             }
             finally
             {

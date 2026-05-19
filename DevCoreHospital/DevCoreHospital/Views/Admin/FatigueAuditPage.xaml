@@ -1,7 +1,8 @@
 ﻿<Page
     x:Class="DevCoreHospital.Views.Admin.FatigueAuditPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:converters="using:DevCoreHospital.Converters">
 
     <Page.Resources>
         <SolidColorBrush x:Key="BgBrush" Color="#FF0B120D"/>
@@ -11,6 +12,7 @@
         <SolidColorBrush x:Key="AccentBrush" Color="#FF166534"/>
         <SolidColorBrush x:Key="ErrorBrush" Color="#FFEF4444"/>
         <SolidColorBrush x:Key="WarningBrush" Color="#FFFFB91C"/>
+        <converters:BoolToPublishStatusBrushConverter x:Key="PublishStatusBrushConverter"/>
     </Page.Resources>
 
     <ScrollViewer Background="{StaticResource BgBrush}">
@@ -72,7 +74,7 @@
                             VerticalAlignment="Center"
                             HorizontalAlignment="Right">
                     <TextBlock Text="{Binding PublishStatus}"
-                               Foreground="{Binding PublishStatusColor}"
+                               Foreground="{Binding CanPublish, Converter={StaticResource PublishStatusBrushConverter}}"
                                FontSize="14"
                                FontWeight="SemiBold"/>
                 </StackPanel>
@@ -290,7 +292,7 @@
                                    FontSize="18"
                                    FontWeight="SemiBold"/>
                         <TextBlock Text="{Binding PublishStatus}"
-                                   Foreground="{Binding PublishStatusColor}"
+                                   Foreground="{Binding CanPublish, Converter={StaticResource PublishStatusBrushConverter}}"
                                    FontSize="14"
                                    FontWeight="SemiBold"/>
                     </StackPanel>

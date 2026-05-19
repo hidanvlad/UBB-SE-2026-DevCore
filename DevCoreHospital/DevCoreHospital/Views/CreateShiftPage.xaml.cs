@@ -1,7 +1,7 @@
-﻿using Microsoft.UI.Xaml;
-using Microsoft.UI.Xaml.Controls;
-using System;
 using System.Collections.Generic;
+using System;
+using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml;
 
 namespace DevCoreHospital.Views
 {
@@ -15,18 +15,16 @@ namespace DevCoreHospital.Views
 
         private void LoadStaffData()
         {
-            // Exemplu de date (Mockup) până legăm de baza de date
             var staff = new List<string> { "Dr. Andrei Ionescu", "Dr. Elena Radu", "Farm. Mihai Pop" };
             EmployeeComboBox.ItemsSource = staff;
         }
 
         private void SaveShift_Click(object sender, RoutedEventArgs e)
         {
-            // Validare de bază
             if (EmployeeComboBox.SelectedItem == null || ShiftDatePicker.Date == null ||
                 StartTimePicker.SelectedTime == null || EndTimePicker.SelectedTime == null)
             {
-                ShowMessage("Eroare: Te rugăm să completezi toate câmpurile.", InfoBarSeverity.Error);
+                ShowMessage("Eroare: Te rugam sa completezi toate c�mpurile.", InfoBarSeverity.Error);
                 return;
             }
 
@@ -35,16 +33,12 @@ namespace DevCoreHospital.Views
 
             if (end <= start)
             {
-                ShowMessage("Atenție: Ora de final trebuie să fie după ora de început.", InfoBarSeverity.Warning);
+                ShowMessage("Aten?ie: Ora de final trebuie sa fie dupa ora de �nceput.", InfoBarSeverity.Warning);
                 return;
             }
 
-            // TODO: Aici va veni codul care apelează ViewModel-ul pentru salvarea în baza de date
-            // ex: ViewModel.SaveShiftAsync(...);
+            ShowMessage("Tura a fost salvata cu succes!", InfoBarSeverity.Success);
 
-            ShowMessage("Tura a fost salvată cu succes!", InfoBarSeverity.Success);
-
-            // Opțional: Resetăm formularul după succes
             EmployeeComboBox.SelectedIndex = -1;
         }
 

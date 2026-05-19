@@ -1,39 +1,44 @@
+using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Linq;
+using System.Runtime.Versioning;
 using DevCoreHospital.Models;
 using DevCoreHospital.Services;
 using DevCoreHospital.Views.Admin;
 using DevCoreHospital.Views.Doctor;
 using DevCoreHospital.Views.Pharmacy;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media.Animation;
-using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Linq;
 
 namespace DevCoreHospital.Views
 {
+    [SupportedOSPlatform("windows10.0.17763.0")]
     public sealed partial class RoleDashboardPage : Page
     {
-        private readonly ICurrentUserService _currentUser = new CurrentUserService();
-        private readonly ObservableCollection<MenuEntry> _items = new();
-        private readonly Dictionary<string, Type> _routes = new();
+        private readonly ICurrentUserService currentUser;
+        private readonly ObservableCollection<MenuEntry> items = new ObservableCollection<MenuEntry>();
+        private readonly Dictionary<string, Type> routes = new Dictionary<string, Type>();
 
         public RoleDashboardPage()
         {
             InitializeComponent();
-            MenuList.ItemsSource = _items;
+
+            currentUser = App.Services.GetRequiredService<ICurrentUserService>();
+            MenuList.ItemsSource = items;
             BuildForRole();
         }
 
         private void BuildForRole()
         {
-            _items.Clear();
-            _routes.Clear();
+            items.Clear();
+            routes.Clear();
 
-            RoleText.Text = $"Role: {_currentUser.RoleType}";
+            RoleText.Text = $"Role: {currentUser.RoleType}";
 
-            switch (_currentUser.RoleType)
+            switch (currentUser.RoleType)
             {
                 case UserRole.Admin:
                     Add("See Doctor Schedule", "admin-doctor-schedule", typeof(DoctorSchedulePage));
@@ -60,7 +65,7 @@ namespace DevCoreHospital.Views
                     break;
             }
 
-            var first = _items.FirstOrDefault();
+            var first = items.FirstOrDefault();
             if (first != null)
             {
                 MenuList.SelectedItem = first;
@@ -71,24 +76,30 @@ namespace DevCoreHospital.Views
         private void Add(string title, string key, Type pageType)
         {
             if (!typeof(Page).IsAssignableFrom(pageType))
+            {
                 throw new InvalidOperationException($"{pageType.FullName} is not a Page.");
+            }
 
-            _items.Add(new MenuEntry { Key = key, Title = title });
-            _routes[key] = pageType;
+            items.Add(new MenuEntry { Key = key, Title = title });
+            routes[key] = pageType;
         }
 
         private void MenuList_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (MenuList.SelectedItem is not MenuEntry entry)
+            {
                 return;
+            }
 
             NavigateToKey(entry.Key);
         }
 
         private void NavigateToKey(string key)
         {
-            if (!_routes.TryGetValue(key, out var pageType))
+            if (!routes.TryGetValue(key, out var pageType))
+            {
                 pageType = typeof(NotImplementedPlaceholderPage);
+            }
 
             ContentFrame.Navigate(pageType, null, new SuppressNavigationTransitionInfo());
         }

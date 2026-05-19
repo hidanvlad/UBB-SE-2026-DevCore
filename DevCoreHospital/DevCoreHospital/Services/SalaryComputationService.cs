@@ -1,133 +1,180 @@
-﻿using System.Collections.Generic;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using DevCoreHospital.Models;
-using DevCoreHospital.Data;
+using DevCoreHospital.Repositories;
 
 namespace DevCoreHospital.Services
 {
-    public class SalaryComputationService
+    public class SalaryComputationService : ISalaryComputationService
     {
-        private readonly DatabaseManager _dbManager;
+        private const double DoctorBaseHourlyRate = 85.0;
+        private const double PharmacistBaseHourlyRate = 45.0;
 
-        public SalaryComputationService(DatabaseManager dbManager)
+        private const double SaturdayOvertimeMultiplier = 1.15;
+        private const double SundayOvertimeMultiplier = 1.25;
+
+        private const int NightShiftStartHour = 20;
+        private const int NightShiftEndHour = 6;
+        private const double NightShiftOvertimeMultiplier = 1.20;
+
+        private const double SurgeonSpecializationBonusPercentage = 0.20;
+        private const double CardiologistSpecializationBonusPercentage = 0.15;
+        private const double EmergencySpecializationBonusPercentage = 0.10;
+
+        private const double YearsOfExperienceBonusPercentagePerYear = 0.02;
+        private const double HangoutParticipationBonusMultiplier = 1.05;
+
+        private const int MedicinesSoldBonusInterval = 10;
+        private const double MedicinesSoldBonusPerInterval = 0.01;
+        private const double MaxMedicineSalesBonusPercentage = 0.30;
+
+        private readonly IPharmacyHandoverRepository pharmacyHandoverRepository;
+        private readonly IHangoutRepository hangoutRepository;
+        private readonly IHangoutParticipantRepository hangoutParticipantRepository;
+        private readonly IStaffRepository? staffRepository;
+        private readonly IShiftManagementShiftRepository? shiftRepository;
+
+        public SalaryComputationService(
+            IPharmacyHandoverRepository pharmacyHandoverRepository,
+            IHangoutRepository hangoutRepository,
+            IHangoutParticipantRepository hangoutParticipantRepository,
+            IStaffRepository? staffRepository = null,
+            IShiftManagementShiftRepository? shiftRepository = null)
         {
-            _dbManager = dbManager;
+            this.pharmacyHandoverRepository = pharmacyHandoverRepository;
+            this.hangoutRepository = hangoutRepository;
+            this.hangoutParticipantRepository = hangoutParticipantRepository;
+            this.staffRepository = staffRepository;
+            this.shiftRepository = shiftRepository;
         }
 
         public Task<double> ComputeSalaryDoctorAsync(Doctor doctor, List<Shift> monthlyShifts, int month, int year)
         {
-            double initialSalary = 0;
-            double doctorHourlyRate = 85.0;
+            double baseSalaryFromShifts = ComputeBaseSalaryFromShifts(monthlyShifts, DoctorBaseHourlyRate);
 
-            foreach (var shift in monthlyShifts)
+            double specializationBonusPercentage = ResolveSpecializationBonusPercentage(doctor.Specialization);
+            double finalSalary = baseSalaryFromShifts;
+            finalSalary += baseSalaryFromShifts * specializationBonusPercentage;
+            finalSalary += baseSalaryFromShifts * (doctor.YearsOfExperience * YearsOfExperienceBonusPercentagePerYear);
+
+            if (DidStaffParticipateInHangoutForMonth(doctor.StaffID, month, year))
             {
-                double dbHours = _dbManager.GetShiftHoursFromDb(shift.Id);
-                double shiftHours = dbHours > 0 ? dbHours : (shift.EndTime - shift.StartTime).TotalHours;
-
-                double shiftSalary = shiftHours * doctorHourlyRate;
-
-                // Weekend logic
-                if (shift.StartTime.DayOfWeek == System.DayOfWeek.Saturday)
-                    shiftSalary *= 1.15;
-                else if (shift.StartTime.DayOfWeek == System.DayOfWeek.Sunday)
-                    shiftSalary *= 1.25;
-
-                // Night shift logic (+20%)
-                bool isNightShift = shift.StartTime.Hour >= 20 || shift.StartTime.Hour <= 6 || shift.EndTime.Hour <= 6;
-                if (isNightShift)
-                    shiftSalary *= 1.20;
-
-                initialSalary += shiftSalary;
+                finalSalary *= HangoutParticipationBonusMultiplier;
             }
-
-            double finalSalary = initialSalary;
-
-            // Specialization bonus
-            double specBonusPercentage = 0;
-            string spec = doctor.Specialization?.ToLower() ?? "";
-
-            if (spec.Contains("surgeon") || spec.Contains("surgery")) specBonusPercentage = 0.20;
-            else if (spec.Contains("cardiologist")) specBonusPercentage = 0.15;
-            else if (spec.Contains("er") || spec.Contains("emergency")) specBonusPercentage = 0.10;
-
-            finalSalary += (initialSalary * specBonusPercentage);
-
-            // Years of experience bonus (+2% per year)
-            finalSalary += (initialSalary * (doctor.YearsOfExperience * 0.02));
-
-            // Hangout bonus (+5% if they attended at least one hangout this month)
-            // Note: Make sure DidStaffParticipateInHangout is implemented in DatabaseManager
-            try
-            {
-                if (_dbManager.DidStaffParticipateInHangout(doctor.StaffID, month, year))
-                {
-                    finalSalary *= 1.05;
-                }
-            }
-            catch { /* Ignore if not yet implemented */ }
 
             return Task.FromResult(finalSalary);
         }
 
         public Task<double> ComputeSalaryPharmacistAsync(Pharmacyst pharmacist, List<Shift> monthlyShifts, int month, int year)
         {
-            double initialSalary = 0;
-            double pharmacistHourlyRate = 45.0;
+            double baseSalaryFromShifts = ComputeBaseSalaryFromShifts(monthlyShifts, PharmacistBaseHourlyRate);
 
-            foreach (var shift in monthlyShifts)
+            int medicinesSold = CountMedicinesSoldForPharmacist(pharmacist.StaffID, month, year);
+            double medicineSalesBonusPercentage = (medicinesSold / MedicinesSoldBonusInterval) * MedicinesSoldBonusPerInterval;
+            if (medicineSalesBonusPercentage > MaxMedicineSalesBonusPercentage)
             {
-                double dbHours = _dbManager.GetShiftHoursFromDb(shift.Id);
-                double shiftHours = dbHours > 0 ? dbHours : (shift.EndTime - shift.StartTime).TotalHours;
-
-                double shiftSalary = shiftHours * pharmacistHourlyRate;
-
-                // Weekend logic (+15% Sat, +25% Sun)
-                if (shift.StartTime.DayOfWeek == System.DayOfWeek.Saturday)
-                    shiftSalary *= 1.15;
-                else if (shift.StartTime.DayOfWeek == System.DayOfWeek.Sunday)
-                    shiftSalary *= 1.25;
-
-                // Night shift logic (+20%)
-                bool isNightShift = shift.StartTime.Hour >= 20 || shift.StartTime.Hour <= 6 || shift.EndTime.Hour <= 6;
-                if (isNightShift)
-                    shiftSalary *= 1.20;
-
-                initialSalary += shiftSalary;
+                medicineSalesBonusPercentage = MaxMedicineSalesBonusPercentage;
             }
 
-            double finalSalary = initialSalary;
+            double finalSalary = baseSalaryFromShifts;
+            finalSalary += baseSalaryFromShifts * medicineSalesBonusPercentage;
+            finalSalary += baseSalaryFromShifts * (pharmacist.YearsOfExperience * YearsOfExperienceBonusPercentagePerYear);
 
-            // Medicines sold logic (Increased by M%)
-            int medicinesSold = 0;
-            try
+            if (DidStaffParticipateInHangoutForMonth(pharmacist.StaffID, month, year))
             {
-                medicinesSold = _dbManager.GetMedicinesSold(pharmacist.StaffID, month, year);
+                finalSalary *= HangoutParticipationBonusMultiplier;
             }
-            catch
-            {
-                medicinesSold = 0;
-            }
-
-            // Example business rule: +1% bonus for every 10 medicines sold, capped at 30%
-            double medicineBonusPercent = (medicinesSold / 10) * 0.01;
-            if (medicineBonusPercent > 0.30) medicineBonusPercent = 0.30;
-
-            finalSalary += (initialSalary * medicineBonusPercent);
-
-            // Years of experience bonus (+2% per year)
-            finalSalary += (initialSalary * (pharmacist.YearsOfExperience * 0.02));
-
-            // Hangout bonus (+5% if they attended at least one hangout this month)
-            try
-            {
-                if (_dbManager.DidStaffParticipateInHangout(pharmacist.StaffID, month, year))
-                {
-                    finalSalary *= 1.05;
-                }
-            }
-            catch { /* Ignore if not yet implemented */ }
 
             return Task.FromResult(finalSalary);
+        }
+
+        public List<IStaff> GetAllStaff() =>
+            staffRepository?.LoadAllStaff() ?? new List<IStaff>();
+
+        public List<Shift> GetAllShifts() =>
+            shiftRepository?.GetAllShifts().ToList() ?? new List<Shift>();
+
+        private double ComputeBaseSalaryFromShifts(List<Shift> monthlyShifts, double baseHourlyRate)
+        {
+            double total = 0;
+            foreach (var shift in monthlyShifts)
+            {
+                double shiftHours = (shift.EndTime - shift.StartTime).TotalHours;
+                double shiftSalary = shiftHours * baseHourlyRate;
+
+                if (shift.StartTime.DayOfWeek == DayOfWeek.Saturday)
+                {
+                    shiftSalary *= SaturdayOvertimeMultiplier;
+                }
+                else if (shift.StartTime.DayOfWeek == DayOfWeek.Sunday)
+                {
+                    shiftSalary *= SundayOvertimeMultiplier;
+                }
+
+                bool isNightShift = shift.StartTime.Hour >= NightShiftStartHour
+                    || shift.StartTime.Hour <= NightShiftEndHour
+                    || shift.EndTime.Hour <= NightShiftEndHour;
+                if (isNightShift)
+                {
+                    shiftSalary *= NightShiftOvertimeMultiplier;
+                }
+
+                total += shiftSalary;
+            }
+            return total;
+        }
+
+        private static double ResolveSpecializationBonusPercentage(string? specialization)
+        {
+            string normalizedSpecialization = (specialization ?? string.Empty).ToLowerInvariant();
+            if (normalizedSpecialization.Contains("surgeon") || normalizedSpecialization.Contains("surgery"))
+            {
+                return SurgeonSpecializationBonusPercentage;
+            }
+            if (normalizedSpecialization.Contains("cardiologist"))
+            {
+                return CardiologistSpecializationBonusPercentage;
+            }
+            if (normalizedSpecialization.Contains("er") || normalizedSpecialization.Contains("emergency"))
+            {
+                return EmergencySpecializationBonusPercentage;
+            }
+            return 0;
+        }
+
+        private int CountMedicinesSoldForPharmacist(int pharmacistStaffId, int month, int year)
+        {
+            var allHandovers = pharmacyHandoverRepository.GetAllPharmacyHandovers();
+            bool MatchesPharmacistAndMonth(PharmacyHandover handover) =>
+                handover.PharmacistId == pharmacistStaffId
+                && handover.HandoverDate.Month == month
+                && handover.HandoverDate.Year == year;
+            return allHandovers.Count(MatchesPharmacistAndMonth);
+        }
+
+        private bool DidStaffParticipateInHangoutForMonth(int staffId, int month, int year)
+        {
+            bool IsForStaff((int HangoutId, int StaffId) participant) => participant.StaffId == staffId;
+            int ToHangoutId((int HangoutId, int StaffId) participant) => participant.HangoutId;
+
+            var allParticipants = hangoutParticipantRepository.GetAllParticipants();
+            var hangoutIdsForStaff = allParticipants
+                .Where(IsForStaff)
+                .Select(ToHangoutId)
+                .ToHashSet();
+            if (hangoutIdsForStaff.Count == 0)
+            {
+                return false;
+            }
+
+            bool IsHangoutInTargetMonth(Hangout hangout) =>
+                hangoutIdsForStaff.Contains(hangout.HangoutID)
+                && hangout.Date.Month == month
+                && hangout.Date.Year == year;
+
+            return hangoutRepository.GetAllHangouts().Any(IsHangoutInTargetMonth);
         }
     }
 }

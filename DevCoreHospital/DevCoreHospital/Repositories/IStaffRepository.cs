@@ -1,10 +1,17 @@
+using System.Collections.Generic;
+using System.Threading.Tasks;
 using DevCoreHospital.Models;
 
-namespace DevCoreHospital.Repositories;
-
-public interface IStaffRepository
+namespace DevCoreHospital.Repositories
 {
-    Doctor? GetDoctorBySpecialization(string spec);
+    public interface IStaffRepository
+    {
+        List<IStaff> LoadAllStaff();
 
-    IStaff? FindByStaffCode(string staffCode);
+        IStaff? GetStaffById(int staffId);
+
+        Task<IReadOnlyList<(int DoctorId, string FirstName, string LastName)>> GetAllDoctorsAsync();
+
+        Task UpdateStatusAsync(int staffId, string status);
+    }
 }

@@ -1,7 +1,7 @@
-﻿using DevCoreHospital.Models;
-using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using System;
+using DevCoreHospital.Models;
 
 namespace DevCoreHospital.Services
 {

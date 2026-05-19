@@ -4,14 +4,16 @@ namespace DevCoreHospital.Services
 {
     public sealed class CurrentUserService : ICurrentUserService
     {
-        private static UserRole _roleType = UserRole.Doctor;
+        private const int DefaultLoggedInUserId = 1;
 
-        public int UserId { get; } = 1;
+        private static UserRole roleType = UserRole.Doctor;
+
+        public int UserId { get; } = DefaultLoggedInUserId;
 
         public UserRole RoleType
         {
-            get => _roleType;
-            set => _roleType = value;
+            get => roleType;
+            set => roleType = value;
         }
 
         public string Role => RoleType.ToString();

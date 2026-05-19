@@ -1,84 +1,67 @@
 using DevCoreHospital.Configuration;
-using DevCoreHospital.Data;
-using DevCoreHospital.Repositories;
 using DevCoreHospital.Services;
 using DevCoreHospital.ViewModels.Doctor;
+using DevCoreHospital.Views.Shell;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Navigation;
-using System;
 
 namespace DevCoreHospital.Views.Doctor
 {
     public sealed partial class DoctorSchedulePage : Page
     {
-        private readonly DoctorScheduleViewModel _vm;
-        private readonly IDialogService _dialogService;
-        private bool _initialized;
+        private readonly DoctorScheduleViewModel viewModel;
+        private readonly DialogPresenter dialogPresenter;
+        private bool initialized;
 
         public DoctorSchedulePage()
         {
             InitializeComponent();
 
-            _dialogService = new DialogService();
-            var dbManager = new DatabaseManager(AppSettings.ConnectionString);
-            var appointmentRepository = new AppointmentRepository(dbManager);
-            var shiftRepository = new ShiftRepository(dbManager);
-            _vm = new DoctorScheduleViewModel(
-                new CurrentUserService(),
-                new DoctorAppointmentService(appointmentRepository),
-                shiftRepository,
-                _dialogService);
-
-            DataContext = _vm;
+            viewModel = App.Services.GetRequiredService<DoctorScheduleViewModel>();
+            dialogPresenter = App.Services.GetRequiredService<DialogPresenter>();
+            DataContext = viewModel;
         }
 
         protected override async void OnNavigatedTo(NavigationEventArgs e)
         {
             base.OnNavigatedTo(e);
 
-            _dialogService.SetXamlRoot(this.XamlRoot);
+            dialogPresenter.SetXamlRoot(this.XamlRoot);
 
-            if (_initialized) return;
-            _initialized = true;
+            if (initialized)
+            {
+                return;
+            }
 
-            await _vm.InitializeAsync();
+            initialized = true;
+
+            await viewModel.InitializeAsync();
         }
 
-        private void DateCalendar_SelectedDatesChanged(CalendarView sender, CalendarViewSelectedDatesChangedEventArgs args)
+        private void DateCalendar_SelectedDatesChanged(CalendarView sender, CalendarViewSelectedDatesChangedEventArgs eventArgs)
         {
             if (sender.SelectedDates == null || sender.SelectedDates.Count == 0)
+            {
                 return;
+            }
 
             var picked = sender.SelectedDates[0].Date;
-            var minSqlDate = new DateTime(1753, 1, 1);
 
-            if (picked < minSqlDate)
+            if (picked < AppSettings.SqlMinimumDate)
+            {
                 return;
+            }
 
-            _vm.SelectedDate = picked;
+            viewModel.SelectedDate = picked;
         }
 
         private void DetailsButton_Click(object sender, RoutedEventArgs e)
         {
             if ((sender as FrameworkElement)?.DataContext is AppointmentItemViewModel item)
             {
-                var appt = new DevCoreHospital.Models.Appointment
-                {
-                    Id = item.Id,
-                    PatientName = item.PatientName,
-                    DoctorId = item.DoctorId,
-                    DoctorName = item.DoctorName,
-                    Date = item.Date,
-                    StartTime = item.StartTime,
-                    EndTime = item.EndTime,
-                    Status = item.Status,
-                    Type = item.Type,
-                    Location = item.Location,
-                    Notes = item.Notes
-                };
-
-                Frame?.Navigate(typeof(AppointmentDetailsPage), appt);
+                Frame?.Navigate(typeof(AppointmentDetailsPage), item.ToAppointment());
             }
         }
     }

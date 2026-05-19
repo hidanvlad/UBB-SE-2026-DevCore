@@ -1,139 +1,81 @@
-﻿using DevCoreHospital.Data;
-using DevCoreHospital.Configuration;
-using DevCoreHospital.Services;
-using DevCoreHospital.ViewModels;
-using DevCoreHospital.Repositories;
-using Microsoft.UI.Xaml;
-using Microsoft.UI.Xaml.Controls;
 using System;
-using System.Collections.ObjectModel;
-using System.Linq;
+using DevCoreHospital.ViewModels;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml;
 
 namespace DevCoreHospital.Views.Admin
 {
     public sealed partial class FatigueAuditPage : Page
     {
-        private readonly FatigueShiftAuditViewModel _viewModel;
-        private readonly IFatigueAuditService _auditService;
-        private readonly IFatigueAuditRepository _auditRepository;
-        private readonly SqlFatigueShiftDataSource _sqlDataSource;
+        private readonly FatigueShiftAuditViewModel viewModel;
 
         public FatigueAuditPage()
         {
             InitializeComponent();
 
-            // Initialize SQL data source
-            _sqlDataSource = new SqlFatigueShiftDataSource(AppSettings.ConnectionString);
-            
-            // Initialize repository
-            _auditRepository = new FatigueAuditRepository(_sqlDataSource);
-            
-            // Initialize service with repository
-            _auditService = new FatigueAuditService(_auditRepository);
-            
-            // Initialize ViewModel
-            _viewModel = new FatigueShiftAuditViewModel(_auditService);
+            viewModel = App.Services.GetRequiredService<FatigueShiftAuditViewModel>();
+            DataContext = viewModel;
 
-            // Set DataContext to ViewModel for binding
-            DataContext = _viewModel;
-
-            // Initialize week picker to today
             WeekStartPicker.Date = new DateTimeOffset(DateTime.Today);
         }
 
-        private void WeekStartPicker_DateChanged(CalendarDatePicker sender, CalendarDatePickerDateChangedEventArgs args)
+        private void WeekStartPicker_DateChanged(CalendarDatePicker sender, CalendarDatePickerDateChangedEventArgs eventArgs)
         {
             if (sender.Date.HasValue)
             {
-                _viewModel.SelectedWeekStart = sender.Date.Value;
+                viewModel.SelectedWeekStart = sender.Date.Value;
             }
         }
 
-        private void RunAutoAudit_Click(object sender, RoutedEventArgs e)
+        private void RunAutoAudit_Click(object sender, RoutedEventArgs eventArgs)
         {
             try
             {
-                // Run the audit through ViewModel - all UI updates handled automatically via binding
-                _viewModel.RunAutoAudit();
+                viewModel.RunAutoAudit();
             }
-            catch (Exception ex)
+            catch (Exception exception)
             {
-                _viewModel.StatusMessage = $"Error during audit: {ex.Message}";
+                viewModel.StatusMessage = $"Error during audit: {exception.Message}";
             }
         }
 
-        private void Refresh_Click(object sender, RoutedEventArgs e)
+        private void Refresh_Click(object sender, RoutedEventArgs eventArgs)
         {
-            // Clear violations and suggestions through ViewModel
-            _viewModel.Violations.Clear();
-            _viewModel.Suggestions.Clear();
+            viewModel.Violations.Clear();
+            viewModel.Suggestions.Clear();
         }
 
-        private async void ApplyReassignment_Click(object sender, RoutedEventArgs e)
+        private async void ApplyReassignment_Click(object sender, RoutedEventArgs eventArgs)
         {
             if (sender is Button button && button.Tag is int shiftId)
             {
-                // Find the suggestion for this shift
-                var suggestion = _viewModel.Suggestions.FirstOrDefault(s => s.ShiftId == shiftId);
-                if (suggestion == null || !suggestion.SuggestedStaffId.HasValue)
-                {
-                    var errorDialog = new ContentDialog
-                    {
-                        Title = "Invalid Reassignment",
-                        Content = "No valid reassignment candidate found for this shift.",
-                        CloseButtonText = "OK",
-                        XamlRoot = Content.XamlRoot
-                    };
-                    await errorDialog.ShowAsync();
-                    return;
-                }
+                var result = viewModel.ApplyReassignment(shiftId);
 
-                // Apply the reassignment through the repository
-                bool success = _auditRepository.ReassignShift(shiftId, suggestion.SuggestedStaffId.Value);
-                if (success)
+                var dialog = new ContentDialog
                 {
-                    // Show confirmation dialog
-                    var confirmDialog = new ContentDialog
-                    {
-                        Title = "Reassignment Applied",
-                        Content = $"Shift #{shiftId} has been reassigned to {suggestion.SuggestedStaffName}.\n\nRunning audit to verify changes...",
-                        CloseButtonText = "OK",
-                        XamlRoot = Content.XamlRoot
-                    };
-                    await confirmDialog.ShowAsync();
-
-                    // Auto-run audit again to show updated violations
-                    _viewModel.RunAutoAudit();
-                }
-                else
-                {
-                    var failDialog = new ContentDialog
-                    {
-                        Title = "Reassignment Failed",
-                        Content = "Could not reassign shift. Please try again.",
-                        CloseButtonText = "OK",
-                        XamlRoot = Content.XamlRoot
-                    };
-                    await failDialog.ShowAsync();
-                }
+                    Title = result.title,
+                    Content = result.message,
+                    CloseButtonText = "OK",
+                    XamlRoot = Content.XamlRoot
+                };
+                await dialog.ShowAsync();
             }
         }
 
-        private void PublishRoster_Click(object sender, RoutedEventArgs e)
+        private void PublishRoster_Click(object sender, RoutedEventArgs eventArgs)
         {
-            if (_viewModel.CanPublish)
+            if (viewModel.CanPublish)
             {
                 var dialog = new ContentDialog
                 {
                     Title = "Roster Published",
-                    Content = $"The roster for the {_viewModel.WeekLabel} has been published successfully.",
+                    Content = $"The roster for the {viewModel.WeekLabel} has been published successfully.",
                     CloseButtonText = "OK",
                     XamlRoot = Content.XamlRoot
                 };
-                dialog.ShowAsync();
+                _ = dialog.ShowAsync();
             }
         }
-        
     }
 }
-

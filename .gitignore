@@ -76,6 +76,13 @@ artifacts/
 *.nuget.props
 *.nuget.targets
 
+.claude
+*.claude
+.claude/
+
+output
+coverage/
+
 # Others
 ~$*
 *~

@@ -1,7 +1,6 @@
 using DevCoreHospital.Views;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using System;
 
 namespace DevCoreHospital
 {
@@ -10,55 +9,25 @@ namespace DevCoreHospital
         public MainWindow()
         {
             this.InitializeComponent();
-            RootFrame.Navigated += RootFrame_Navigated;
-            NavigateTo(typeof(RoleSelectionPage));
+            RootFrame.Navigate(typeof(RoleSelectionPage));
         }
 
-        private void NavView_SelectionChanged(NavigationView sender, NavigationViewSelectionChangedEventArgs args)
+        private void NavView_SelectionChanged(NavigationView sender, NavigationViewSelectionChangedEventArgs eventArgs)
         {
-            if (args.SelectedItem is not NavigationViewItem item)
+            if (eventArgs.SelectedItemContainer is not NavigationViewItem selected)
+            {
                 return;
-
-            switch (item.Tag?.ToString())
-            {
-                case "role-selection":
-                    NavigateTo(typeof(RoleSelectionPage));
-                    break;
-                case "dashboard":
-                    NavigateTo(typeof(RoleDashboardPage));
-                    break;
-            }
-        }
-
-        private void RootFrame_Navigated(object sender, Microsoft.UI.Xaml.Navigation.NavigationEventArgs e)
-        {
-            if (e.SourcePageType == typeof(RoleSelectionPage))
-            {
-                NavView.SelectedItem = FindItemByTag("role-selection");
-            }
-            else if (e.SourcePageType == typeof(RoleDashboardPage))
-            {
-                NavView.SelectedItem = FindItemByTag("dashboard");
-            }
-        }
-
-        private void NavigateTo(Type pageType)
-        {
-            if (RootFrame.CurrentSourcePageType == pageType)
-                return;
-
-            RootFrame.Navigate(pageType);
-        }
-
-        private NavigationViewItem? FindItemByTag(string tag)
-        {
-            foreach (var mi in NavView.MenuItems)
-            {
-                if (mi is NavigationViewItem nvi && string.Equals(nvi.Tag?.ToString(), tag, StringComparison.Ordinal))
-                    return nvi;
             }
 
-            return null;
+            var tag = selected.Tag?.ToString();
+            if (tag == "role-selection")
+            {
+                RootFrame.Navigate(typeof(RoleSelectionPage));
+            }
+            else if (tag == "dashboard")
+            {
+                RootFrame.Navigate(typeof(RoleDashboardPage));
+            }
         }
     }
 }
